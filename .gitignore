@@ -1,0 +1,26 @@
+# VS Code settings (local của riêng bạn)
+.vscode/
+*.code-workspace
+
+# Local documentation
+doc.md
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
+.env.local
+
+# Build artifacts
+build/
+dist/
+*.class

@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter auto-generated files (tự động tạo khi chạy flutter run)
+**/generated_plugin_registrant.*
+**/GeneratedPluginRegistrant.*
+**/generated_plugins.cmake
+
+# pubspec.lock (nếu không muốn commit)
+# Lưu ý: Thường nên commit pubspec.lock để đảm bảo mọi người dùng cùng version
+# pubspec.lock
