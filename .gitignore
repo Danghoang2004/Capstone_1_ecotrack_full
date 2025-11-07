@@ -22,3 +22,8 @@ Thumbs.db
 build/
 dist/
 *.class
+
+# Flutter auto-generated files
+Front_end/frontend_ecotrack/**/generated_plugin_registrant.*
+Front_end/frontend_ecotrack/**/GeneratedPluginRegistrant.*
+Front_end/frontend_ecotrack/**/generated_plugins.cmake
