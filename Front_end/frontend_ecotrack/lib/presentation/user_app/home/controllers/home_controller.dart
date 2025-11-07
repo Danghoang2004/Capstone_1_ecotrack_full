@@ -4,6 +4,7 @@ import 'ranking_controller.dart';
 import 'recent_activity_controller.dart';
 import 'welcome_card_controller.dart';
 import 'profile_controller.dart';
+import 'upload.dart';
 
 class HomeController {
   final CampaignController campaignController = CampaignController();
@@ -12,4 +13,5 @@ class HomeController {
       RecentActivityController();
   final WelcomeCardController welcomeCardController = WelcomeCardController();
   final ProfileController profileController = ProfileController();
+  final UploadController uploadController = UploadController();
 }

@@ -1,8 +1,6 @@
-# VS Code settings (local của riêng bạn)
 .vscode/
 *.code-workspace
 
-# Local documentation
 doc.md
 
 # IDE

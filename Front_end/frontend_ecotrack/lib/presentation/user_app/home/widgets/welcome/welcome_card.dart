@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../controllers/welcome_card_controller.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../controllers/welcome_card_controller.dart';
 
 class WelcomeCard extends StatelessWidget {
   final WelcomeCardController controller;
@@ -13,7 +14,7 @@ class WelcomeCard extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: HomeColors.bgWelcome,
+        gradient: HomeColors.bgWelcome,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -84,15 +85,23 @@ class WelcomeCard extends StatelessWidget {
           ),
           // Badge Eco Warrior bên phải
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: HomeColors.bgHeader, // #E1F1DF - màu xanh nhạt
+              color: HomeColors.badgeBg,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.verified, color: AppColors.white, size: 18),
+                SvgPicture.asset(
+                  'assets/icons/badge.svg',
+                  width: 18,
+                  height: 18,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
                 const SizedBox(width: 6),
                 Text(
                   controller.badge,

@@ -5,4 +5,3 @@ class WelcomeCardController {
   int rank = 15;
   String badge = 'Eco Warrior';
 }
-
