@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       title: 'EcoTrack',
       theme: ThemeData(
         fontFamily: 'Arial',
-        scaffoldBackgroundColor: const Color(0xFFF7F8F2),
+        scaffoldBackgroundColor: const Color.fromARGB(255, 246, 247, 245),
       ),
       initialRoute: '/login',
       onGenerateRoute: AppRouter.generateRoute,

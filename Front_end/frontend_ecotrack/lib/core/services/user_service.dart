@@ -1,22 +1,32 @@
+// lib/core/services/user_service.dart
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'api_client.dart';
+import 'package:frontend_ecotrack/core/services/api_client.dart';
+import 'package:frontend_ecotrack/data/models/ProfileView.dart';
 
 class UserService {
-  final ApiClient apiClient = ApiClient(storage: const FlutterSecureStorage());
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
+  late final ApiClient apiClient = ApiClient(storage: storage);
 
-  Future<Map<String, dynamic>?> getProfile() async {
-    try {
-      final response = await apiClient.get('/api/user/me');
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print('Error: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Exception: $e');
+  Future<ProfileView> getProfileView() async {
+    final response = await apiClient.get("/api/user/profile");
+
+    if (response.statusCode == 401) {
+      throw UnauthorizedException("Token expired");
     }
-    return null;
+
+    if (response.statusCode != 200) {
+      throw Exception("Lỗi server: ${response.statusCode}");
+    }
+
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+    return ProfileView.fromJson(body);
   }
+}
+
+class UnauthorizedException implements Exception {
+  final String message;
+  UnauthorizedException([this.message = 'Unauthorized']);
+  @override
+  String toString() => 'UnauthorizedException: $message';
 }

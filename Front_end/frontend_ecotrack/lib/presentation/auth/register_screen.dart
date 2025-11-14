@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
+import 'package:flutter_svg/flutter_svg.dart';
 import '../common/primary_button.dart';
 import 'widgets/auth_tab_switcher.dart';
 
@@ -63,10 +63,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (resp.statusCode == 200) {
         final data = jsonDecode(resp.body);
-        final token = data['token']; // 👈 Lấy token từ phản hồi
+        final token = data['token'];
 
         if (token != null) {
-          // ✅ Lưu token an toàn
           await _storage.write(key: 'jwt_token', value: token);
 
           if (!mounted) return;
@@ -74,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             context,
           ).showSnackBar(const SnackBar(content: Text("Đăng ký thành công!")));
 
-          Navigator.pushReplacementNamed(context, "/home");
+          Navigator.pushReplacementNamed(context, "/user_app");
         } else {
           setState(() => _errorMessage = "Server không trả về token.");
         }
@@ -133,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xfff7f7f7),
+                    color: const Color.fromARGB(255, 252, 252, 252),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: fieldKey.currentState?.hasError == true
@@ -217,15 +216,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
             key: _formKey,
             child: Column(
               children: [
-                const SizedBox(height: 40),
-                Image.asset("assets/icons/leaf.png", height: 70),
+                SizedBox(height: 25),
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Color(0xFF5EAC24),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.eco,
+                      color: Colors.white, // icon lá màu trắng
+                      size: 40,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 10),
                 const Text(
                   "Chào mừng đến với EcoTrack",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                 ),
                 const Text(
                   "Cùng nhau bảo vệ môi trường và xây dựng tương lai xanh",
+                  style: TextStyle(fontSize: 12),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 25),
 
@@ -239,7 +254,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 20),
                 const Align(
                   alignment: Alignment.centerLeft,
-                  child: Text("Tạo tài khoản", style: TextStyle(fontSize: 16)),
+                  child: Text(
+                    "Tạo tài khoản",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 10),
 
@@ -303,21 +321,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: _loading ? null : _register,
                 ),
                 const SizedBox(height: 20),
-                const Divider(),
-                const SizedBox(height: 12),
-
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.g_mobiledata, size: 40),
-                    SizedBox(width: 20),
-                    Icon(Icons.facebook, size: 30),
+                  children: [
+                    Expanded(
+                      child: Divider(
+                        thickness: 1, // độ dày nét
+                        color: Colors.grey, // màu vạch
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        'hoặc tiếp tục với',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                    Expanded(child: Divider(thickness: 1, color: Colors.grey)),
                   ],
                 ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // --- Nút Google ---
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: Image.asset(
+                        'assets/icons/google.png',
+                        height: 16,
+                        width: 16,
+                      ),
+                      label: const Text(
+                        'Google',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.grey),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
 
-                const SizedBox(height: 40),
-                const Text("2025 EcoTrack. Cùng nhau bảo vệ hành tinh xanh."),
+                    const SizedBox(width: 20),
+
+                    // --- Nút Facebook ---
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.facebook,
+                        color: Color(0xFF1877F2),
+                      ),
+                      label: const Text(
+                        'Facebook',
+                        style: TextStyle(color: Color(0xFF1877F2)),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF1877F2)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
+                const Text(
+                  "2025 EcoTrack. Cùng nhau bảo vệ hành tinh xanh.",
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.normal),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
               ],
             ),
           ),

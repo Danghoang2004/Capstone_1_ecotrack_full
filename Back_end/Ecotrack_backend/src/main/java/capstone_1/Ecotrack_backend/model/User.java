@@ -3,16 +3,7 @@ package capstone_1.Ecotrack_backend.model;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
@@ -43,15 +34,38 @@ public class User {
     @Column(name = "credentials_non_expired")
     private Boolean credentialsNonExpired = true;
 
+
     @Column(name = "provider_id")
     private String providerId;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
+    @JoinTable(
+            name = "user_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
     private Set<Role> roles = new HashSet<>();
+
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile userProfile;
 
     // constructors, getters, setters
     public User() {
+    }
+
+    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled, Boolean accountNonLocked, Boolean credentialsNonExpired, String providerId, Set<Role> roles, UserProfile userProfile) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.accountNonExpired = accountNonExpired;
+        this.enabled = enabled;
+        this.accountNonLocked = accountNonLocked;
+        this.credentialsNonExpired = credentialsNonExpired;
+        this.providerId = providerId;
+        this.roles = roles;
+        this.userProfile = userProfile;
     }
 
     // getters and setters below...
@@ -135,4 +149,11 @@ public class User {
         this.roles = roles;
     }
 
+    public UserProfile getUserProfile() { return userProfile; }
+    public void setUserProfile(UserProfile userProfile) {
+        this.userProfile = userProfile;
+        if (userProfile != null) {
+            userProfile.setUser(this);
+        }
+    }
 }
