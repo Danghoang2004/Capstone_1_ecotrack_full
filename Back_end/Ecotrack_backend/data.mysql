@@ -1,0 +1,313 @@
+/* ================================================================
+   1. USER, ROLE, AUTH SYSTEM
+   ================================================================ */
+CREATE TABLE roles (
+    role_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE users (
+    user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL, 
+    email VARCHAR(100) NOT NULL,
+    account_non_expired BOOLEAN DEFAULT TRUE,
+    is_enabled BOOLEAN DEFAULT TRUE,
+    account_non_locked BOOLEAN DEFAULT TRUE,
+    credentials_non_expired BOOLEAN DEFAULT TRUE,
+    provider_id VARCHAR(255)
+);
+
+CREATE TABLE user_role (
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    PRIMARY KEY (user_id, role_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE
+);
+
+/* ================================================================
+   2. USER PROFILE & LEVELS — UPDATED
+   ================================================================ */
+
+CREATE TABLE levels (
+    level_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    level_name VARCHAR(100) NOT NULL,
+    min_points INT NOT NULL,
+    max_points INT NOT NULL,
+    icon_url VARCHAR(255)
+);
+
+/* === ✔ UPDATED user_profiles (dùng bản bạn cung cấp) === */
+CREATE TABLE user_profiles (
+    profile_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    full_name VARCHAR(100),
+    avatar_url VARCHAR(255) NOT NULL DEFAULT 'default_avatar.png',
+    gender ENUM('M','F','O'),
+    birth_date DATE,
+    location VARCHAR(150),
+    level_id BIGINT,
+    quiz_streak INT NOT NULL DEFAULT 0,
+    last_quiz_date DATE,
+    UNIQUE KEY (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (level_id) REFERENCES levels(level_id) ON DELETE SET NULL
+);
+
+CREATE TABLE user_points (
+    user_id BIGINT PRIMARY KEY,
+    points INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE point_transactions (
+    transaction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    action_type ENUM('REPORT','CAMPAIGN','BADGE','QUIZ','VOUCHER','OTHER') NOT NULL,
+    points INT NOT NULL,
+    description VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+/* ================================================================
+   3. BADGES & LEADERBOARD
+   ================================================================ */
+CREATE TABLE badges (
+    badge_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    badge_name VARCHAR(100) NOT NULL,
+    icon_url VARCHAR(255) NOT NULL,
+    description TEXT,
+    requirement TEXT
+);
+
+CREATE TABLE user_badges (
+    user_id BIGINT NOT NULL,
+    badge_id BIGINT NOT NULL,
+    awarded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, badge_id),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (badge_id) REFERENCES badges(badge_id) ON DELETE CASCADE
+);
+
+CREATE TABLE leaderboard (
+    leaderboard_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    rank_position INT NOT NULL,
+    score INT NOT NULL,
+    snapshot_date DATE NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+/* ================================================================
+   4. COMMUNITY GROUPS
+   ================================================================ */
+CREATE TABLE community_groups (
+    group_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    group_name VARCHAR(150) NOT NULL,
+    created_by_user_id BIGINT,
+    FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE group_members (
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    role ENUM('ADMIN','MEMBER') NOT NULL DEFAULT 'MEMBER',
+    PRIMARY KEY (group_id, user_id),
+    FOREIGN KEY (group_id) REFERENCES community_groups(group_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE group_leaderboard (
+    group_leaderboard_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    group_id BIGINT NOT NULL,
+    total_score INT DEFAULT 0,
+    snapshot_date DATE NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES community_groups(group_id) ON DELETE CASCADE
+);
+
+/* ================================================================
+   5. QUIZZES & MINI GAME
+   ================================================================ */
+CREATE TABLE quizzes (
+    quiz_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    points_reward INT NOT NULL DEFAULT 0,
+    status ENUM('DRAFT','PUBLISHED') NOT NULL DEFAULT 'DRAFT'
+);
+
+CREATE TABLE quiz_questions (
+    question_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    quiz_id BIGINT NOT NULL,
+    question_text TEXT NOT NULL,
+    option_a TEXT NOT NULL,
+    option_b TEXT NOT NULL,
+    option_c TEXT NOT NULL,
+    option_d TEXT NOT NULL,
+    correct_option ENUM('A','B','C','D') NOT NULL,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_quiz_attempts (
+    attempt_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    quiz_id BIGINT NOT NULL,
+    score INT NOT NULL,
+    completed_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE RESTRICT
+);
+
+/* ================================================================
+   6. WASTE REPORTS — UPDATED
+   ================================================================ */
+
+/* === ✔ UPDATED waste_reports (đúng như bạn gửi) === */
+CREATE TABLE waste_reports (
+    report_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    gps_lat DECIMAL(10,8) NOT NULL,
+    gps_long DECIMAL(11,8) NOT NULL,
+    status ENUM('PENDING','VERIFIED','REJECTED') NOT NULL DEFAULT 'PENDING',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    category VARCHAR(50),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+CREATE TABLE report_verifications (
+    verification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    report_id BIGINT NOT NULL,
+    verified_by BIGINT NULL,
+    result ENUM('APPROVED','REJECTED') NOT NULL,
+    confidence_score DECIMAL(5,2) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (report_id) REFERENCES waste_reports(report_id) ON DELETE CASCADE,
+    FOREIGN KEY (verified_by) REFERENCES users(user_id) ON DELETE SET NULL
+);
+
+/* ================================================================
+   7. PARTNERS & VOUCHERS
+   ================================================================ */
+CREATE TABLE partners (
+    partner_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNIQUE NOT NULL,
+    company_name VARCHAR(200) NOT NULL,
+    website VARCHAR(200),
+    logo_url VARCHAR(255),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE vouchers (
+    voucher_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    partner_id BIGINT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    value VARCHAR(100),
+    image_url VARCHAR(255),
+    quantity INT DEFAULT NULL,
+    points_required INT NOT NULL,
+    expiry_date DATE NOT NULL,
+    FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_vouchers (
+    user_voucher_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    voucher_id BIGINT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id) ON DELETE RESTRICT
+);
+
+/* ================================================================
+   8. CAMPAIGNS
+   ================================================================ */
+CREATE TABLE campaigns (
+    campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    created_by_partner_id BIGINT,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    start_time TIME,
+    end_time TIME,
+    location_address VARCHAR(255) NOT NULL,
+    max_participants INT,
+    image_url VARCHAR(255),
+    FOREIGN KEY (created_by_partner_id) REFERENCES partners(partner_id) ON DELETE SET NULL
+);
+
+CREATE TABLE campaign_participants (
+    campaign_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (campaign_id, user_id),
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE campaign_badge_rewards (
+    campaign_id BIGINT NOT NULL,
+    badge_id BIGINT NOT NULL,
+    PRIMARY KEY (campaign_id, badge_id),
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE,
+    FOREIGN KEY (badge_id) REFERENCES badges(badge_id) ON DELETE CASCADE
+);
+
+CREATE TABLE checkins (
+    checkin_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE campaign_likes (
+    campaign_like_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    UNIQUE KEY (campaign_id, user_id),
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE campaign_comments (
+    comment_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (campaign_id) REFERENCES campaigns(campaign_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+/* ================================================================
+   9. NOTIFICATIONS & ACTIVITY LOGS
+   ================================================================ */
+CREATE TABLE notifications (
+    notification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    notification_type ENUM('CAMPAIGN','ACHIEVEMENT','REWARD','SYSTEM') NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    target_type VARCHAR(50),
+    target_id BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE activity_logs (
+    log_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);

@@ -16,6 +16,7 @@ For help getting started with Flutter development, view the
 samples, guidance on mobile development, and a full API reference.
 
 # chú thích
+```
 frontend_flutter/
 │
 ├── lib/
@@ -68,3 +69,5 @@ frontend_flutter/
 │   ├── index.html
 │   └── manifest.json
 └── pubspec.yaml               # Khai báo thư viện Flutter
+
+```
