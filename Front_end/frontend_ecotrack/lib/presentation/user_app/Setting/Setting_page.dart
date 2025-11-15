@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/App_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -389,8 +390,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: xử lý đăng xuất
+                  onPressed: () async {
+                    await AuthService().logout(); // Xoá JWT khỏi local
+
+                    if (!mounted) return;
+
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/login',
+                      (route) => false,
+                    );
                   },
                   icon: const Icon(Icons.logout, color: Colors.white),
                   label: const Padding(

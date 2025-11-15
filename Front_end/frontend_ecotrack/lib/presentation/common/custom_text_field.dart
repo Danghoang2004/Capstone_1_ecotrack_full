@@ -6,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final bool obscure;
   final TextEditingController? controller;
   final String? Function(String?)? validator;
+  final Widget? suffixIcon;
 
   const CustomTextField({
     super.key,
@@ -14,6 +15,7 @@ class CustomTextField extends StatelessWidget {
     this.obscure = false,
     this.controller,
     this.validator,
+    this.suffixIcon,
   });
 
   @override
@@ -25,6 +27,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.grey[600]),
         hintText: hint,
+        suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 14),

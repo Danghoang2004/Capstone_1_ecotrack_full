@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:frontend_ecotrack/core/services/report_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 
 class Report_page extends StatefulWidget {
   const Report_page({super.key});
@@ -22,6 +23,62 @@ class _Report_pageState extends State<Report_page> {
   DateTime? lastSubmitTime;
 
   final List<String> validTrashTypes = ["Vô cơ", "Hữu cơ", "tổng hợp"];
+
+  void showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 100,
+                  child: Lottie.asset('assets/lotties/animations/success.json'),
+                ),
+                const SizedBox(height: 7),
+                const Text(
+                  "Gửi báo cáo thành công!",
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Cảm ơn bạn đã đóng góp cho môi trường xanh sạch 💚",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, color: Colors.black87),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    "Đóng",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -96,9 +153,8 @@ class _Report_pageState extends State<Report_page> {
 
       if (success) {
         lastSubmitTime = DateTime.now();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Gửi báo cáo thành công ")),
-        );
+
+        showSuccessDialog();
 
         setState(() {
           selectedImage = null;
@@ -149,8 +205,6 @@ class _Report_pageState extends State<Report_page> {
       ),
     );
   }
-
-  // UI Tách thành component cho gọn
 
   Widget _buildImagePickerSection() {
     return Container(
@@ -252,6 +306,29 @@ class _Report_pageState extends State<Report_page> {
           const SizedBox(height: 5),
           Wrap(children: validTrashTypes.map(_buildTrashTypeButton).toList()),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTrashTypeButton(String label) {
+    final isSelected = selectedTrashType == label;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: isSelected ? Colors.green[200] : Colors.white,
+          side: BorderSide(color: isSelected ? Colors.green : Colors.grey),
+          minimumSize: const Size(20, 30),
+        ),
+        onPressed: () {
+          setState(() {
+            selectedTrashType = label;
+          });
+        },
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 9, color: Colors.black),
+        ),
       ),
     );
   }
@@ -368,29 +445,6 @@ class _Report_pageState extends State<Report_page> {
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrashTypeButton(String label) {
-    final isSelected = selectedTrashType == label;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.green[200] : Colors.white,
-          side: BorderSide(color: isSelected ? Colors.green : Colors.grey),
-          minimumSize: const Size(20, 30),
-        ),
-        onPressed: () {
-          setState(() {
-            selectedTrashType = label;
-          });
-        },
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 9, color: Colors.black),
         ),
       ),
     );
