@@ -345,3 +345,14 @@ CREATE TABLE activity_logs (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
+
+INSERT INTO roles (role_name)
+VALUES 
+("ROLE_USER"),
+("ROLE_ADMIN"),
+("ROLE_PARTNER");
+
+
+
+
+
