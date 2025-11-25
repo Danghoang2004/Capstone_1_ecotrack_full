@@ -152,13 +152,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             background: Stack(
               fit: StackFit.expand,
               children: [
-                // BG Image
                 if (hasAvatar)
                   Image.asset('assets/images/anhprofile.jpg', fit: BoxFit.cover)
                 else
                   Container(color: Colors.green[400]),
 
-                // Dark overlay
                 Container(color: Colors.black.withOpacity(0.25)),
 
                 Positioned(

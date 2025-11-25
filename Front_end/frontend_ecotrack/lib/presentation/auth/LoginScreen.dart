@@ -18,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordCtrl = TextEditingController();
 
   bool _loading = false;
-  bool _obscurePassword = true; // <-- trạng thái toggle mật khẩu
+  bool _obscurePassword = true;
   String? _error;
 
   final AuthService _authService = AuthService();
@@ -84,6 +84,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    const Text(
+                      "Thông Báo",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
                     SizedBox(
                       height: 100,
                       child: Lottie.asset(
@@ -95,24 +105,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 8),
 
                     const Text(
-                      "Đăng nhập thành công",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF4CAF50),
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    const Text(
-                      "Đang chuyển hướng...",
+                      "Đăng nhập tài khoản thành công",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                        color: Color.fromARGB(255, 34, 34, 34),
                         decoration: TextDecoration.none,
                       ),
                     ),

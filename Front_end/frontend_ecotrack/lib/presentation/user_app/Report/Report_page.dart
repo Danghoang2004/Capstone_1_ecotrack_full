@@ -181,10 +181,36 @@ class _Report_pageState extends State<Report_page> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FFF8),
-      appBar: AppBar(
-        title: const Text('Báo cáo rác thải'),
-        backgroundColor: const Color.fromARGB(255, 197, 242, 175),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: AppBar(
+          backgroundColor: const Color(0xFF2E7D32),
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            "Báo cáo rác thải",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
+
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline, color: Colors.white),
+              onPressed: () {},
+            ),
+            const SizedBox(width: 6),
+          ],
+        ),
       ),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(8.0),

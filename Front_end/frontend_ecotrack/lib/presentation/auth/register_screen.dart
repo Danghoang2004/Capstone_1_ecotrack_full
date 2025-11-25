@@ -34,54 +34,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _showPassword = false;
   bool _showConfirm = false;
 
-  // ========= API REGISTER ==========
   Future<void> _register() async {
-    setState(() {
-      _errorMessage = null;
-    });
-
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
-    final username = _usernameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
 
     try {
-      final url = Uri.parse('${widget.apiBaseUrl}/api/auth/register');
+      final url = Uri.parse("${widget.apiBaseUrl}/api/auth/register");
 
       final resp = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "username": username,
           "email": email,
           "password": password,
+          "username": _usernameCtrl.text.trim(),
         }),
       );
 
+      final data = resp.body.isNotEmpty ? jsonDecode(resp.body) : {};
+
       if (resp.statusCode == 200) {
-        final data = jsonDecode(resp.body);
-        final token = data['token'];
-
-        if (token != null) {
-          await _storage.write(key: 'jwt_token', value: token);
-
-          if (!mounted) return;
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Đăng ký thành công!")));
-
-          Navigator.pushReplacementNamed(context, "/user_app");
-        } else {
-          setState(() => _errorMessage = "Server không trả về token.");
-        }
+        Navigator.pushNamed(context, "/otp", arguments: email);
       } else {
-        final data = resp.body.isNotEmpty ? jsonDecode(resp.body) : {};
-        setState(() {
-          _errorMessage = data['message'] ?? "Đăng ký thất bại.";
-        });
+        final msg =
+            data["message"] ??
+            data["error"] ??
+            "Đăng ký thất bại, vui lòng thử lại.";
+
+        setState(() => _errorMessage = msg);
       }
     } catch (e) {
       setState(() => _errorMessage = "Lỗi mạng: $e");

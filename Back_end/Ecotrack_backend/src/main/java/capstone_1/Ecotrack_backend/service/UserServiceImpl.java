@@ -20,6 +20,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoderWrapper;
     private final UserPointsRepository userPointsRepository;
     private final UserProfileRepository userProfileRepository;
+    private final EmailServiceImp emailServiceImp;
 
     @Override
     @Transactional
@@ -36,27 +37,81 @@ public class UserServiceImpl implements UserService {
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoderWrapper.encode(request.getPassword()));
 
+        // ROLE_USER mặc định
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseGet(() -> roleRepository.save(new Role("ROLE_USER")));
         user.setRoles(Collections.singleton(userRole));
 
-        // 🔥 SAVE user trước để có user_id
+        // Tạo mã xác thực
+        String otp = generateVerificationCode();
+        user.setVerificationCode(otp);
+        user.setVerified(false);
+
         User savedUser = userRepository.save(user);
 
-        // 🔥 TỰ TẠO PROFILE MẶC ĐỊNH
+        // Tạo profile
         UserProfile profile = new UserProfile();
         profile.setUser(savedUser);
         profile.setAvatarUrl("default_avatar.png");
         userProfileRepository.save(profile);
 
-        // 🔥 TẠO USER_POINTS
+        // Tạo điểm
         UserPoints points = new UserPoints();
         points.setUser(savedUser);
         points.setPoints(0);
         userPointsRepository.save(points);
 
+        // Gửi email OTP
+        guiEmailXacThuc(user.getEmail(), otp);
+
         return savedUser;
     }
 
 
+    private String generateVerificationCode() {
+        return String.valueOf(new Random().nextInt(900000) + 100000);
+    }
+
+
+    public void guiEmailXacThuc(String email, String code) {
+        String subject = "Mã xác thực tài khoản EcoTrack";
+        String text = """
+                    <html>
+                        <body>
+                            <h3>Xin chào,</h3>
+                            <p>Mã xác thực tài khoản của bạn là:</p>
+                            <h2 style='color: green;'>%s</h2>
+                            <p>Vui lòng nhập mã này để kích hoạt tài khoản.</p>
+                        </body>
+                    </html>
+                """.formatted(code);
+
+        emailServiceImp.sendMessage(
+                "dangvanhoang25121984@gmail.com",
+                email,
+                subject,
+                text);
+    }
+
+
+    @Transactional
+    public boolean verifyAccount(String email, String code) {
+        Optional<User> optional = userRepository.findByEmail(email);
+        if (optional.isEmpty())
+            return false;
+
+        User user = optional.get();
+
+        if (user.getVerificationCode() == null)
+            return false;
+
+        if (!user.getVerificationCode().equals(code))
+            return false;
+
+        user.setVerified(true);
+        user.setVerificationCode(null);
+        userRepository.save(user);
+
+        return true;
+    }
 }

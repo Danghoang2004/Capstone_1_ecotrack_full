@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/App_bar.dart';
@@ -136,7 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   _quickAction(
                     icon: Icons.qr_code_scanner,
                     label: "Check-in \n Quét QR chiến dịch",
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pushNamed(context, '/QR_check');
+                    },
                   ),
                 ],
               ),

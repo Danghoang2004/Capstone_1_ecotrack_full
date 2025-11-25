@@ -7,6 +7,7 @@ import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.security.JwtUtil;
 import capstone_1.Ecotrack_backend.service.UserService;
+import capstone_1.Ecotrack_backend.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,9 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserServiceImpl userServiceiml;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -59,6 +63,9 @@ public class AuthController {
                 return ResponseEntity.status(401).body(Map.of("error", " Sai mật khẩu , vui lòng thử lại "));
             }
 
+            if (!user.isVerified()) {
+                return ResponseEntity.status(401).body(Map.of("error", "Tài khoản chưa được xác thực email"));
+            }
             // Sinh JWT
             String token = jwtUtil.generateToken(user.getUsername());
 
@@ -68,4 +75,28 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error","Lỗi đăng nhập : "+e.getMessage()));
         }
     }
+
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyAccount(@RequestBody Map<String, String> request){
+        String email = request.get("email");
+        String code = request.get("code");
+
+        boolean success = userServiceiml.verifyAccount(email,code);
+
+        if(success) {
+
+            // Lấy user để tạo token
+            User user = userRepository.findByEmail(email).get();
+            String token = jwtUtil.generateToken(user.getUsername());
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Xác thực tài khoản thành công!",
+                    "token", token
+            ));
+        }
+
+        return ResponseEntity.badRequest().body(Map.of("error", "Mã xác thực không hợp lệ"));
+    }
+
+
 }
