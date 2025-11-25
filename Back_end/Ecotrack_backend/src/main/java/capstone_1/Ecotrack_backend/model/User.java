@@ -34,6 +34,11 @@ public class User {
     @Column(name = "credentials_non_expired")
     private Boolean credentialsNonExpired = true;
 
+    @Column(name = "verification_code")
+    private String verificationCode;
+
+    @Column(name = "is_verified")
+    private boolean isVerified = false;
 
     @Column(name = "provider_id")
     private String providerId;
@@ -54,7 +59,7 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled, Boolean accountNonLocked, Boolean credentialsNonExpired, String providerId, Set<Role> roles, UserProfile userProfile) {
+    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled, Boolean accountNonLocked, Boolean credentialsNonExpired, String verificationCode, boolean isVerified, String providerId, Set<Role> roles, UserProfile userProfile) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -63,6 +68,8 @@ public class User {
         this.enabled = enabled;
         this.accountNonLocked = accountNonLocked;
         this.credentialsNonExpired = credentialsNonExpired;
+        this.verificationCode = verificationCode;
+        this.isVerified = isVerified;
         this.providerId = providerId;
         this.roles = roles;
         this.userProfile = userProfile;
@@ -127,6 +134,22 @@ public class User {
 
     public Boolean getCredentialsNonExpired() {
         return credentialsNonExpired;
+    }
+
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        isVerified = verified;
     }
 
     public void setCredentialsNonExpired(Boolean credentialsNonExpired) {
