@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_ecotrack/presentation/auth/LoginScreen.dart';
-import 'package:frontend_ecotrack/presentation/auth/otp_screen.dart';
+import 'package:frontend_ecotrack/presentation/auth_user/LoginScreen.dart';
+import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Home/Home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
-
-import 'auth/register_screen.dart';
+import 'auth_user/register_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {

@@ -34,20 +34,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
 
-    try {
-      final success = await _authService.login(email, password);
+    // Gọi hàm login và nhận kết quả Map
+    final result = await _authService.login(email, password);
 
-      if (success) {
-        _showSuccessDialog();
-      } else {
-        setState(
-          () => _error = 'Sai thông tin đăng nhập hoặc mật khẩu không đúng.',
-        );
-      }
-    } catch (e) {
-      setState(() => _error = 'Lỗi kết nối: $e');
-    } finally {
-      setState(() => _loading = false);
+    if (!mounted) return;
+
+    setState(() => _loading = false);
+
+    if (result['success'] == true) {
+      _showSuccessDialog();
+    } else {
+      setState(() {
+        _error = result['message'];
+      });
     }
   }
 
