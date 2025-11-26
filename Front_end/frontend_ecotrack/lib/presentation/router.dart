@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/LoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
-import 'package:frontend_ecotrack/presentation/user_app/Home/Home_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';

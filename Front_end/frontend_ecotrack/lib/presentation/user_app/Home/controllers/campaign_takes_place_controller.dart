@@ -1,11 +1,11 @@
-// Campaign Controller - Quản lý campaigns
+// Campaign Takes Place Controller - Quản lý chiến dịch đang diễn ra
 class CampaignModel {
   final String id;
   final String title;
   final String imageUrl;
   final String dateTime;
   final int participants;
-  final double distance;
+  final String distance;
 
   CampaignModel({
     required this.id,
@@ -17,26 +17,25 @@ class CampaignModel {
   });
 }
 
-class CampaignController {
-  // Mock data cho campaigns
+class CampaignTakesPlaceController {
+  // Mock data cho campaigns đang diễn ra
   List<CampaignModel> get campaigns => [
         CampaignModel(
           id: '1',
           title: 'Dọn rác bãi biển Đà Nẵng',
-          imageUrl:
-              'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400',
+          imageUrl: 'assets/images/park_cleanup.jpg',
           dateTime: '16/07/2025 07:00-11:00',
           participants: 199,
-          distance: 1.2,
+          distance: '1.2km',
         ),
         CampaignModel(
           id: '2',
           title: 'Làm sạch công viên Tao Đàn',
-          imageUrl:
-              'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400',
+          imageUrl: 'assets/images/park_cleanup.jpg',
           dateTime: '16/07/2025 07:00-11:00',
           participants: 199,
-          distance: 1.2,
+          distance: '1.2km',
         ),
       ];
 }
+

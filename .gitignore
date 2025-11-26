@@ -2,6 +2,7 @@
 *.code-workspace
 
 doc.md
+Note.md
 
 # IDE
 .idea/

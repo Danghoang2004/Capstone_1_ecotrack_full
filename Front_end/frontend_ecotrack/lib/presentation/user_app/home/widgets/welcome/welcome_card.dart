@@ -3,10 +3,26 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/welcome_card_controller.dart';
 
-class WelcomeCard extends StatelessWidget {
+class WelcomeCard extends StatefulWidget {
   final WelcomeCardController controller;
 
   const WelcomeCard({super.key, required this.controller});
+
+  @override
+  State<WelcomeCard> createState() => _WelcomeCardState();
+}
+
+class _WelcomeCardState extends State<WelcomeCard> {
+  @override
+  void initState() {
+    super.initState();
+    // Load profile và rebuild khi xong
+    widget.controller.loadProfile().then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +43,7 @@ class WelcomeCard extends StatelessWidget {
               children: [
                 // Greeting
                 Text(
-                  'Xin chào, ${controller.userName} !',
+                  'Xin chào, ${widget.controller.userName} !',
                   style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 22,
@@ -51,7 +67,7 @@ class WelcomeCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${controller.points} điểm',
+                            '${widget.controller.points} điểm',
                             style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 14,
@@ -69,7 +85,7 @@ class WelcomeCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '#${controller.rank} xếp hạng',
+                            '#${widget.controller.rank} xếp hạng',
                             style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 14,
@@ -104,7 +120,7 @@ class WelcomeCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  controller.badge,
+                  widget.controller.badge,
                   style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 14,

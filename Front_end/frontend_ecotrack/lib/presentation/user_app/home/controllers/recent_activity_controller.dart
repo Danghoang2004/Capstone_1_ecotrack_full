@@ -20,26 +20,26 @@ class RecentActivityModel {
 class RecentActivityController {
   // Mock data cho hoạt động gần đây
   List<RecentActivityModel> get activities => [
-        RecentActivityModel(
-          id: '1',
-          title: 'Báo cáo rác thành công',
-          description: '+50 Điểm - 2 giờ trước',
-          iconType: 'check',
-          iconBgColor: const Color(0xFFC0E1AE), // Xanh nhạt
-        ),
-        RecentActivityModel(
-          id: '2',
-          title: 'Tham gia chiến dịch',
-          description: '+50 Điểm - 2 giờ trước',
-          iconType: 'person',
-          iconBgColor: const Color(0xFFC0E1AE), // Xanh nhạt
-        ),
-        RecentActivityModel(
-          id: '3',
-          title: 'Đạt huy hiệu mới',
-          description: '+50 Điểm - 2 giờ trước',
-          iconType: 'badge',
-          iconBgColor: const Color(0xFFD4A574), // Nâu nhạt
-        ),
-      ];
+    RecentActivityModel(
+      id: '1',
+      title: 'Báo cáo rác thành công',
+      description: '+50 Điểm - 2 giờ trước',
+      iconType: 'check',
+      iconBgColor: const Color(0xFFC0E1AE), // Xanh nhạt
+    ),
+    RecentActivityModel(
+      id: '2',
+      title: 'Tham gia chiến dịch',
+      description: '+50 Điểm - 2 giờ trước',
+      iconType: 'person',
+      iconBgColor: const Color(0xFFC0E1AE), // Xanh nhạt
+    ),
+    RecentActivityModel(
+      id: '3',
+      title: 'Đạt huy hiệu mới',
+      description: '+50 Điểm - 2 giờ trước',
+      iconType: 'badge',
+      iconBgColor: const Color(0xFFD4A574), // Nâu nhạt
+    ),
+  ];
 }

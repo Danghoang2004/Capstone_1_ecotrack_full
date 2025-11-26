@@ -1,5 +1,20 @@
+-- ================================================================
+-- SETUP DATABASE ECOTRACK_DB
+-- ================================================================
+
+-- Tạo database
+CREATE DATABASE IF NOT EXISTS ecotrack_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Tạo user và cấp quyền
+CREATE USER IF NOT EXISTS 'spring'@'localhost' IDENTIFIED BY 'spring';
+GRANT ALL PRIVILEGES ON ecotrack_db.* TO 'spring'@'localhost';
+FLUSH PRIVILEGES;
+
+-- Sử dụng database
+USE ecotrack_db;
+
 /* ================================================================
-   BẢNG QUYỀN NGƯỜI DÙNG (Roles) 
+   BẢNG QUYỀN NGƯỜI DÙNG (Roles)
 ================================================================ */
 CREATE TABLE roles (
     role_id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -12,12 +27,14 @@ CREATE TABLE roles (
 CREATE TABLE users (
     user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL, 
+    password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL,
     account_non_expired BOOLEAN DEFAULT TRUE,
     is_enabled BOOLEAN DEFAULT TRUE,
     account_non_locked BOOLEAN DEFAULT TRUE,
     credentials_non_expired BOOLEAN DEFAULT TRUE,
+    verification_code VARCHAR(255),
+    is_verified BOOLEAN DEFAULT FALSE,
     provider_id VARCHAR(255)
 );
 
@@ -347,7 +364,7 @@ CREATE TABLE activity_logs (
 );
 
 INSERT INTO roles (role_name)
-VALUES 
+VALUES
 ("ROLE_USER"),
 ("ROLE_ADMIN"),
 ("ROLE_PARTNER");

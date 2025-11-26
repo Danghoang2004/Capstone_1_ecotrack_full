@@ -3,10 +3,26 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/profile_controller.dart';
 
-class HeaderWidget extends StatelessWidget {
+class HeaderWidget extends StatefulWidget {
   final ProfileController controller;
 
   const HeaderWidget({super.key, required this.controller});
+
+  @override
+  State<HeaderWidget> createState() => _HeaderWidgetState();
+}
+
+class _HeaderWidgetState extends State<HeaderWidget> {
+  @override
+  void initState() {
+    super.initState();
+    // Load profile và rebuild khi xong
+    widget.controller.loadProfile().then((_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,21 +123,50 @@ class HeaderWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.grey,
-                backgroundImage: NetworkImage(controller.imageUrl),
-                onBackgroundImageError: (exception, stackTrace) {
-                  // Nếu load ảnh lỗi thì hiển thị icon mặc định
-                },
-                child: controller.imageUrl.isEmpty
-                    ? const Icon(Icons.person, color: AppColors.white, size: 20)
-                    : null,
-              ),
+              _buildAvatar(),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    final imageUrl = widget.controller.imageUrl;
+    final hasValidUrl =
+        imageUrl.isNotEmpty &&
+        imageUrl !=
+            'https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/11/tai-hinh-nen-dep-mien-phi.jpg' &&
+        (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+
+    if (!hasValidUrl) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundColor: Colors.grey[400],
+        child: const Icon(Icons.person, color: AppColors.white, size: 20),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: NetworkImage(imageUrl),
+      onBackgroundImageError: (exception, stackTrace) {
+        // Nếu load ảnh lỗi thì hiển thị icon mặc định
+        if (mounted) {
+          setState(() {});
+        }
+      },
+      child: widget.controller.isLoading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+              ),
+            )
+          : null,
     );
   }
 }
