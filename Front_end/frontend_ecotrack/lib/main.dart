@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'presentation/user_app/home/screens/home_screen.dart';
+import 'package:frontend_ecotrack/presentation/router.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,12 +11,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'EcoTrack',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
+        fontFamily: 'Arial',
+        scaffoldBackgroundColor: const Color.fromARGB(255, 246, 247, 245),
       ),
-      home: const HomeScreen(),
+      initialRoute: '/login',
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }
