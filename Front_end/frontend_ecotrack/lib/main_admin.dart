@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
-import 'package:frontend_ecotrack/presentation/admin_web/auth_admin/AdminLoginScreen.dart';
-import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/AdminDashboardScreen.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDashboardScreen.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_partner/partner_dashboard_screen.dart';
 
 void main() {
   // Đảm bảo rằng ứng dụng này được chạy riêng cho Web
@@ -24,9 +25,10 @@ class AdminApp extends StatelessWidget {
       // Bắt đầu từ màn hình chờ để kiểm tra token và vai trò
       home: const AdminSplashScreen(),
       routes: {
-        // CHỈ CÓ CÁC ROUTES CỦA ADMIN
+        // CHỈ CÓ CÁC ROUTES CỦA ADMIN và parter
         '/admin_login': (context) => const AdminLoginScreen(),
         '/admin_dashboard': (context) => const AdminDashboardScreen(),
+        '/partner_dashboard': (context) => const PartnerDashboardScreen(),
       },
       // Định nghĩa route mặc định
       onGenerateRoute: (settings) {
@@ -60,26 +62,32 @@ class _AdminSplashScreenState extends State<AdminSplashScreen> {
   }
 
   Future<void> _checkAuthStatus() async {
-    // Độ trễ nhẹ để trải nghiệm tốt hơn
     await Future.delayed(const Duration(milliseconds: 500));
 
     final token = await _authService.getToken();
 
     if (token != null) {
       final isAdmin = await _authService.isAdmin();
+      final isPartner = await _authService.isPartner(); // KIỂM TRA ROLE PARTNER
 
       if (isAdmin) {
-        // Có token và là Admin -> Dashboard
         if (mounted)
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
         return;
-      } else {
-        // Có token nhưng không phải Admin -> Bắt buộc đăng xuất
-        await _authService.logout();
       }
+
+      if (isPartner) {
+        // KIỂM TRA PARTNER SAU ADMIN
+        if (mounted)
+          Navigator.pushReplacementNamed(context, '/partner_dashboard');
+        return;
+      }
+
+      // Nếu có token nhưng không phải Admin và cũng không phải Partner (có thể là User), thì đăng xuất
+      await _authService.logout();
     }
 
-    // Không có token hoặc không phải Admin -> Login Admin
+    // Nếu không có token hoặc không có quyền phù hợp, chuyển đến Login
     if (mounted) Navigator.pushReplacementNamed(context, '/admin_login');
   }
 
