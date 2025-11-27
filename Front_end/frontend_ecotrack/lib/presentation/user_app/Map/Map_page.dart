@@ -67,7 +67,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _showReportDetails(Report r) {
-    const String baseUrl = "http://127.0.0.1:8080";
+    const String baseUrl = "http://192.168.1.89:8080";
 
     String imageUrl = r.imageUrl.startsWith("http")
         ? r.imageUrl
