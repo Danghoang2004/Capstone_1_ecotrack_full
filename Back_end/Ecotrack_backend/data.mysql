@@ -1,5 +1,11 @@
+-- Tạo database
+CREATE DATABASE IF NOT EXISTS ecotrack_demo1 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Sử dụng database
+USE ecotrack_demo1;
+
 /* ================================================================
-   BẢNG QUYỀN NGƯỜI DÙNG (Roles) 
+   BẢNG QUYỀN NGƯỜI DÙNG (Roles)
 ================================================================ */
 CREATE TABLE roles (
     role_id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -12,7 +18,7 @@ CREATE TABLE roles (
 CREATE TABLE users (
     user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL, 
+    password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL,
     account_non_expired BOOLEAN DEFAULT TRUE,
     is_enabled BOOLEAN DEFAULT TRUE,
@@ -347,12 +353,7 @@ CREATE TABLE activity_logs (
 );
 
 INSERT INTO roles (role_name)
-VALUES 
+VALUES
 ("ROLE_USER"),
 ("ROLE_ADMIN"),
 ("ROLE_PARTNER");
-
-
-
-
-
