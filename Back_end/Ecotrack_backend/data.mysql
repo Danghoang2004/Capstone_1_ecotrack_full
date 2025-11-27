@@ -24,7 +24,10 @@ CREATE TABLE users (
     is_enabled BOOLEAN DEFAULT TRUE,
     account_non_locked BOOLEAN DEFAULT TRUE,
     credentials_non_expired BOOLEAN DEFAULT TRUE,
-    provider_id VARCHAR(255)
+    provider_id VARCHAR(255),
+    is_verified BOOLEAN DEFAULT FALSE,
+    verification_code VARCHAR(255),
+    last_credentials_update DATETIME NULL
 );
 
 /* ================================================================
@@ -232,6 +235,27 @@ CREATE TABLE partners (
 );
 
 /* ================================================================
+   COUPON (Coupons)
+================================================================ */
+CREATE TABLE coupons (
+    coupon_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    partner_id BIGINT NOT NULL,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    discount_type ENUM('PERCENT', 'FIXED') NOT NULL,
+    discount_value DOUBLE NOT NULL,
+    usage_limit INT NOT NULL,
+    used_count INT NOT NULL DEFAULT 0,
+    expiry_date DATE NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE,
+    INDEX idx_partner_id (partner_id),
+    INDEX idx_code (code),
+    INDEX idx_expiry_date (expiry_date)
+);
+
+/* ================================================================
    VOUCHER (Vouchers)
 ================================================================ */
 CREATE TABLE vouchers (
@@ -357,3 +381,61 @@ VALUES
 ("ROLE_USER"),
 ("ROLE_ADMIN"),
 ("ROLE_PARTNER");
+
+-- Tạo tài khoản admin mặc định
+-- Email: admin@gmail.com
+-- Password: password (đã được hash bằng BCrypt: $2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy)
+INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, is_verified)
+VALUES
+('admin', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'admin@gmail.com', TRUE, TRUE, TRUE, TRUE, TRUE);
+
+-- Gán quyền ROLE_ADMIN cho tài khoản admin
+-- Lưu ý: role_id của ROLE_ADMIN là 2 (sau ROLE_USER là 1)
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.email = 'admin@gmail.com' AND r.role_name = 'ROLE_ADMIN';
+
+-- Tạo profile cho admin
+INSERT INTO user_profiles (user_id, avatar_url)
+SELECT user_id, 'default_avatar.png'
+FROM users
+WHERE email = 'admin@gmail.com';
+
+-- Tạo user_points cho admin
+INSERT INTO user_points (user_id, points)
+SELECT user_id, 0
+FROM users
+WHERE email = 'admin@gmail.com';
+
+-- Tạo tài khoản partner mặc định
+-- Email: partner@gmail.com
+-- Password: password (đã được hash bằng BCrypt: $2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy)
+INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, is_verified)
+VALUES
+('partner', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'partner@gmail.com', TRUE, TRUE, TRUE, TRUE, TRUE);
+
+-- Gán quyền ROLE_PARTNER cho tài khoản partner
+-- Lưu ý: role_id của ROLE_PARTNER là 3 (sau ROLE_USER là 1, ROLE_ADMIN là 2)
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.email = 'partner@gmail.com' AND r.role_name = 'ROLE_PARTNER';
+
+-- Tạo profile cho partner
+INSERT INTO user_profiles (user_id, avatar_url)
+SELECT user_id, 'default_avatar.png'
+FROM users
+WHERE email = 'partner@gmail.com';
+
+-- Tạo user_points cho partner
+INSERT INTO user_points (user_id, points)
+SELECT user_id, 0
+FROM users
+WHERE email = 'partner@gmail.com';
+
+-- Tạo bản ghi trong bảng partners
+INSERT INTO partners (user_id, company_name, website)
+SELECT user_id, 'Demo Partner Company', 'https://demo-partner.com'
+FROM users
+WHERE email = 'partner@gmail.com';
