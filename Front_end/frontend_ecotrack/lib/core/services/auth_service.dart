@@ -161,6 +161,21 @@ class AuthService {
     return false;
   }
 
+  Future<bool> isPartner() async {
+    final rolesJson = await _storage.read(key: 'user_roles');
+    if (rolesJson != null) {
+      try {
+        final roles = jsonDecode(rolesJson);
+        // Kiểm tra xem danh sách roles có chứa ROLE_PARTNER hay không
+        return roles.contains("ROLE_PARTNER");
+      } catch (e) {
+        print("Lỗi decode roles: $e");
+        return false;
+      }
+    }
+    return false;
+  }
+
   // Thêm hàm lấy Roles
   Future<List<String>> getRoles() async {
     final rolesJson = await _storage.read(key: 'user_roles');
