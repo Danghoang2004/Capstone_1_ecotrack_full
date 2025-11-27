@@ -38,13 +38,13 @@ class _UserlayoutState extends State<Userlayout> {
             });
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: const Color.fromARGB(255, 160, 231, 124),
+          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
           elevation: 12,
-          selectedItemColor: const Color.fromARGB(255, 2, 85, 2),
-          unselectedItemColor: Colors.grey,
-          selectedFontSize: 12,
+          selectedItemColor: const Color.fromARGB(255, 1, 95, 1),
+          unselectedItemColor: const Color.fromARGB(255, 0, 0, 0),
+          selectedFontSize:12,
           unselectedFontSize: 11,
-          iconSize: 22,
+          iconSize: 18,
           items: [
             const BottomNavigationBarItem(
               icon: Padding(

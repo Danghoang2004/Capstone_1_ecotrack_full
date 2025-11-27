@@ -6,6 +6,7 @@ import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart'
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
+import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
 import 'auth_user/register_screen.dart';
 
 class AppRouter {
@@ -30,6 +31,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => OtpScreenSingle(email: email));
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screen());
+      case '/voucher':
+        return MaterialPageRoute(builder: (_) => const RewardsScreen());
       default:
         return MaterialPageRoute(
           builder: (_) =>

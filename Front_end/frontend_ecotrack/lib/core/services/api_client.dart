@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  final String baseUrl = 'http://192.168.1.89:8080';
+  final String baseUrl = 'http://192.168.1.6:8080';
   final FlutterSecureStorage storage;
 
   ApiClient({required this.storage});
@@ -84,5 +85,50 @@ class ApiClient {
 
   dynamic decodeUtf8Json(http.Response response) {
     return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+}
+
+/// ======================
+/// VoucherApi dùng ApiClient
+/// ======================
+class VoucherApi {
+  final ApiClient _client;
+
+  VoucherApi(this._client);
+
+  /// Lấy danh sách voucher từ BE
+  Future<List<RewardItem>> fetchRewards() async {
+    final res = await _client.get('/api/v1/vouchers');
+
+    if (res.statusCode == 200) {
+      final List data = _client.decodeUtf8Json(res);
+      return data.map((e) => RewardItem.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load vouchers: ${res.body}');
+    }
+  }
+
+  /// Gọi API đổi voucher
+  Future<void> redeemVoucher(int voucherId, int userId) async {
+    final res = await _client.post(
+      '/api/v1/vouchers/$voucherId/redeem?userId=$userId',
+      {}, // body rỗng
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Redeem failed: ${res.body}');
+    }
+  }
+
+  /// Lấy điểm user cho màn voucher
+  Future<int> fetchUserPoints(int userId) async {
+    final res = await _client.get('/api/v1/vouchers/user/$userId/voucher-page');
+
+    if (res.statusCode == 200) {
+      final Map<String, dynamic> data = _client.decodeUtf8Json(res);
+      return (data['points'] ?? 0) as int;
+    } else {
+      throw Exception('Failed to load user points: ${res.body}');
+    }
   }
 }

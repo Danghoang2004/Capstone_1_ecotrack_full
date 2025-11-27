@@ -181,11 +181,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.videogame_asset_outlined,
                     "Mini Game",
                     "Quizz môi trường",
+                    // chưa gắn onTap thì để trống
                   ),
                   _featureCard(
                     Icons.card_giftcard_outlined,
                     "Đổi thưởng",
                     "Coupon & Ưu đãi",
+                    onTap: () {
+                      Navigator.pushNamed(context, '/voucher');
+                    },
                   ),
                 ],
               ),
@@ -421,24 +425,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _featureCard(IconData icon, String title, String subtitle) {
+  Widget _featureCard(
+    IconData icon,
+    String title,
+    String subtitle, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Container(
-        height: 100,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.green.shade100),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.green, size: 30),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text(subtitle, style: const TextStyle(fontSize: 12)),
-          ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap, // <-- thêm sự kiện tap
+        child: Container(
+          height: 100,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.green.shade100),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.green, size: 30),
+              const SizedBox(height: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(subtitle, style: const TextStyle(fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

@@ -45,11 +45,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             }
 
-            // Show UI skeleton even on generic error so layout stays consistent
+            // Hiển thị skeleton để layout vẫn đẹp khi lỗi
             return _buildProfileSkeleton();
           }
 
-          // Success: data may be null or populated
+          // Success
           final view = snap.data;
           if (view == null) {
             return _buildProfileSkeleton();
@@ -60,6 +60,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  // =================== UI CHÍNH ===================
 
   Widget _buildProfileContent(ProfileView view) {
     return CustomScrollView(
@@ -75,15 +77,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildProgressAndStats(view),
                 const SizedBox(height: 5),
                 _buildStatsGrid(view),
-                const SizedBox(height: 15),
-                _buildBadgesHeader(),
-                const SizedBox(height: 8),
-                _buildBadgesSection(view.badges),
                 const SizedBox(height: 20),
-                _buildRecentActivitiesHeader(),
-                const SizedBox(height: 8),
+                _buildAchievementsSection(view.badges),
+                const SizedBox(height: 24),
                 _buildRecentActivitySection(view.recentActivities),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -92,11 +90,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // ------------------------------
-  // Build a skeleton (placeholders) for cases: error, no data, or loading fallback
-  // ------------------------------
+  /// Skeleton khi lỗi / không có data nhưng vẫn muốn giữ layout
   Widget _buildProfileSkeleton() {
-    // create an empty (zero) ProfileView-like presentation using placeholder values
     final placeholder = ProfileView(
       userId: 0,
       fullName: '',
@@ -123,133 +118,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           awardedAt: null,
         ),
       ),
-      recentActivities: List<ActivityModel>.empty(growable: true),
+      recentActivities: <ActivityModel>[],
     );
 
     return _buildProfileContent(placeholder);
   }
 
-  // ------------------------------
-  // AppBar / Header with avatar, name, location, progress bar
-  // ------------------------------
+  // =================== HEADER / APPBAR ===================
+
   SliverAppBar _buildSliverAppBar(ProfileView view) {
     final hasAvatar = view.avatarUrl.isNotEmpty;
     final displayName = view.fullName.isNotEmpty
         ? view.fullName
         : (view.username.isNotEmpty ? view.username : 'Người dùng');
 
-    return SliverAppBar(
-      expandedHeight: 200,
-      pinned: true,
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.green[400],
-      flexibleSpace: LayoutBuilder(
-        builder: (context, constraints) {
-          final isCollapsed = constraints.maxHeight <= kToolbarHeight + 50;
-
-          return FlexibleSpaceBar(
-            collapseMode: CollapseMode.parallax,
-            background: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (hasAvatar)
-                  Image.asset('assets/images/anhprofile.jpg', fit: BoxFit.cover)
-                else
-                  Container(color: Colors.green[400]),
-
-                Container(color: Colors.black.withOpacity(0.25)),
-
-                Positioned(
-                  top: 30,
-                  left: 16,
-                  child: _headerIcon(Icons.settings),
-                ),
-
-                Positioned(
-                  top: 30,
-                  right: 16,
-                  child: Row(
-                    children: [
-                      _headerIcon(Icons.notifications),
-                      const SizedBox(width: 10),
-                      _headerIcon(Icons.share),
-                    ],
-                  ),
-                ),
-
-                // Progress bar
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 16,
-                    ),
-                    child: _buildProgressBar(view),
-                  ),
-                ),
-
-                // Avatar + Name overlay
-                Positioned(
-                  bottom: 80,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: isCollapsed ? 24 : 30,
-                        backgroundColor: Colors.white,
-                        backgroundImage: hasAvatar
-                            ? AssetImage('assets/images/avatar.jpg')
-                            : null,
-                        child: !hasAvatar
-                            ? const Icon(
-                                Icons.person,
-                                size: 32,
-                                color: Colors.grey,
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 6),
-
-                      if (!isCollapsed)
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-
-                      if (!isCollapsed) const SizedBox(height: 1),
-
-                      if (!isCollapsed)
-                        Text(
-                          view.location ?? '',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _headerIcon(IconData icon) {
-    return Icon(icon, color: Colors.white, size: 18);
-  }
-
-  // progress bar showing points / level bounds
-  Widget _buildProgressBar(ProfileView view) {
+    // Tính tiến độ (giữ nguyên logic cũ)
     final min = (view.minPoints ?? 0).toDouble();
     final max =
         (view.maxPoints ?? (view.points > 0 ? view.points.toDouble() : 100))
@@ -259,329 +142,492 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? ((cur - min) / (max - min)).clamp(0.0, 1.0)
         : 0.0;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white70,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tiến độ lên cấp',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    const SizedBox(height: 6),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: percent,
-                        minHeight: 10,
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                      ),
-                    ),
-                  ],
+    return SliverAppBar(
+      expandedHeight: 250.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color.fromARGB(255, 223, 233, 223),
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/images/anhprofile.jpg',
+              fit: BoxFit.cover,
+              errorBuilder: (context, _, __) => Container(
+                alignment: Alignment.center,
+                color: const Color(0xFF4CAF50),
+                child: const Text(
+                  'Ảnh không tìm thấy',
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                '${view.points}/${(view.maxPoints ?? 0)} XP',
-                style: const TextStyle(fontSize: 12),
+            ),
+
+            // Icon trên cùng
+            Positioned(
+              top: 28,
+              left: 12,
+              child: IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {},
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              top: 28,
+              right: 12,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.people_alt_outlined,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+            ),
+
+            // Avatar + tên + location
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.white,
+                  backgroundImage: hasAvatar
+                      ? AssetImage('assets/images/avatar.jpg')
+                      : null,
+                  child: !hasAvatar
+                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                      : null,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  view.location ?? 'Chưa cập nhật địa điểm',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                ),
+                const SizedBox(height: 5),
+
+                // Thanh tiến độ giống file trên
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Tiến độ lên cấp',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${view.points}/${view.maxPoints} XP',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: percent,
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
+            ),
+          ],
+          
         ),
-      ],
+        
+      ),
+      
     );
+    
   }
 
-  // ------------------------------
-  // Colored stat grid (4 boxes) — always present
-  // ------------------------------
+  // =================== STATS GRID (4 Ô) ===================
+
   Widget _buildStatsGrid(ProfileView view) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              _statCard(
-                // Eco Points
-                color: Colors.green[700]!,
-                title: view.points.toString(),
-                subtitle: 'Eco Points',
-                icon: Icons.eco,
-                flex: 1,
-              ),
-              const SizedBox(width: 12),
-              _statCard(
-                color: Colors.orange[700]!,
-                title: view.reportCount.toString(),
-                subtitle: 'Báo cáo rác',
-                icon: Icons.camera_alt,
-                flex: 1,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _statCard(
-                color: Colors.blue[700]!,
-                title: view.groupCount.toString(),
-                subtitle: 'Chiến dịch',
-                icon: Icons.group,
-                flex: 1,
-              ),
-              const SizedBox(width: 12),
-              _statCard(
-                color: Colors.red[300]!,
-                title: view.rank != null ? '#${view.rank}' : '-',
-                subtitle: 'Xếp hạng',
-                icon: Icons.emoji_events,
-                flex: 1,
-              ),
-            ],
-          ),
-        ],
-      ),
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 1,
+      mainAxisSpacing: 1,
+      childAspectRatio: 1.1,
+      children: [
+        _statCard(
+          color: const Color(0xFF2E7D32),
+          icon: Icons.eco,
+          title: view.points.toString(),
+          subtitle: 'Eco Points',
+        ),
+        _statCard(
+          color: const Color(0xFFFFA000),
+          icon: Icons.camera_alt,
+          title: view.reportCount.toString(),
+          subtitle: 'Báo cáo rác',
+        ),
+        _statCard(
+          color: const Color(0xFF3F51B5),
+          icon: Icons.people,
+          title: view.groupCount.toString(),
+          subtitle: 'Chiến dịch',
+        ),
+        _statCard(
+          color: const Color(0xFFE53935),
+          icon: Icons.leaderboard,
+          title: view.rank != null ? '#${view.rank}' : '-',
+          subtitle: 'Xếp hạng',
+        ),
+      ],
     );
   }
 
   Widget _statCard({
     required Color color,
+    required IconData icon,
     required String title,
     required String subtitle,
-    required IconData icon,
-    required int flex,
   }) {
-    return Expanded(
-      flex: flex,
-      child: Container(
-        height: 110,
-        width: 50,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.all(12),
+    return Card(
+      color: color,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white),
-            SizedBox(height: 8),
+            Icon(icon, color: Colors.white, size: 28),
+            const SizedBox(height: 5),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
                 color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: Colors.white70)),
+            Text(
+              subtitle,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
           ],
         ),
       ),
     );
   }
 
-  // header for badges section
-  Widget _buildBadgesHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  // =================== HUY HIỆU (2 HÀNG x 3) ===================
+
+  Widget _buildAchievementsSection(List<BadgeModel> badges) {
+    // map BadgeModel -> tối đa 6 item
+    final effective = badges.take(6).toList();
+
+    // nếu có data từ BE
+    if (effective.isNotEmpty) {
+      // tách 2 hàng
+      final row1 = effective.take(3).toList();
+      final row2 = effective.length > 3 ? effective.sublist(3) : <BadgeModel>[];
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Huy hiệu thành tích',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: row1
+                .asMap()
+                .entries
+                .map((e) => _buildAchievementFromBadge(e.value, e.key))
+                .toList(),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: row2
+                .asMap()
+                .entries
+                .map((e) => _buildAchievementFromBadge(e.value, e.key + 3))
+                .toList(),
+          ),
+        ],
+      );
+    }
+
+    // fallback 6 thẻ xám giống file trên
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: const [
         Text(
           'Huy hiệu thành tích',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        // you may place a 'Xem tất cả' button here
-      ],
-    );
-  }
-
-  // badges: always show 6 slots (placeholder if badgeName is empty)
-  Widget _buildBadgesSection(List<BadgeModel> badges) {
-    // ensure length at least 6 for UI layout
-    final displayList = List<BadgeModel>.from(badges);
-    while (displayList.length < 6) {
-      displayList.add(
-        BadgeModel(
-          badgeId: 0,
-          badgeName: '',
-          iconUrl: null,
-          description: null,
-          requirement: null,
-          awardedAt: null,
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: SizedBox(
-          height: 110,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: displayList.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final b = displayList[index];
-              final bool has =
-                  (b.badgeId != 0 && (b.badgeName?.isNotEmpty ?? false));
-              return Column(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: has
-                        ? Colors.transparent
-                        : Colors.grey[200],
-                    backgroundImage: has && b.iconUrl != null
-                        ? NetworkImage(b.iconUrl!)
-                        : null,
-                    child: !has
-                        ? Icon(Icons.lock, color: Colors.grey[400])
-                        : null,
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: 80,
-                    child: Text(
-                      has ? b.badgeName : 'Chưa có',
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: has ? Colors.black : Colors.grey[500],
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivitiesHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: const [
-        Text(
-          'Hoạt động gần đây',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        // optional action button
-      ],
-    );
-  }
-
-  Widget _buildRecentActivitySection(List<ActivityModel> activities) {
-    if (activities.isEmpty) {
-      // 🔹 Khi không có hoạt động
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.grey[200],
-              child: Icon(Icons.event_note, color: Colors.grey[400]),
+            _StaticBadge(
+              icon: Icons.recycling,
+              label: 'Người tái chế',
+              subLabel: '0 báo cáo',
             ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                "Chưa có hoạt động",
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
+            _StaticBadge(
+              icon: Icons.energy_savings_leaf,
+              label: 'Mục tiêu xanh',
+              subLabel: '0 chiến dịch',
+            ),
+            _StaticBadge(
+              icon: Icons.star,
+              label: 'Ngôi sao',
+              subLabel: 'Top 0',
             ),
           ],
         ),
-      );
-    }
-
-    // 🔹 Khi có dữ liệu hoạt động
-    return Column(
-      children: activities.map((a) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 5,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Icon tròn bên trái
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: const Color(0x335EAC24), // xanh nhạt
-                child: const Icon(
-                  Icons.history,
-                  color: Color(0xFF5EAC24), // xanh chính
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Nội dung chữ
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      a.description,
-                      style: const TextStyle(color: Colors.black, fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "+${a.points} điểm • ${_formatDate(a.createdAt)}",
-                      style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _StaticBadge(
+              icon: Icons.shield,
+              label: 'Thủ lĩnh',
+              subLabel: '0 bạn bè',
+            ),
+            _StaticBadge(
+              icon: Icons.card_giftcard,
+              label: 'Chia sẻ',
+              subLabel: '0 lượt mời',
+            ),
+            _StaticBadge(
+              icon: Icons.workspace_premium,
+              label: 'Eco Master',
+              subLabel: 'Top 0',
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  // 🔹 format thời gian gọn gàng
+  Widget _buildAchievementFromBadge(BadgeModel b, int index) {
+    // chọn icon / màu theo index để đẹp mắt
+    final icons = [
+      Icons.recycling,
+      Icons.energy_savings_leaf,
+      Icons.star,
+      Icons.shield,
+      Icons.card_giftcard,
+      Icons.workspace_premium,
+    ];
+    final colors = [
+      Colors.green,
+      Colors.orange,
+      Colors.blue,
+      Colors.red,
+      Colors.purple,
+      Colors.teal,
+    ];
+
+    final icon = icons[index % icons.length];
+    final color = colors[index % colors.length];
+    final achieved = (b.awardedAt != null) || (b.badgeName.isNotEmpty);
+
+    final label = b.badgeName.isNotEmpty
+        ? b.badgeName
+        : 'Huy hiệu chưa mở khóa';
+    final subLabel = b.description ?? '';
+
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundColor: achieved ? color.withOpacity(0.2) : Colors.grey[300],
+          child: Icon(icon, size: 30, color: achieved ? color : Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ),
+        if (subLabel.isNotEmpty)
+          Text(
+            subLabel,
+            style: const TextStyle(color: Colors.grey, fontSize: 10),
+          ),
+      ],
+    );
+  }
+
+  // =================== HOẠT ĐỘNG GẦN ĐÂY ===================
+
+  Widget _buildRecentActivitySection(List<ActivityModel> activities) {
+    if (activities.isEmpty) {
+      // Khi không có hoạt động
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Hoạt động gần đây',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.grey[200],
+                  child: Icon(Icons.event_note, color: Colors.grey[400]),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    "Chưa có hoạt động",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Có dữ liệu -> layout kiểu hình 2
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Hoạt động gần đây',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        ...activities.map((a) {
+          final isGain = a.points >= 0;
+          final pointsText = "${isGain ? '+' : ''}${a.points} điểm";
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(
+                255,
+                255,
+                255,
+                255,
+              ), // xám nhạt như mockup
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: const Color(0x335EAC24),
+                  child: const Icon(Icons.history, color: Color(0xFF5EAC24)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        a.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}",
+                        style: TextStyle(color: Colors.grey[700], fontSize: 9),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    pointsText,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  // format thời gian
   String _formatDate(String dateString) {
     if (dateString.isEmpty) return '';
     try {
@@ -592,19 +638,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  /// Hiển thị progress bar (tiến độ lên cấp) và khoảng cách trước khi grid thống kê
+  String _timeAgo(String dateString) {
+    if (dateString.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(dateString);
+      final diff = DateTime.now().difference(dateTime);
+
+      if (diff.inMinutes < 1) return 'Vừa xong';
+      if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
+      if (diff.inHours < 24) return '${diff.inHours} giờ trước';
+      return '${diff.inDays} ngày trước';
+    } catch (_) {
+      return dateString;
+    }
+  }
+
+  /// hiện tại chỉ dùng để tạo khoảng cách trước grid
   Widget _buildProgressAndStats(ProfileView view) {
+    return const SizedBox(height: 2);
+  }
+}
+
+// =================== STATIC BADGE FALLBACK ===================
+
+class _StaticBadge extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subLabel;
+
+  const _StaticBadge({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.subLabel,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 2),
-        // (nếu muốn có thêm 1 hàng tóm tắt nhỏ, có thể mở comment dưới)
-        // Row(
-        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //   children: [
-        //     Text('${view.points} Eco Points', style: TextStyle(fontWeight: FontWeight.bold)),
-        //     Text(view.location ?? '-', style: TextStyle(color: Colors.grey)),
-        //   ],
-        // ),
+        CircleAvatar(
+          radius: 30,
+          backgroundColor: Colors.grey[300],
+          child: Icon(icon, size: 30, color: Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+        Text(
+          subLabel,
+          style: const TextStyle(color: Colors.grey, fontSize: 10),
+        ),
       ],
     );
   }
