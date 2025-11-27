@@ -46,7 +46,7 @@ class CheckIn_screen extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
                     "Quét mã QR để Check-in chiến dịch môi trường",
-                    style: TextStyle(color: Colors.white70, fontSize: 15),
+                    style: const TextStyle(color: Colors.white70, fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -66,7 +66,7 @@ class CheckIn_screen extends StatelessWidget {
                   "EcoTrack QR",
                   style: TextStyle(
                     color: Color(0xFF00E676),
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -91,7 +91,7 @@ class CheckIn_screen extends StatelessWidget {
 
                 const Text(
                   "EcoTrack  •  Green Campaign  •  Community",
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
                 ),
 
                 const SizedBox(height: 90),
@@ -133,7 +133,7 @@ class _BottomItem extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.white, size: 22),
         const SizedBox(height: 4),
-        Text(text, style: const TextStyle(color: Colors.white, fontSize: 11)),
+        Text(text, style: const TextStyle(color: Colors.white, fontSize: 12)),
       ],
     );
   }

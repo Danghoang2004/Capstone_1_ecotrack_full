@@ -112,7 +112,13 @@ class _OtpScreenSingleState extends State<OtpScreenSingle> {
       },
     ).then((_) {
       if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, "/user_app", (route) => false);
+      // Truyền argument để biết đây là lần đầu đăng ký
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        "/user_app",
+        (route) => false,
+        arguments: true, // showWelcomeDialog = true
+      );
     });
 
     Future.delayed(const Duration(seconds: 4), () {

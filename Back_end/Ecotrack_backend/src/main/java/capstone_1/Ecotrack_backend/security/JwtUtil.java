@@ -54,4 +54,18 @@ public class JwtUtil {
             return false;
         }
     }
+
+    public Date getIssuedAtFromToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getIssuedAt();
+        } catch (JwtException e) {
+            System.err.println(" Error getting issued at from token: " + e.getMessage());
+            return null;
+        }
+    }
 }
