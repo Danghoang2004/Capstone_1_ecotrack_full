@@ -5,8 +5,13 @@ import '../../controllers/profile_controller.dart';
 
 class HeaderWidget extends StatefulWidget {
   final ProfileController controller;
+  final VoidCallback? onAvatarTap; // Callback để switch tab trong UserLayout
 
-  const HeaderWidget({super.key, required this.controller});
+  const HeaderWidget({
+    super.key,
+    required this.controller,
+    this.onAvatarTap,
+  });
 
   @override
   State<HeaderWidget> createState() => _HeaderWidgetState();
@@ -139,34 +144,50 @@ class _HeaderWidgetState extends State<HeaderWidget> {
             'https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/11/tai-hinh-nen-dep-mien-phi.jpg' &&
         (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
 
+    Widget avatarWidget;
     if (!hasValidUrl) {
-      return CircleAvatar(
+      avatarWidget = CircleAvatar(
         radius: 16,
         backgroundColor: Colors.grey[400],
         child: const Icon(Icons.person, color: AppColors.white, size: 20),
       );
+    } else {
+      avatarWidget = CircleAvatar(
+        radius: 16,
+        backgroundColor: Colors.grey[300],
+        backgroundImage: NetworkImage(imageUrl),
+        onBackgroundImageError: (exception, stackTrace) {
+          // Nếu load ảnh lỗi thì hiển thị icon mặc định
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        child: widget.controller.isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                ),
+              )
+            : null,
+      );
     }
 
-    return CircleAvatar(
-      radius: 16,
-      backgroundColor: Colors.grey[300],
-      backgroundImage: NetworkImage(imageUrl),
-      onBackgroundImageError: (exception, stackTrace) {
-        // Nếu load ảnh lỗi thì hiển thị icon mặc định
-        if (mounted) {
-          setState(() {});
+    // Wrap avatar trong InkWell để có thể click
+    return InkWell(
+      onTap: () {
+        // Nếu có callback từ UserLayout (desktop mode), dùng callback để switch tab
+        // Nếu không, dùng Navigator.pushNamed (mobile mode hoặc standalone)
+        if (widget.onAvatarTap != null) {
+          widget.onAvatarTap!();
+        } else {
+          Navigator.pushNamed(context, '/profile');
         }
       },
-      child: widget.controller.isLoading
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
-              ),
-            )
-          : null,
+      borderRadius: BorderRadius.circular(16),
+      child: avatarWidget,
     );
   }
 }

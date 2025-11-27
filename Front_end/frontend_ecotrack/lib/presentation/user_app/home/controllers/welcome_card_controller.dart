@@ -14,10 +14,10 @@ class WelcomeCardController {
 
   String get userName {
     if (_profile == null) return 'Người dùng';
-    final name = _profile!.fullName?.trim();
-    if (name != null && name.isNotEmpty) return name;
-    final username = _profile!.username?.trim();
-    if (username != null && username.isNotEmpty) return username;
+    final name = _profile!.fullName.trim();
+    if (name.isNotEmpty) return name;
+    final username = _profile!.username.trim();
+    if (username.isNotEmpty) return username;
     return 'Người dùng';
   }
 

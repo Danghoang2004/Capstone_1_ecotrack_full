@@ -41,8 +41,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       if (isAdmin) {
         Navigator.pushReplacementNamed(context, '/admin_dashboard');
       } else {
+        // Không lộ thông tin, chỉ hiển thị lỗi chung
         await _authService.logout();
-        setState(() => _error = 'Bạn không có quyền truy cập trang quản trị.');
+        setState(() => _error = 'Email hoặc mật khẩu không đúng');
       }
     } else {
       setState(() {

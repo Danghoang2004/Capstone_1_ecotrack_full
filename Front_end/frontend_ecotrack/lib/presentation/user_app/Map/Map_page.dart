@@ -5,9 +5,12 @@ import 'package:frontend_ecotrack/data/models/Report.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final bool hideAppBar;
+
+  const MapPage({super.key, this.hideAppBar = false});
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -67,7 +70,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _showReportDetails(Report r) {
-    const String baseUrl = "http://192.168.1.89:8080";
+    final String baseUrl = dotenv.env['API_BASE_URL']!;
 
     String imageUrl = r.imageUrl.startsWith("http")
         ? r.imageUrl
@@ -131,9 +134,11 @@ class _MapPageState extends State<MapPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AppBar(
+      appBar: widget.hideAppBar
+          ? null
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: AppBar(
           backgroundColor: const Color(0xFF2E7D32),
           elevation: 0,
           title: const Text(
@@ -162,8 +167,8 @@ class _MapPageState extends State<MapPage> {
             ),
             const SizedBox(width: 4),
           ],
-        ),
-      ),
+            ),
+          ),
       body: Stack(
         children: [
           FlutterMap(

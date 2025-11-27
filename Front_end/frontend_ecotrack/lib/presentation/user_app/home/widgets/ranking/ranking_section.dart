@@ -27,11 +27,16 @@ class RankingSection extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Text(
-                'Xem tất cả',
-                style: TextStyle(
-                  color: AppColors.black,
-                  fontSize: 14,
+              InkWell(
+                onTap: () {
+                  Navigator.pushNamed(context, '/ranking');
+                },
+                child: const Text(
+                  'Xem tất cả',
+                  style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -45,11 +50,39 @@ class RankingSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.borderColor, width: 1),
             ),
-            child: Column(
-              children: controller.weeklyRankings
-                  .map((ranking) => RankingCard(ranking: ranking))
-                  .toList(),
-            ),
+            child: controller.isLoading
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : controller.error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Lỗi: ${controller.error}',
+                            style: const TextStyle(color: Colors.red, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : controller.weeklyRankings.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                'Chưa có dữ liệu',
+                                style: TextStyle(color: Colors.grey, fontSize: 12),
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: controller.weeklyRankings
+                                .map((ranking) => RankingCard(ranking: ranking))
+                                .toList(),
+                          ),
           ),
         ],
       ),

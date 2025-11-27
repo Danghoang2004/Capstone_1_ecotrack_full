@@ -1,5 +1,6 @@
 package capstone_1.Ecotrack_backend.model;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,6 +43,9 @@ public class User {
 
     @Column(name = "provider_id")
     private String providerId;
+
+    @Column(name = "last_credentials_update")
+    private LocalDateTime lastCredentialsUpdate; // Thời gian email/password bị thay đổi
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -178,5 +182,13 @@ public class User {
         if (userProfile != null) {
             userProfile.setUser(this);
         }
+    }
+
+    public LocalDateTime getLastCredentialsUpdate() {
+        return lastCredentialsUpdate;
+    }
+
+    public void setLastCredentialsUpdate(LocalDateTime lastCredentialsUpdate) {
+        this.lastCredentialsUpdate = lastCredentialsUpdate;
     }
 }

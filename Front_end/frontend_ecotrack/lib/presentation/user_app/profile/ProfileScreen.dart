@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
 import '../../../core/services/user_service.dart' hide UnauthorizedException;
 import 'package:frontend_ecotrack/core/errors/unauthorized_exception.dart';
+import '../home/controllers/recent_activity_controller.dart';
+import '../home/widgets/recent_activity/recent_activity_card.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool hideAppBar;
+
+  const ProfileScreen({super.key, this.hideAppBar = false});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -64,6 +68,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildProfileContent(ProfileView view) {
     return CustomScrollView(
       slivers: <Widget>[
+        // Luôn hiển thị SliverAppBar (banner, avatar, progress bar)
         _buildSliverAppBar(view),
         SliverToBoxAdapter(
           child: Container(
@@ -82,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20),
                 _buildRecentActivitiesHeader(),
                 const SizedBox(height: 8),
-                _buildRecentActivitySection(view.recentActivities),
+                _buildRecentActivitySection(view),
                 const SizedBox(height: 20),
               ],
             ),
@@ -495,7 +500,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildRecentActivitySection(List<ActivityModel> activities) {
+  Widget _buildRecentActivitySection(ProfileView view) {
+    // Convert activities từ ProfileView thành RecentActivityModel (dùng lại logic từ home)
+    final activities = view.recentActivities
+        .map(
+          (activity) =>
+              RecentActivityController.convertActivityToModel(activity),
+        )
+        .toList();
+
     if (activities.isEmpty) {
       // 🔹 Khi không có hoạt động
       return Container(
@@ -526,70 +539,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    // 🔹 Khi có dữ liệu hoạt động
+    // 🔹 Khi có dữ liệu hoạt động - dùng lại RecentActivityCard từ home
     return Column(
-      children: activities.map((a) {
-        return Container(
-          padding: const EdgeInsets.all(12),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 5,
-                offset: const Offset(0, 3),
+      children: activities
+          .map(
+            (activity) => Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Icon tròn bên trái
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: const Color(0x335EAC24), // xanh nhạt
-                child: const Icon(
-                  Icons.history,
-                  color: Color(0xFF5EAC24), // xanh chính
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Nội dung chữ
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      a.description,
-                      style: const TextStyle(color: Colors.black, fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "+${a.points} điểm • ${_formatDate(a.createdAt)}",
-                      style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+              child: RecentActivityCard(activity: activity),
+            ),
+          )
+          .toList(),
     );
-  }
-
-  // 🔹 format thời gian gọn gàng
-  String _formatDate(String dateString) {
-    if (dateString.isEmpty) return '';
-    try {
-      final dateTime = DateTime.parse(dateString);
-      return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
-    } catch (_) {
-      return dateString;
-    }
   }
 
   /// Hiển thị progress bar (tiến độ lên cấp) và khoảng cách trước khi grid thống kê

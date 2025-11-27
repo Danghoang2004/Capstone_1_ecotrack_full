@@ -32,15 +32,8 @@ class RecentActivityCard extends StatelessWidget {
     return Container(
       width: 40,
       height: 40,
-      decoration: BoxDecoration(
-        color: bgColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        iconData,
-        color: iconColor,
-        size: 20,
-      ),
+      decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
+      child: Icon(iconData, color: iconColor, size: 20),
     );
   }
 
@@ -69,10 +62,7 @@ class RecentActivityCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   activity.description,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
               ],
             ),
@@ -82,4 +72,3 @@ class RecentActivityCard extends StatelessWidget {
     );
   }
 }
-

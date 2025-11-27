@@ -18,7 +18,6 @@ class UploadController {
         _selectedImage = File(image.path);
       }
     } catch (e) {
-      print('Error picking image from camera: $e');
       rethrow;
     }
   }
@@ -34,7 +33,6 @@ class UploadController {
         _selectedImage = File(image.path);
       }
     } catch (e) {
-      print('Error picking image from gallery: $e');
       rethrow;
     }
   }
@@ -52,7 +50,6 @@ class UploadController {
       throw Exception('No image selected');
     }
     // TODO: Implement API call để upload ảnh
-    print('Uploading image: ${_selectedImage!.path}');
   }
 
   /// Reset selected image

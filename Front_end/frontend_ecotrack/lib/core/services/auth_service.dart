@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   // IP backend của bạn
-  final String baseUrl = 'http://192.168.1.89:8080';
+  final String baseUrl = dotenv.env['API_BASE_URL']!;
 
   // --- 1. Đăng ký ---
   Future<Map<String, dynamic>> register(
@@ -139,7 +140,21 @@ class AuthService {
         // Kiểm tra xem danh sách roles có chứa ROLE_ADMIN hay không
         return roles.contains("ROLE_ADMIN");
       } catch (e) {
-        print("Lỗi decode roles: $e");
+        return false;
+      }
+    }
+    return false;
+  }
+
+  // Thêm hàm kiểm tra Partner
+  Future<bool> isPartner() async {
+    final rolesJson = await _storage.read(key: 'user_roles');
+    if (rolesJson != null) {
+      try {
+        final roles = jsonDecode(rolesJson);
+        // Kiểm tra xem danh sách roles có chứa ROLE_PARTNER hay không
+        return roles.contains("ROLE_PARTNER");
+      } catch (e) {
         return false;
       }
     }
@@ -154,7 +169,6 @@ class AuthService {
         final roles = jsonDecode(rolesJson) as List<dynamic>;
         return roles.cast<String>();
       } catch (e) {
-        print("Lỗi decode roles: $e");
         return [];
       }
     }

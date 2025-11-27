@@ -19,6 +19,7 @@ class ProfileView {
 
   final List<BadgeModel> badges;
   final List<ActivityModel> recentActivities;
+  final List<TopRankingModel>? topRankings;
 
   ProfileView({
     required this.userId,
@@ -37,6 +38,7 @@ class ProfileView {
     this.rank,
     required this.badges,
     required this.recentActivities,
+    this.topRankings,
   });
 
   factory ProfileView.fromJson(Map<String, dynamic> json) {
@@ -61,6 +63,45 @@ class ProfileView {
       recentActivities: (json['recentActivities'] as List<dynamic>)
           .map((e) => ActivityModel.fromJson(e))
           .toList(),
+      topRankings: json['topRankings'] != null
+          ? (json['topRankings'] as List<dynamic>)
+              .map((e) => TopRankingModel.fromJson(e))
+              .toList()
+          : null,
+    );
+  }
+}
+
+class TopRankingModel {
+  final String id;
+  final int rank;
+  final String userName;
+  final int points;
+  final String? avatarUrl;
+  final String? location;
+  final List<String> titles;
+
+  TopRankingModel({
+    required this.id,
+    required this.rank,
+    required this.userName,
+    required this.points,
+    this.avatarUrl,
+    this.location,
+    required this.titles,
+  });
+
+  factory TopRankingModel.fromJson(Map<String, dynamic> json) {
+    return TopRankingModel(
+      id: json['id']?.toString() ?? '',
+      rank: json['rank'] ?? 0,
+      userName: json['userName'] ?? '',
+      points: json['points'] ?? 0,
+      avatarUrl: json['avatarUrl'],
+      location: json['location'],
+      titles: json['titles'] != null
+          ? List<String>.from(json['titles'])
+          : [],
     );
   }
 }

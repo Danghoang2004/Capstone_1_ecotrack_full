@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/ranking_controller.dart';
-import '../../navigation/navigation.dart';
+import '../../../../common/formatNumber/format_number.dart';
 
 class RankingCard extends StatelessWidget {
   final RankingModel ranking;
@@ -26,76 +26,81 @@ class RankingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        // Navigate to ranking detail với ID (sẽ được implement bởi người khác)
-        Navigator.pushNamed(context, AppRoutes.rankingDetail(ranking.id));
+        // Navigate to ranking screen
+        Navigator.pushNamed(context, '/ranking');
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
-        children: [
-          // Rank circle
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: _getRankColor(ranking.rank),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '${ranking.rank}',
-                style: const TextStyle(
-                  color: AppColors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+          children: [
+            // Rank circle
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: _getRankColor(ranking.rank),
+                shape: BoxShape.circle,
               ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Avatar placeholder
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.grey,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // User info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  ranking.userName,
+              child: Center(
+                child: Text(
+                  '${ranking.rank}',
                   style: const TextStyle(
-                    color: AppColors.black,
+                    color: AppColors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${ranking.points} điểm',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 12),
+            // Avatar
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                shape: BoxShape.circle,
+              ),
+              child: ranking.avatarUrl != null && ranking.avatarUrl!.isNotEmpty
+                  ? ClipOval(
+                      child: Image.network(
+                        ranking.avatarUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              Icons.person,
+                              color: Colors.grey,
+                              size: 24,
+                            ),
+                      ),
+                    )
+                  : const Icon(Icons.person, color: Colors.grey, size: 24),
+            ),
+            const SizedBox(width: 12),
+            // User info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ranking.userName,
+                    style: const TextStyle(
+                      color: AppColors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${FormatNumber.formatPoints(ranking.points)} điểm',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-
