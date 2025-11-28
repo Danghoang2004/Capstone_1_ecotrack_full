@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/ranking_controller.dart';
 import 'ranking_card.dart';
+import '../../../switch_tabs/UserLayout.dart';
 
 class RankingSection extends StatelessWidget {
   final RankingController controller;
@@ -29,14 +30,20 @@ class RankingSection extends StatelessWidget {
               ),
               InkWell(
                 onTap: () {
-                  Navigator.pushNamed(context, '/ranking');
+                  final screenWidth = MediaQuery.of(context).size.width;
+                  final isDesktop = screenWidth > 800;
+
+                  if (isDesktop) {
+                    // Desktop: Switch sang ranking screen trong UserLayout
+                    Userlayout.switchToRanking(context);
+                  } else {
+                    // Mobile: push route mới
+                    Navigator.pushNamed(context, '/ranking');
+                  }
                 },
                 child: const Text(
                   'Xem tất cả',
-                  style: TextStyle(
-                    color: AppColors.black,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: AppColors.black, fontSize: 14),
                 ),
               ),
             ],
@@ -58,35 +65,34 @@ class RankingSection extends StatelessWidget {
                     ),
                   )
                 : controller.error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Text(
-                            'Lỗi: ${controller.error}',
-                            style: const TextStyle(color: Colors.red, fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
-                    : controller.weeklyRankings.isEmpty
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16.0),
-                              child: Text(
-                                'Chưa có dữ liệu',
-                                style: TextStyle(color: Colors.grey, fontSize: 12),
-                              ),
-                            ),
-                          )
-                        : Column(
-                            children: controller.weeklyRankings
-                                .map((ranking) => RankingCard(ranking: ranking))
-                                .toList(),
-                          ),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Lỗi: ${controller.error}',
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : controller.weeklyRankings.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'Chưa có dữ liệu',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: controller.weeklyRankings
+                        .map((ranking) => RankingCard(ranking: ranking))
+                        .toList(),
+                  ),
           ),
         ],
       ),
     );
   }
 }
-

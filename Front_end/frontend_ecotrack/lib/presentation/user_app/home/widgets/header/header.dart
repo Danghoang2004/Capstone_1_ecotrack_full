@@ -5,13 +5,9 @@ import '../../controllers/profile_controller.dart';
 
 class HeaderWidget extends StatefulWidget {
   final ProfileController controller;
-  final VoidCallback? onAvatarTap; // Callback để switch tab trong UserLayout
+  final VoidCallback? onAvatarTap;
 
-  const HeaderWidget({
-    super.key,
-    required this.controller,
-    this.onAvatarTap,
-  });
+  const HeaderWidget({super.key, required this.controller, this.onAvatarTap});
 
   @override
   State<HeaderWidget> createState() => _HeaderWidgetState();
@@ -21,7 +17,6 @@ class _HeaderWidgetState extends State<HeaderWidget> {
   @override
   void initState() {
     super.initState();
-    // Load profile và rebuild khi xong
     widget.controller.loadProfile().then((_) {
       if (mounted) {
         setState(() {});
@@ -31,13 +26,26 @@ class _HeaderWidgetState extends State<HeaderWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 900;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(color: HomeColors.bgHeader),
+      decoration: BoxDecoration(
+        color: isDesktop ? Colors.white : HomeColors.bgHeader,
+        boxShadow: isDesktop
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Logo
           Row(
             children: [
               Container(
@@ -45,8 +53,7 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: HomeColors
-                      .logoBorderColor, // Background màu xanh lá cây đậm
+                  color: HomeColors.logoBorderColor,
                 ),
                 child: Center(
                   child: SvgPicture.asset(
@@ -56,7 +63,7 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                     colorFilter: const ColorFilter.mode(
                       AppColors.white,
                       BlendMode.srcIn,
-                    ), // Màu trắng cho logo
+                    ),
                   ),
                 ),
               ),
@@ -80,7 +87,6 @@ class _HeaderWidgetState extends State<HeaderWidget> {
               ),
             ],
           ),
-          // Notification và avatar
           Row(
             children: [
               SizedBox(
@@ -157,7 +163,6 @@ class _HeaderWidgetState extends State<HeaderWidget> {
         backgroundColor: Colors.grey[300],
         backgroundImage: NetworkImage(imageUrl),
         onBackgroundImageError: (exception, stackTrace) {
-          // Nếu load ảnh lỗi thì hiển thị icon mặc định
           if (mounted) {
             setState(() {});
           }
@@ -175,11 +180,8 @@ class _HeaderWidgetState extends State<HeaderWidget> {
       );
     }
 
-    // Wrap avatar trong InkWell để có thể click
     return InkWell(
       onTap: () {
-        // Nếu có callback từ UserLayout (desktop mode), dùng callback để switch tab
-        // Nếu không, dùng Navigator.pushNamed (mobile mode hoặc standalone)
         if (widget.onAvatarTap != null) {
           widget.onAvatarTap!();
         } else {
