@@ -3,6 +3,7 @@ import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen
 import 'package:frontend_ecotrack/presentation/user_app/Map/Map_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Setting/Setting_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
 import 'package:frontend_ecotrack/core/services/session_checker_service.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/widgets/header/header.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/controllers/home_controller.dart';
@@ -14,6 +15,26 @@ class Userlayout extends StatefulWidget {
 
   @override
   State<Userlayout> createState() => _UserlayoutState();
+
+  // Static method để switch sang ranking screen từ bên ngoài
+  static void switchToRanking(BuildContext? context) {
+    if (context != null) {
+      // Tìm Userlayout trong widget tree (tìm cả StatefulWidget và State)
+      final userLayout = context.findAncestorWidgetOfExactType<Userlayout>();
+      if (userLayout != null) {
+        final state = context.findAncestorStateOfType<_UserlayoutState>();
+        if (state != null) {
+          state.switchToRanking();
+          return;
+        }
+      }
+      // Fallback: push route mới (chỉ cho mobile)
+      final screenWidth = MediaQuery.of(context).size.width;
+      if (screenWidth <= 800) {
+        Navigator.pushNamed(context, '/ranking');
+      }
+    }
+  }
 }
 
 class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
@@ -39,6 +60,7 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
       MapPage(hideAppBar: false), // Mobile: hiển thị AppBar
       ProfileScreen(),
       SettingsScreen(),
+      const RankingScreen(hideHeader: false), // Ranking screen
     ];
     WidgetsBinding.instance.addObserver(this);
     // Check session ngay khi vào màn hình
@@ -275,12 +297,21 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
         return ProfileScreen(hideAppBar: true);
       case 3: // Setting
         return SettingsScreen(hideAppBar: true);
+      case 4: // Ranking
+        return const RankingScreen(hideHeader: true);
       default:
         return HomeScreen(
           showWelcomeDialog: widget.showWelcomeDialog,
           hideHeader: true,
         );
     }
+  }
+
+  // Method để switch sang ranking screen từ bên ngoài
+  void switchToRanking() {
+    setState(() {
+      currentIndex = 4;
+    });
   }
 }
 

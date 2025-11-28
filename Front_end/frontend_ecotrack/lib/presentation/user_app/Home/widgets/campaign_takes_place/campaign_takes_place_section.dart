@@ -103,50 +103,64 @@ class _CampaignCard extends StatelessWidget {
                     style: const TextStyle(color: Colors.black54, fontSize: 12),
                   ),
                   const SizedBox(height: 6),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(
-                        Icons.people_outline,
-                        size: 14,
-                        color: Colors.green.shade700,
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.brown.shade700,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '${campaign.participants} người tham gia',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
+                      // Người tham gia
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.people_outline,
+                            size: 14,
+                            color: Colors.green.shade700,
                           ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Colors.green.shade700,
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border.all(color: Colors.black),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          campaign.distance,
-                          style: const TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.brown.shade700,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${campaign.participants} người tham gia',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
+                      ),
+                      // Khoảng cách
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: Colors.green.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(color: Colors.black),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              campaign.distance,
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

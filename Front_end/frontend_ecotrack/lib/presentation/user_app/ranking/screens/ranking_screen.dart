@@ -35,16 +35,15 @@ class _RankingScreenState extends State<RankingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HomeColors.background,
-      body: SafeArea(
+    if (widget.hideHeader) {
+      // Desktop: Không dùng Scaffold, chỉ hiển thị content với scroll
+      return Container(
+        color: Colors.grey.shade50,
         child: Column(
           children: [
-            // Header (ẩn khi hideHeader = true)
-            if (!widget.hideHeader) const RankingHeader(),
             // Tabs
             _buildTabs(),
-            // Content
+            // Content với scroll
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -67,13 +66,52 @@ class _RankingScreenState extends State<RankingScreen> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    } else {
+      // Mobile: Dùng Scaffold và SafeArea
+      return Scaffold(
+        backgroundColor: HomeColors.background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              const RankingHeader(),
+              // Tabs
+              _buildTabs(),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    children: [
+                      // Top 3 Section
+                      TopThreeSection(
+                        controller: controller,
+                        isIndividual: _selectedTab == 0,
+                      ),
+                      const SizedBox(height: 24),
+                      // Ranking List Section
+                      RankingListSection(
+                        controller: controller,
+                        isIndividual: _selectedTab == 0,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildTabs() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: widget.hideHeader ? 16 : 8,
+      ),
       child: Row(
         children: [
           Expanded(child: _buildTab('Cá Nhân', 0)),

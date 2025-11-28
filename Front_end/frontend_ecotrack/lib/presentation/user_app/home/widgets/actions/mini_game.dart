@@ -1,3 +1,4 @@
+// mini_game.dart
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/app_colors.dart';
 
@@ -6,9 +7,11 @@ class MiniGameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isDesktop ? 24 : 16),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(16),
@@ -17,38 +20,38 @@ class MiniGameCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon container
             Container(
-              width: 56,
-              height: 56,
+              width: isDesktop ? 64 : 56,
+              height: isDesktop ? 64 : 56,
               decoration: BoxDecoration(
                 color: HomeColors.cardBorder,
                 shape: BoxShape.circle,
                 border: Border.all(color: AppColors.borderColor, width: 2),
               ),
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.sports_esports,
                   color: AppColors.black,
-                  size: 28,
+                  size: isDesktop ? 32 : 28,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            // Title
-            const Text(
+            SizedBox(height: isDesktop ? 16 : 12),
+            Text(
               'Mini Game',
               style: TextStyle(
                 color: AppColors.black,
-                fontSize: 16,
+                fontSize: isDesktop ? 18 : 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 4),
-            // Subtitle
-            const Text(
+            SizedBox(height: isDesktop ? 8 : 4),
+            Text(
               'Quiz môi trường',
-              style: TextStyle(color: AppColors.black, fontSize: 12),
+              style: TextStyle(
+                color: AppColors.black,
+                fontSize: isDesktop ? 14 : 12,
+              ),
             ),
           ],
         ),

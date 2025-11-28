@@ -7,8 +7,6 @@ import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
 import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
-import 'package:frontend_ecotrack/presentation/user_app/home/widgets/header/header.dart';
-import 'package:frontend_ecotrack/presentation/user_app/home/controllers/home_controller.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
 import 'auth_user/register_screen.dart';
@@ -39,35 +37,14 @@ class AppRouter {
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screen());
       case '/ranking':
-        // Check nếu đang ở desktop mode (width > 800) thì wrap với header của Home
-        return MaterialPageRoute(
-          builder: (context) {
-            final screenWidth = MediaQuery.of(context).size.width;
-            final isDesktop = screenWidth > 800;
-
-            if (isDesktop) {
-              // Desktop: Wrap với header của Home
-              final homeController = HomeController();
-              return Scaffold(
-                body: Column(
-                  children: [
-                    HeaderWidget(controller: homeController.profileController),
-                    Expanded(
-                      child: RankingScreen(hideHeader: true),
-                    ),
-                  ],
-                ),
-              );
-            } else {
-              // Mobile: Giữ nguyên
-              return const RankingScreen();
-            }
-          },
-        );
+        // Mobile: Giữ nguyên
+        return MaterialPageRoute(builder: (_) => const RankingScreen());
       case '/partner_login':
         return MaterialPageRoute(builder: (_) => const PartnerLoginScreen());
       case '/partner_dashboard':
-        return MaterialPageRoute(builder: (_) => const PartnerDashboardScreen());
+        return MaterialPageRoute(
+          builder: (_) => const PartnerDashboardScreen(),
+        );
       default:
         return MaterialPageRoute(
           builder: (_) =>
