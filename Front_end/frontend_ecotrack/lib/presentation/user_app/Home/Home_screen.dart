@@ -181,6 +181,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.videogame_asset_outlined,
                     "Mini Game",
                     "Quizz môi trường",
+                    onTap: () {
+                     Navigator.pushNamed(context, '/minigame');
+                 },
                   ),
                   _featureCard(
                     Icons.card_giftcard_outlined,
@@ -421,8 +424,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _featureCard(IconData icon, String title, String subtitle) {
+  Widget _featureCard(IconData icon, String title, String subtitle,{VoidCallback? onTap,}) {
     return Expanded(
+    child: InkWell(                             // <-- thêm InkWell
+      onTap: onTap,                             // <-- dùng onTap truyền vào
+      borderRadius: BorderRadius.circular(14),  // cho hiệu ứng ripple đẹp
       child: Container(
         height: 100,
         margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -441,8 +447,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _recentActivity(String title, String points, String time) {
     return ListTile(

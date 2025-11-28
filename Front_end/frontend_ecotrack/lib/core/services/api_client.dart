@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:frontend_ecotrack/data/models/quiz_models.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  final String baseUrl = 'http://192.168.1.89:8080';
+  final String baseUrl = 'http://192.168.1.6:8080';
   final FlutterSecureStorage storage;
 
   ApiClient({required this.storage});
@@ -84,5 +85,33 @@ class ApiClient {
 
   dynamic decodeUtf8Json(http.Response response) {
     return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+}
+
+class QuizRepository {
+  // tạo 1 ApiClient dùng chung cho quiz
+  final ApiClient _api = ApiClient(storage: const FlutterSecureStorage());
+
+  Future<QuizDetail> getQuiz(int quizId) async {
+    final http.Response res = await _api.get('/api/quizzes/$quizId');
+
+    if (res.statusCode >= 400) {
+      throw Exception('Lỗi gọi API quiz: ${res.statusCode} - ${res.body}');
+    }
+
+    final data = _api.decodeUtf8Json(res);
+    return QuizDetail.fromJson((data as Map).cast<String, dynamic>());
+  }
+
+  Future<SubmitResponse> submit(int quizId, Map<int, String> answers) async {
+    final payload = {
+      'answers': answers.entries
+          .map((e) => {'questionId': e.key, 'selected': e.value})
+          .toList(),
+    };
+
+    final res = await _api.post('/api/quizzes/$quizId/submit', payload);
+    final data = _api.decodeUtf8Json(res);
+    return SubmitResponse.fromJson((data as Map).cast<String, dynamic>());
   }
 }
