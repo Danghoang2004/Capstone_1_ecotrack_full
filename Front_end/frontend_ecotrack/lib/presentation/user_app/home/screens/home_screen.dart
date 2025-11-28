@@ -9,8 +9,7 @@ import '../widgets/ranking/ranking_section.dart';
 import '../widgets/recent_activity/recent_activity_section.dart';
 import '../widgets/campaign_takes_place/campaign_takes_place_section.dart';
 import '../widgets/welcome_dialog/welcome_dialog.dart';
-import '../../../common/widgets/flexible_layout.dart';
-import '../../campaign/checkin_screen.dart';
+import '../../upload_report/upload_report.dart';
 import '../controllers/home_controller.dart';
 
 class HomeScreen extends StatefulWidget {
