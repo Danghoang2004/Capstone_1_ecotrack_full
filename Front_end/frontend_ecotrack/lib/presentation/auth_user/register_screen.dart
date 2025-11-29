@@ -7,7 +7,7 @@ import '../common/primary_button.dart';
 import 'widgets/auth_tab_switcher.dart';
 
 class RegisterScreen extends StatefulWidget {
-  final String apiBaseUrl = 'http://192.168.1.89:8080';
+  final String apiBaseUrl = 'http://172.16.3.170:8080';
 
   const RegisterScreen({super.key});
 
