@@ -5,11 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_ecotrack/core/services/session_service.dart';
 
 class ApiClient {
-<<<<<<< HEAD
-  final String baseUrl = 'http://172.16.3.170:8080';
-=======
   final String baseUrl = dotenv.env['API_BASE_URL']!;
->>>>>>> bce5684916de919f078f1745cc0f3d64e82a43ad
   final FlutterSecureStorage storage;
 
   ApiClient({required this.storage});
@@ -24,9 +20,7 @@ class ApiClient {
     return response;
   }
 
-  Future<Map<String, String>> _headers({
-    bool json = true,
-  }) async {
+  Future<Map<String, String>> _headers({bool json = true}) async {
     final token = await storage.read(key: 'jwt_token');
 
     final map = <String, String>{};
@@ -47,7 +41,10 @@ class ApiClient {
 
   Future<http.Response> get(String path) async {
     final headers = await _headers(json: false);
-    final response = await http.get(Uri.parse('$baseUrl$path'), headers: headers);
+    final response = await http.get(
+      Uri.parse('$baseUrl$path'),
+      headers: headers,
+    );
     return _handleResponse(response);
   }
 
@@ -73,7 +70,10 @@ class ApiClient {
 
   Future<http.Response> delete(String path) async {
     final headers = await _headers(json: false);
-    final response = await http.delete(Uri.parse('$baseUrl$path'), headers: headers);
+    final response = await http.delete(
+      Uri.parse('$baseUrl$path'),
+      headers: headers,
+    );
     return _handleResponse(response);
   }
 

@@ -6,12 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../common/primary_button.dart';
 import 'widgets/auth_tab_switcher.dart';
 
-<<<<<<< HEAD
-class RegisterScreen extends StatefulWidget {
-  final String apiBaseUrl = 'http://172.16.3.170:8080';
-=======
 import 'package:flutter_dotenv/flutter_dotenv.dart';
->>>>>>> bce5684916de919f078f1745cc0f3d64e82a43ad
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

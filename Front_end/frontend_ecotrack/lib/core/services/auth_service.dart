@@ -6,11 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   // IP backend của bạn
-<<<<<<< HEAD
-  final String baseUrl = 'http://172.16.3.170:8080';
-=======
   final String baseUrl = dotenv.env['API_BASE_URL']!;
->>>>>>> bce5684916de919f078f1745cc0f3d64e82a43ad
 
   // --- 1. Đăng ký ---
   Future<Map<String, dynamic>> register(
