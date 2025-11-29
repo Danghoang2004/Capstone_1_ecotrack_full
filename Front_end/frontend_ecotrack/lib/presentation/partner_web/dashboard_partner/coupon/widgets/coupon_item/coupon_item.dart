@@ -47,6 +47,14 @@ class CouponItem extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
+                  if (coupon.shortDescription != null && coupon.shortDescription!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      coupon.shortDescription!,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
                   Text(
                     coupon.discountValue,
                     style: const TextStyle(
@@ -110,6 +118,13 @@ class CouponItem extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (coupon.shortDescription != null && coupon.shortDescription!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    coupon.shortDescription!,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   coupon.description,

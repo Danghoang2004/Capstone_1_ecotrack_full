@@ -241,12 +241,24 @@ CREATE TABLE coupons (
     coupon_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,
     code VARCHAR(50) NOT NULL UNIQUE,
+    title VARCHAR(255),
+    short_description VARCHAR(500),
     description TEXT,
+    thumbnail_url VARCHAR(255),
+    category VARCHAR(50),
+    badge_label VARCHAR(50),
     discount_type ENUM('PERCENT', 'FIXED') NOT NULL,
     discount_value DOUBLE NOT NULL,
+    original_price DOUBLE,
+    final_price DOUBLE,
     usage_limit INT NOT NULL,
     used_count INT NOT NULL DEFAULT 0,
+    required_points INT,
+    max_redeem_per_user INT,
+    start_date DATE,
     expiry_date DATE NOT NULL,
+    location_scope VARCHAR(50),
+    location_text VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE,
@@ -439,3 +451,26 @@ INSERT INTO partners (user_id, company_name, website)
 SELECT user_id, 'Demo Partner Company', 'https://demo-partner.com'
 FROM users
 WHERE email = 'partner@gmail.com';
+
+/* ================================================================
+   MIGRATIONS
+================================================================ */
+
+-- Migration: Thêm cột thumbnail_url vào bảng coupons
+-- Lưu ý: Nếu cột đã tồn tại, bỏ qua lỗi hoặc comment dòng này
+-- ALTER TABLE coupons
+-- ADD COLUMN thumbnail_url VARCHAR(255) NULL AFTER description;
+
+-- Migration: Thêm các cột mới cho voucher system vào bảng coupons
+-- Lưu ý: Nếu cột đã tồn tại, bỏ qua lỗi hoặc comment các dòng tương ứng
+-- ALTER TABLE coupons
+-- ADD COLUMN title VARCHAR(255) NULL AFTER code,
+-- ADD COLUMN short_description VARCHAR(500) NULL AFTER title,
+-- ADD COLUMN category VARCHAR(50) NULL AFTER thumbnail_url,
+-- ADD COLUMN badge_label VARCHAR(50) NULL AFTER category,
+-- ADD COLUMN original_price DOUBLE NULL AFTER discount_value,
+-- ADD COLUMN final_price DOUBLE NULL AFTER original_price,
+-- ADD COLUMN required_points INT NOT NULL DEFAULT 0 AFTER used_count,
+-- ADD COLUMN start_date DATE NULL AFTER required_points,
+-- ADD COLUMN location_scope VARCHAR(50) NULL AFTER expiry_date,
+-- ADD COLUMN location_text VARCHAR(255) NULL AFTER location_scope;

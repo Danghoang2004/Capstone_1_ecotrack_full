@@ -19,8 +19,23 @@ public class Coupon {
     @Column(name = "code", nullable = false, unique = true, length = 50)
     private String code;
 
+    @Column(name = "title", length = 255)
+    private String title;
+
+    @Column(name = "short_description", length = 500)
+    private String shortDescription;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "thumbnail_url", length = 255)
+    private String thumbnailUrl;
+
+    @Column(name = "category", length = 50)
+    private String category; // Ăn uống / Mua sắm / Di chuyển / Dịch vụ / Khác
+
+    @Column(name = "badge_label", length = 50)
+    private String badgeLabel;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
@@ -29,14 +44,35 @@ public class Coupon {
     @Column(name = "discount_value", nullable = false)
     private Double discountValue;
 
+    @Column(name = "original_price")
+    private Double originalPrice;
+
+    @Column(name = "final_price")
+    private Double finalPrice;
+
     @Column(name = "usage_limit", nullable = false)
     private Integer usageLimit;
 
     @Column(name = "used_count", nullable = false)
     private Integer usedCount = 0;
 
+    @Column(name = "required_points")
+    private Integer requiredPoints;
+
+    @Column(name = "max_redeem_per_user")
+    private Integer maxRedeemPerUser; // Số lần tối đa 1 user có thể đổi voucher này
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
+
+    @Column(name = "location_scope", length = 50)
+    private String locationScope; // NATIONWIDE / PROVINCE
+
+    @Column(name = "location_text", length = 255)
+    private String locationText;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
@@ -153,6 +189,102 @@ public class Coupon {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getShortDescription() {
+        return shortDescription;
+    }
+
+    public void setShortDescription(String shortDescription) {
+        this.shortDescription = shortDescription;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getBadgeLabel() {
+        return badgeLabel;
+    }
+
+    public void setBadgeLabel(String badgeLabel) {
+        this.badgeLabel = badgeLabel;
+    }
+
+    public Double getOriginalPrice() {
+        return originalPrice;
+    }
+
+    public void setOriginalPrice(Double originalPrice) {
+        this.originalPrice = originalPrice;
+    }
+
+    public Double getFinalPrice() {
+        return finalPrice;
+    }
+
+    public void setFinalPrice(Double finalPrice) {
+        this.finalPrice = finalPrice;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getLocationScope() {
+        return locationScope;
+    }
+
+    public void setLocationScope(String locationScope) {
+        this.locationScope = locationScope;
+    }
+
+    public String getLocationText() {
+        return locationText;
+    }
+
+    public void setLocationText(String locationText) {
+        this.locationText = locationText;
+    }
+
+    public Integer getRequiredPoints() {
+        return requiredPoints;
+    }
+
+    public void setRequiredPoints(Integer requiredPoints) {
+        this.requiredPoints = requiredPoints;
+    }
+
+    public Integer getMaxRedeemPerUser() {
+        return maxRedeemPerUser;
+    }
+
+    public void setMaxRedeemPerUser(Integer maxRedeemPerUser) {
+        this.maxRedeemPerUser = maxRedeemPerUser;
     }
 }
 
