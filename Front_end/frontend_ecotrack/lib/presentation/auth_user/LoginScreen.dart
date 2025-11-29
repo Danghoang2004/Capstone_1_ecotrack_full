@@ -42,6 +42,20 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = false);
 
     if (result['success'] == true) {
+      // Kiểm tra role trước khi điều hướng (không lộ thông tin)
+      final roles = await _authService.getRoles();
+
+      // Nếu là Admin hoặc Partner, không cho vào user_app
+      // Nhưng hiển thị lỗi chung để không lộ thông tin
+      if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_PARTNER")) {
+        await _authService.logout(); // Xóa token để đảm bảo an toàn
+        setState(() {
+          _error = 'Email hoặc mật khẩu không đúng';
+        });
+        return;
+      }
+
+      // Chỉ cho phép ROLE_USER vào user_app
       _showSuccessDialog();
     } else {
       setState(() {

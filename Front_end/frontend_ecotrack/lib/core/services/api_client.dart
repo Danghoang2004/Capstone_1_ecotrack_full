@@ -1,16 +1,31 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend_ecotrack/core/services/session_service.dart';
 
 class ApiClient {
+<<<<<<< HEAD
   final String baseUrl = 'http://172.16.3.170:8080';
+=======
+  final String baseUrl = dotenv.env['API_BASE_URL']!;
+>>>>>>> bce5684916de919f078f1745cc0f3d64e82a43ad
   final FlutterSecureStorage storage;
 
   ApiClient({required this.storage});
 
+  // Helper method để check và handle 401
+  Future<http.Response> _handleResponse(http.Response response) async {
+    if (response.statusCode == 401) {
+      // Bất kỳ 401 nào cũng được xem là session expired
+      // (có thể do token hết hạn, user bị disable, hoặc thông tin thay đổi)
+      await SessionService.handleSessionExpired();
+    }
+    return response;
+  }
+
   Future<Map<String, String>> _headers({
     bool json = true,
-    bool includeJson = true,
   }) async {
     final token = await storage.read(key: 'jwt_token');
 
@@ -21,7 +36,7 @@ class ApiClient {
     }
 
     map['Accept'] = 'application/json; charset=utf-8';
-    map['Accept-Charset'] = 'utf-8';
+    // Note: 'Accept-Charset' is a forbidden header in browsers, removed to prevent errors
 
     if (token != null) {
       map['Authorization'] = 'Bearer $token';
@@ -32,30 +47,34 @@ class ApiClient {
 
   Future<http.Response> get(String path) async {
     final headers = await _headers(json: false);
-    return http.get(Uri.parse('$baseUrl$path'), headers: headers);
+    final response = await http.get(Uri.parse('$baseUrl$path'), headers: headers);
+    return _handleResponse(response);
   }
 
   Future<http.Response> post(String path, Map<String, dynamic> body) async {
     final headers = await _headers(json: true);
-    return http.post(
+    final response = await http.post(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: jsonEncode(body),
     );
+    return _handleResponse(response);
   }
 
   Future<http.Response> put(String path, Map<String, dynamic> body) async {
     final headers = await _headers(json: true);
-    return http.put(
+    final response = await http.put(
       Uri.parse('$baseUrl$path'),
       headers: headers,
       body: jsonEncode(body),
     );
+    return _handleResponse(response);
   }
 
   Future<http.Response> delete(String path) async {
     final headers = await _headers(json: false);
-    return http.delete(Uri.parse('$baseUrl$path'), headers: headers);
+    final response = await http.delete(Uri.parse('$baseUrl$path'), headers: headers);
+    return _handleResponse(response);
   }
 
   Future<http.StreamedResponse> postMultipart(

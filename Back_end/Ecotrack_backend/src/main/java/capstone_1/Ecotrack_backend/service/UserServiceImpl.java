@@ -57,7 +57,7 @@ public class UserServiceImpl implements UserService {
 
         // Tạo điểm
         UserPoints points = new UserPoints();
-        points.setUser(savedUser);
+        points.setUser(savedUser); // Với @MapsId, userId sẽ tự động được set từ user.getId()
         points.setPoints(0);
         userPointsRepository.save(points);
 

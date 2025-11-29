@@ -3,7 +3,9 @@ import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/App_bar.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  final bool hideAppBar;
+
+  const SettingsScreen({super.key, this.hideAppBar = false});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -89,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final edge = 18.0;
     return Scaffold(
-      appBar: CustomAppBar(),
+      appBar: widget.hideAppBar ? null : CustomAppBar(),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: edge),

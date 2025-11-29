@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_ecotrack/presentation/router.dart';
+import 'package:frontend_ecotrack/core/services/session_service.dart';
 
-void main() {
+void main() async {
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 
@@ -11,6 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: SessionService.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'EcoTrack',
       theme: ThemeData(

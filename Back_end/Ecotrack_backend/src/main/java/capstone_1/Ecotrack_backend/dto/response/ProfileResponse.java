@@ -37,4 +37,7 @@ public class ProfileResponse {
 
     // Recent activities
     private List<ActivityResponse> recentActivities;
+
+    // Top 5 rankings
+    private List<RankingUserResponse> topRankings;
 }
