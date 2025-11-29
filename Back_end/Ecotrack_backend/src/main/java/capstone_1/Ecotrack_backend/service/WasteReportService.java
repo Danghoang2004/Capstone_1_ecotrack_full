@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
+import capstone_1.Ecotrack_backend.model.NotificationType;
+import capstone_1.Ecotrack_backend.service.NotificationService;
+
 @Service
 public class WasteReportService {
 
@@ -21,6 +24,8 @@ public class WasteReportService {
     private UserPointsRepository userPointsRepository;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     public WasteReportService(WasteReportRepository report) {
         this.report = report;
@@ -44,6 +49,17 @@ public class WasteReportService {
         userPoints.setPoints(userPoints.getPoints() + 10);
         userPointsRepository.save(userPoints);
 
+        //Tạo thông báo cho người dùng 
+         notificationService.createNotification(
+                saved.getUserId(),
+                NotificationType.CAMPAIGN,
+                "Báo cáo rác thành công",
+                "Cảm ơn bạn đã gửi báo cáo: " + saved.getTitle(),
+                "REPORT",
+                saved.getReportId()
+        );
+
         return saved;
+        
     }
 }
