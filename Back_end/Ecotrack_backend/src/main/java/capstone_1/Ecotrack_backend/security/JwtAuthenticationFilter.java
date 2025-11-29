@@ -59,7 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             List<SimpleGrantedAuthority> authorities = user.getRoles()
                     .stream()
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                    // Chỉ cần lấy tên Role (đã có ROLE_ sẵn trong DB)
+                    .map(role -> new SimpleGrantedAuthority(role.getName()))
                     .toList();
 
             UsernamePasswordAuthenticationToken authToken =

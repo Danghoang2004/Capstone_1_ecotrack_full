@@ -42,7 +42,7 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User user = userService.registerUser(request);
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user);
 
             // --- CẬP NHẬT: Trả về đầy đủ thông tin giống Login ---
             // Mặc định khi đăng ký mới thường là ROLE_USER (hoặc tùy logic service của bạn)
@@ -84,7 +84,7 @@ public class AuthController {
             }
 
             // Sinh JWT
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user);
 
             // --- ĐOẠN CODE QUAN TRỌNG ĐƯỢC THÊM VÀO ---
             // Lấy danh sách tên Role từ User Entity
@@ -118,7 +118,7 @@ public class AuthController {
 
             // Lấy user để tạo token
             User user = userRepository.findByEmail(email).get();
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Xác thực tài khoản thành công!",
