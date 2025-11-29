@@ -204,11 +204,11 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
                   return Column(
                     children: [
                       StatCard(
-                        title: 'Tổng Doanh Thu',
+                        title: 'Tổng Giá Trị Voucher',
                         value: stats['totalRevenue'] ?? '0₫',
-                        change: 'Từ các coupon đã sử dụng',
+                        change: 'Tổng giá trị voucher đã được đổi',
                         isPositive: true,
-                        icon: Icons.attach_money,
+                        icon: Icons.card_giftcard,
                       ),
                       const SizedBox(height: 16),
                       StatCard(

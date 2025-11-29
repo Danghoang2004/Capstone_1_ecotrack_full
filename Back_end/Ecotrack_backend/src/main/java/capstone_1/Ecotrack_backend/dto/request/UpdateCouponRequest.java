@@ -9,21 +9,39 @@ import java.time.LocalDate;
 
 @Data
 public class UpdateCouponRequest {
+    private String title;
+
+    private String shortDescription;
+
     private String description;
 
-    @NotBlank(message = "Loại giảm giá không được để trống")
-    private String discountType; // "percent" hoặc "fixed"
+    private String category;
 
-    @NotNull(message = "Giá trị giảm không được để trống")
-    @Positive(message = "Giá trị giảm phải lớn hơn 0")
-    private Double discountValue;
+    private String badgeLabel;
+
+    @NotBlank(message = "Loại giảm giá không được để trống")
+    private String discountType; // "percent", "fixed" hoặc "free"
+
+    private Double discountValue; // Optional, có thể là 0 nếu "free"
+
+    private Double originalPrice;
 
     @NotNull(message = "Giới hạn sử dụng không được để trống")
     @Positive(message = "Giới hạn sử dụng phải lớn hơn 0")
     private Integer usageLimit;
 
+    private Integer requiredPoints;
+
+    private Integer maxRedeemPerUser; // Số lần tối đa 1 user có thể đổi voucher này (optional)
+
+    private LocalDate startDate;
+
     @NotNull(message = "Ngày hết hạn không được để trống")
     private LocalDate expiryDate;
+
+    private String locationScope;
+
+    private String locationText;
 
     private Boolean isActive;
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -91,6 +92,35 @@ class ApiClient {
     for (var file in files.entries) {
       request.files.add(
         await http.MultipartFile.fromPath(file.key, file.value),
+      );
+    }
+
+    return await request.send();
+  }
+
+  Future<http.StreamedResponse> postMultipartBytes(
+    String path,
+    Map<String, String> fields,
+    Map<String, Uint8List> files,
+    String fileName,
+  ) async {
+    final token = await storage.read(key: 'jwt_token');
+
+    var request = http.MultipartRequest("POST", Uri.parse('$baseUrl$path'));
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    fields.forEach((key, value) => request.fields[key] = value);
+
+    for (var file in files.entries) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          file.key,
+          file.value,
+          filename: fileName,
+        ),
       );
     }
 
