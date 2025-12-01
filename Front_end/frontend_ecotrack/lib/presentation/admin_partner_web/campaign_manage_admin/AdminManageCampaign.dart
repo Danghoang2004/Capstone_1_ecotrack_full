@@ -76,7 +76,7 @@ class Campaign {
   }
 }
 
-// 2. MOCK DATA (DỮ LIỆU GIẢ LẬP)
+// 2. MOCK DATA
 
 final UserProfile currentUser = UserProfile(
   name: "Admin Nguyễn",
@@ -185,11 +185,22 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String searchText = "";
+
+  @override
   Widget build(BuildContext context) {
+    final filteredCampaigns = campaignsData.where((c) {
+      return c.title.toLowerCase().contains(searchText.toLowerCase());
+    }).toList();
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -351,13 +362,19 @@ class DashboardScreen extends StatelessWidget {
                                       vertical: 14,
                                     ),
                                   ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      searchText = value;
+                                    });
+                                  },
                                 ),
+
                                 const SizedBox(height: 24),
 
                                 // DYNAMIC CAMPAIGN LIST
                                 // Render danh sách chiến dịch từ mảng campaignsData
                                 Column(
-                                  children: campaignsData.map((campaign) {
+                                  children: filteredCampaigns.map((campaign) {
                                     return Padding(
                                       padding: const EdgeInsets.only(
                                         bottom: 20.0,
