@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDashboardScreen.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_partner/partner_dashboard_screen.dart';
 
-void main() {
+Future<void> main() async {
   // Đảm bảo rằng ứng dụng này được chạy riêng cho Web
-  // lệnh chạy: flutter run -d web --target=lib/main_admin.dart
+  // lệnh chạy: flutter run -d chrome --target=lib/main_admin.dart
+  await dotenv.load(fileName: ".env");
   runApp(const AdminApp());
 }
 

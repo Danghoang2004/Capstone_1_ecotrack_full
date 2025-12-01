@@ -36,23 +36,14 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     setState(() => _loading = false);
 
     if (result['success'] == true) {
-      // BƯỚC QUAN TRỌNG: Kiểm tra và phân quyền
       final isAdmin = await _authService.isAdmin();
-      final isPartner = await _authService.isPartner(); // KIỂM TRA ROLE PARTNER
 
       if (isAdmin) {
-        // 1. Nếu là Admin: điều hướng đến Admin Dashboard
         Navigator.pushReplacementNamed(context, '/admin_dashboard');
-      } else if (isPartner) {
-        // 2. Nếu là Partner: điều hướng đến Partner Dashboard
-        Navigator.pushReplacementNamed(context, '/partner_dashboard');
       } else {
-        // 3. Nếu đăng nhập thành công nhưng không có quyền phù hợp (Admin/Partner)
+        // Không lộ thông tin, chỉ hiển thị lỗi chung
         await _authService.logout();
-        setState(
-          () =>
-              _error = 'Tài khoản không có quyền truy cập cổng thông tin này.',
-        );
+        setState(() => _error = 'Email hoặc mật khẩu không đúng');
       }
     } else {
       setState(() {

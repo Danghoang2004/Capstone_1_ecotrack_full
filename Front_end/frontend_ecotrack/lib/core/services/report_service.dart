@@ -34,7 +34,6 @@ class ReportService {
 
       return false;
     } catch (e) {
-      print("Upload error: $e");
       return false;
     }
   }

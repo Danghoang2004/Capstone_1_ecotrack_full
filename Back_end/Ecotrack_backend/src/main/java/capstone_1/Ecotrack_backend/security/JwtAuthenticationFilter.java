@@ -12,6 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -52,10 +54,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (userOpt.isEmpty() || !jwtUtil.validateJwtToken(jwtToken)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Token không hợp lệ hoặc đã hết hạn\"}");
                 return;
             }
 
             var user = userOpt.get();
+
+            // Kiểm tra tài khoản có bị khóa không (enabled = false)
+            if (user.getEnabled() != null && !user.getEnabled()) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Tài khoản đã bị tạm dừng. Phiên đã hết hạn.\"}");
+                return;
+            }
+
+            // Kiểm tra xem credentials (email/password) có bị thay đổi sau khi token được tạo không
+            if (user.getLastCredentialsUpdate() != null) {
+                Date tokenIssuedAt = jwtUtil.getIssuedAtFromToken(jwtToken);
+                if (tokenIssuedAt != null) {
+                    // Convert LocalDateTime to Date để so sánh
+                    java.time.ZonedDateTime zonedDateTime = user.getLastCredentialsUpdate()
+                            .atZone(java.time.ZoneId.systemDefault());
+                    Date lastCredentialsUpdateDate = Date.from(zonedDateTime.toInstant());
+
+                    // Nếu credentials bị update sau khi token được tạo, token không còn hợp lệ
+                    if (lastCredentialsUpdateDate.after(tokenIssuedAt)) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Tài khoản đã bị thay đổi. Phiên đã hết hạn.\"}");
+                        return;
+                    }
+                }
+            }
 
             List<SimpleGrantedAuthority> authorities = user.getRoles()
                     .stream()
