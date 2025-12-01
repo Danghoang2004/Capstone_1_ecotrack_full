@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/LoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/upload_report/upload_report.dart';
@@ -35,7 +36,7 @@ class AppRouter {
         final email = settings.arguments as String;
         return MaterialPageRoute(builder: (_) => OtpScreenSingle(email: email));
       case '/QR_check':
-        return MaterialPageRoute(builder: (context) => CheckIn_screen());
+        return MaterialPageRoute(builder: (context) => CheckIn_screenreal());
       case '/ranking':
         // Mobile: Giữ nguyên
         return MaterialPageRoute(builder: (_) => const RankingScreen());

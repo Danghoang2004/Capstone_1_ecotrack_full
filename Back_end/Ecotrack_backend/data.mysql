@@ -1,20 +1,19 @@
+
 -- Tạo database
 CREATE DATABASE IF NOT EXISTS ecotrack_demo1 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- Sử dụng database
 USE ecotrack_demo1;
 
-/* ================================================================
-   BẢNG QUYỀN NGƯỜI DÙNG (Roles)
-================================================================ */
+-- ================================================================
+-- ROLES
+-- ================================================================
 CREATE TABLE roles (
     role_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     role_name VARCHAR(50) NOT NULL UNIQUE
 );
 
-/* ================================================================
-   BẢNG NGƯỜI DÙNG (Users)
-================================================================ */
+-- ================================================================
+-- USERS
+-- ================================================================
 CREATE TABLE users (
     user_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
@@ -30,9 +29,9 @@ CREATE TABLE users (
     last_credentials_update DATETIME NULL
 );
 
-/* ================================================================
-   BẢNG PHÂN QUYỀN NGƯỜI DÙNG (User_Role)
-================================================================ */
+-- ================================================================
+-- USER_ROLE
+-- ================================================================
 CREATE TABLE user_role (
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
@@ -41,9 +40,9 @@ CREATE TABLE user_role (
     FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   BẢNG CẤP ĐỘ NGƯỜI DÙNG (Levels)
-================================================================ */
+-- ================================================================
+-- LEVELS
+-- ================================================================
 CREATE TABLE levels (
     level_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     level_name VARCHAR(100) NOT NULL,
@@ -52,9 +51,9 @@ CREATE TABLE levels (
     icon_url VARCHAR(255)
 );
 
-/* ================================================================
-   BẢNG HỒ SƠ NGƯỜI DÙNG (User Profiles)
-================================================================ */
+-- ================================================================
+-- USER_PROFILES
+-- ================================================================
 CREATE TABLE user_profiles (
     profile_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNIQUE NOT NULL,
@@ -70,18 +69,18 @@ CREATE TABLE user_profiles (
     FOREIGN KEY (level_id) REFERENCES levels(level_id) ON DELETE SET NULL
 );
 
-/* ================================================================
-   BẢNG ĐIỂM NGƯỜI DÙNG (User Points)
-================================================================ */
+-- ================================================================
+-- USER_POINTS
+-- ================================================================
 CREATE TABLE user_points (
     user_id BIGINT PRIMARY KEY,
     points INT NOT NULL DEFAULT 0,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   BẢNG LỊCH SỬ ĐIỂM (Point Transactions)
-================================================================ */
+-- ================================================================
+-- POINT_TRANSACTIONS
+-- ================================================================
 CREATE TABLE point_transactions (
     transaction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -92,9 +91,9 @@ CREATE TABLE point_transactions (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   BẢNG HUY HIỆU (Badges)
-================================================================ */
+-- ================================================================
+-- BADGES
+-- ================================================================
 CREATE TABLE badges (
     badge_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     badge_name VARCHAR(100) NOT NULL,
@@ -103,9 +102,9 @@ CREATE TABLE badges (
     requirement TEXT
 );
 
-/* ================================================================
-   BẢNG HUY HIỆU NGƯỜI DÙNG (User Badges)
-================================================================ */
+-- ================================================================
+-- USER_BADGES
+-- ================================================================
 CREATE TABLE user_badges (
     user_id BIGINT NOT NULL,
     badge_id BIGINT NOT NULL,
@@ -115,9 +114,9 @@ CREATE TABLE user_badges (
     FOREIGN KEY (badge_id) REFERENCES badges(badge_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   BẢNG XẾP HẠNG CÁ NHÂN (Leaderboard)
-================================================================ */
+-- ================================================================
+-- LEADERBOARD
+-- ================================================================
 CREATE TABLE leaderboard (
     leaderboard_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -128,9 +127,9 @@ CREATE TABLE leaderboard (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   NHÓM CỘNG ĐỒNG (Community Groups)
-================================================================ */
+-- ================================================================
+-- COMMUNITY_GROUPS
+-- ================================================================
 CREATE TABLE community_groups (
     group_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     group_name VARCHAR(150) NOT NULL,
@@ -138,9 +137,9 @@ CREATE TABLE community_groups (
     FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-/* ================================================================
-   THÀNH VIÊN NHÓM (Group Members)
-================================================================ */
+-- ================================================================
+-- GROUP_MEMBERS
+-- ================================================================
 CREATE TABLE group_members (
     group_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
@@ -150,9 +149,9 @@ CREATE TABLE group_members (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   BẢNG XẾP HẠNG NHÓM (Group Leaderboard)
-================================================================ */
+-- ================================================================
+-- GROUP_LEADERBOARD
+-- ================================================================
 CREATE TABLE group_leaderboard (
     group_leaderboard_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     group_id BIGINT NOT NULL,
@@ -162,9 +161,9 @@ CREATE TABLE group_leaderboard (
     FOREIGN KEY (group_id) REFERENCES community_groups(group_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   CÂU HỎI - MINI GAME (Quizzes)
-================================================================ */
+-- ================================================================
+-- QUIZZES
+-- ================================================================
 CREATE TABLE quizzes (
     quiz_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -194,14 +193,14 @@ CREATE TABLE user_quiz_attempts (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE RESTRICT
 );
 
-/* ================================================================
-   BÁO CÁO RÁC (Waste Reports)
-================================================================ */
+-- ================================================================
+-- WASTE_REPORTS
+-- ================================================================
 CREATE TABLE waste_reports (
     report_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT,
     title VARCHAR(200) NOT NULL,
-    description TEXT NULL,
+    description TEXT,
     image_url VARCHAR(255) NOT NULL,
     gps_lat DECIMAL(10,8) NOT NULL,
     gps_long DECIMAL(11,8) NOT NULL,
@@ -214,7 +213,7 @@ CREATE TABLE waste_reports (
 CREATE TABLE report_verifications (
     verification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     report_id BIGINT NOT NULL,
-    verified_by BIGINT NULL,
+    verified_by BIGINT,
     result ENUM('APPROVED','REJECTED') NOT NULL,
     confidence_score DECIMAL(5,2) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -222,9 +221,9 @@ CREATE TABLE report_verifications (
     FOREIGN KEY (verified_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
-/* ================================================================
-   ĐỐI TÁC (Partners)
-================================================================ */
+-- ================================================================
+-- PARTNERS
+-- ================================================================
 CREATE TABLE partners (
     partner_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNIQUE NOT NULL,
@@ -234,9 +233,9 @@ CREATE TABLE partners (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   COUPON (Coupons)
-================================================================ */
+-- ================================================================
+-- COUPONS (Hoàn chỉnh DB2)
+-- ================================================================
 CREATE TABLE coupons (
     coupon_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,
@@ -267,9 +266,9 @@ CREATE TABLE coupons (
     INDEX idx_expiry_date (expiry_date)
 );
 
-/* ================================================================
-   VOUCHER (Vouchers)
-================================================================ */
+-- ================================================================
+-- VOUCHERS
+-- ================================================================
 CREATE TABLE vouchers (
     voucher_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,
@@ -283,9 +282,6 @@ CREATE TABLE vouchers (
     FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   VOUCHER NGƯỜI DÙNG (User Vouchers)
-================================================================ */
 CREATE TABLE user_vouchers (
     user_voucher_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -297,9 +293,9 @@ CREATE TABLE user_vouchers (
     FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id) ON DELETE RESTRICT
 );
 
-/* ================================================================
-   CHIẾN DỊCH MÔI TRƯỜNG (Campaigns)
-================================================================ */
+-- ================================================================
+-- CAMPAIGNS
+-- ================================================================
 CREATE TABLE campaigns (
     campaign_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     created_by_partner_id BIGINT,
@@ -313,6 +309,7 @@ CREATE TABLE campaigns (
     max_participants INT,
     image_url VARCHAR(255),
     reward_points INT DEFAULT 0,
+    qr_code_url VARCHAR(255),
     FOREIGN KEY (created_by_partner_id) REFERENCES partners(partner_id) ON DELETE SET NULL
 );
 
@@ -361,9 +358,9 @@ CREATE TABLE campaign_comments (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   THÔNG BÁO (Notifications)
-================================================================ */
+-- ================================================================
+-- NOTIFICATIONS
+-- ================================================================
 CREATE TABLE notifications (
     notification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -377,9 +374,9 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-/* ================================================================
-   LỊCH SỬ HOẠT ĐỘNG (Activity Logs)
-================================================================ */
+-- ================================================================
+-- ACTIVITY_LOGS
+-- ================================================================
 CREATE TABLE activity_logs (
     log_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -388,89 +385,45 @@ CREATE TABLE activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- ================================================================
+-- DỮ LIỆU MẪU
+-- ================================================================
 INSERT INTO roles (role_name)
 VALUES
-("ROLE_USER"),
-("ROLE_ADMIN"),
-("ROLE_PARTNER");
+('ROLE_USER'),
+('ROLE_ADMIN'),
+('ROLE_PARTNER');
 
--- Tạo tài khoản admin mặc định
--- Email: admin@gmail.com
--- Password: password (đã được hash bằng BCrypt: $2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy)
+-- Admin sample
 INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, is_verified)
-VALUES
-('admin', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'admin@gmail.com', TRUE, TRUE, TRUE, TRUE, TRUE);
+VALUES ('admin','$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy','admin@gmail.com', TRUE, TRUE, TRUE, TRUE, TRUE);
 
--- Gán quyền ROLE_ADMIN cho tài khoản admin
--- Lưu ý: role_id của ROLE_ADMIN là 2 (sau ROLE_USER là 1)
 INSERT INTO user_role (user_id, role_id)
 SELECT u.user_id, r.role_id
 FROM users u, roles r
-WHERE u.email = 'admin@gmail.com' AND r.role_name = 'ROLE_ADMIN';
+WHERE u.email='admin@gmail.com' AND r.role_name='ROLE_ADMIN';
 
--- Tạo profile cho admin
 INSERT INTO user_profiles (user_id, avatar_url)
-SELECT user_id, 'default_avatar.png'
-FROM users
-WHERE email = 'admin@gmail.com';
+SELECT user_id,'default_avatar.png'
+FROM users WHERE email='admin@gmail.com';
 
--- Tạo user_points cho admin
 INSERT INTO user_points (user_id, points)
-SELECT user_id, 0
-FROM users
-WHERE email = 'admin@gmail.com';
+SELECT user_id,0 FROM users WHERE email='admin@gmail.com';
 
--- Tạo tài khoản partner mặc định
--- Email: partner@gmail.com
--- Password: password (đã được hash bằng BCrypt: $2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy)
+-- Partner sample
 INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, is_verified)
-VALUES
-('partner', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'partner@gmail.com', TRUE, TRUE, TRUE, TRUE, TRUE);
+VALUES ('partner','$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy','partner@gmail.com', TRUE, TRUE, TRUE, TRUE, TRUE);
 
--- Gán quyền ROLE_PARTNER cho tài khoản partner
--- Lưu ý: role_id của ROLE_PARTNER là 3 (sau ROLE_USER là 1, ROLE_ADMIN là 2)
 INSERT INTO user_role (user_id, role_id)
-SELECT u.user_id, r.role_id
-FROM users u, roles r
-WHERE u.email = 'partner@gmail.com' AND r.role_name = 'ROLE_PARTNER';
+SELECT u.user_id,r.role_id FROM users u, roles r
+WHERE u.email='partner@gmail.com' AND r.role_name='ROLE_PARTNER';
 
--- Tạo profile cho partner
 INSERT INTO user_profiles (user_id, avatar_url)
-SELECT user_id, 'default_avatar.png'
-FROM users
-WHERE email = 'partner@gmail.com';
+SELECT user_id,'default_avatar.png' FROM users WHERE email='partner@gmail.com';
 
--- Tạo user_points cho partner
 INSERT INTO user_points (user_id, points)
-SELECT user_id, 0
-FROM users
-WHERE email = 'partner@gmail.com';
+SELECT user_id,0 FROM users WHERE email='partner@gmail.com';
 
--- Tạo bản ghi trong bảng partners
 INSERT INTO partners (user_id, company_name, website)
-SELECT user_id, 'Demo Partner Company', 'https://demo-partner.com'
-FROM users
-WHERE email = 'partner@gmail.com';
-
-/* ================================================================
-   MIGRATIONS
-================================================================ */
-
--- Migration: Thêm cột thumbnail_url vào bảng coupons
--- Lưu ý: Nếu cột đã tồn tại, bỏ qua lỗi hoặc comment dòng này
--- ALTER TABLE coupons
--- ADD COLUMN thumbnail_url VARCHAR(255) NULL AFTER description;
-
--- Migration: Thêm các cột mới cho voucher system vào bảng coupons
--- Lưu ý: Nếu cột đã tồn tại, bỏ qua lỗi hoặc comment các dòng tương ứng
--- ALTER TABLE coupons
--- ADD COLUMN title VARCHAR(255) NULL AFTER code,
--- ADD COLUMN short_description VARCHAR(500) NULL AFTER title,
--- ADD COLUMN category VARCHAR(50) NULL AFTER thumbnail_url,
--- ADD COLUMN badge_label VARCHAR(50) NULL AFTER category,
--- ADD COLUMN original_price DOUBLE NULL AFTER discount_value,
--- ADD COLUMN final_price DOUBLE NULL AFTER original_price,
--- ADD COLUMN required_points INT NOT NULL DEFAULT 0 AFTER used_count,
--- ADD COLUMN start_date DATE NULL AFTER required_points,
--- ADD COLUMN location_scope VARCHAR(50) NULL AFTER expiry_date,
--- ADD COLUMN location_text VARCHAR(255) NULL AFTER location_scope;
+SELECT user_id, 'Demo Partner Company','https://demo-partner.com'
+FROM users WHERE email='partner@gmail.com';

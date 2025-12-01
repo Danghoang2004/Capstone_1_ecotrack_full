@@ -87,7 +87,7 @@ public class AuthController {
                 e.printStackTrace();
             }
 
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user);
 
             // --- CẬP NHẬT: Trả về đầy đủ thông tin giống Login ---
             // Mặc định khi đăng ký mới thường là ROLE_USER (hoặc tùy logic service của bạn)
@@ -99,22 +99,20 @@ public class AuthController {
                     token,
                     user.getUsername(),
                     user.getEmail(),
-                    roles
-            ));
+                    roles));
             // -----------------------------------------------------
 
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(
-                    java.util.Map.of("error", ex.getMessage())
-            );
+                    java.util.Map.of("error", ex.getMessage()));
         }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request){
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             Optional<User> optional = userRepository.findByEmail(request.getEmail());
-            if(optional.isEmpty()){
+            if (optional.isEmpty()) {
                 return ResponseEntity.status(401).body(Map.of("error", "Email không tồn tại"));
             }
             User user = optional.get();
@@ -124,23 +122,25 @@ public class AuthController {
                 return ResponseEntity.status(401).body(Map.of("error", "Sai mật khẩu, vui lòng thử lại"));
             }
 
-            if (!user.isVerified()) { // Lưu ý: Code cũ của bạn dùng isVerified, đảm bảo field này đúng tên trong Entity
+            if (!user.isVerified()) { // Lưu ý: Code cũ của bạn dùng isVerified, đảm bảo field này đúng tên trong
+                                      // Entity
                 return ResponseEntity.status(401).body(Map.of("error", "Tài khoản chưa được xác thực email"));
             }
 
             // Kiểm tra tài khoản có bị khóa không (enabled = false)
             if (user.getEnabled() != null && !user.getEnabled()) {
-                return ResponseEntity.status(403).body(Map.of("error", "Bạn đã bị tạm dừng tài khoản, xin vui lòng liên hệ Admin để mở khóa"));
+                return ResponseEntity.status(403)
+                        .body(Map.of("error", "Bạn đã bị tạm dừng tài khoản, xin vui lòng liên hệ Admin để mở khóa"));
             }
 
-
             // Sinh JWT
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user);
 
             // --- ĐOẠN CODE QUAN TRỌNG ĐƯỢC THÊM VÀO ---
             // Lấy danh sách tên Role từ User Entity
             List<String> roles = user.getRoles().stream()
-                    .map(role -> role.getName()) // Giả sử trong model Role bạn có hàm getName() trả về "ROLE_ADMIN", "ROLE_USER"
+                    .map(role -> role.getName()) // Giả sử trong model Role bạn có hàm getName() trả về "ROLE_ADMIN",
+                                                 // "ROLE_USER"
                     .collect(Collectors.toList());
 
             // Trả về Token + Roles + Info
@@ -148,33 +148,31 @@ public class AuthController {
                     token,
                     user.getUsername(),
                     user.getEmail(),
-                    roles
-            ));
+                    roles));
             // ------------------------------------------
 
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace(); // In lỗi ra console để debug nếu cần
-            return ResponseEntity.status(500).body(Map.of("error","Lỗi đăng nhập: " + e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("error", "Lỗi đăng nhập: " + e.getMessage()));
         }
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyAccount(@RequestBody Map<String, String> request){
+    public ResponseEntity<?> verifyAccount(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String code = request.get("code");
 
-        boolean success = userServiceiml.verifyAccount(email,code);
+        boolean success = userServiceiml.verifyAccount(email, code);
 
-        if(success) {
+        if (success) {
 
             // Lấy user để tạo token
             User user = userRepository.findByEmail(email).get();
-            String token = jwtUtil.generateToken(user.getUsername());
+            String token = jwtUtil.generateToken(user);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Xác thực tài khoản thành công!",
-                    "token", token
-            ));
+                    "token", token));
         }
 
         return ResponseEntity.badRequest().body(Map.of("error", "Mã xác thực không hợp lệ"));

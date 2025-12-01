@@ -1,5 +1,6 @@
 package capstone_1.Ecotrack_backend.security;
 
+import capstone_1.Ecotrack_backend.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -20,11 +22,18 @@ public class JwtUtil {
         this.jwtExpirationMs = jwtExpirationMs;
     }
 
-    public String generateToken(String username) {
+    public String generateToken(User user) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + jwtExpirationMs);
+        List<String> roles = user.getRoles().stream()
+                .map(role -> role.getName())
+                .toList();
+        // 2. Tạo Claims và thêm Roles vào
+        Claims claims = Jwts.claims().setSubject(user.getUsername());
+        claims.put("roles", roles); // <<< ĐÂY LÀ DÒNG QUAN TRỌNG
+
         return Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
                 .signWith(key, SignatureAlgorithm.HS256)

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/header/header.dart';
 import '../widgets/welcome/welcome_card.dart';
@@ -171,12 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CheckIn_screen(),
-                      ),
-                    );
+                    Navigator.pushNamed(context, '/QR_check');
                   },
                   child: Container(
                     height: 110,
@@ -298,12 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: InkWell(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CheckIn_screen(),
-                            ),
-                          );
+                          Navigator.pushNamed(context, '/QR_check');
                         },
                         child: Container(
                           height: 130,

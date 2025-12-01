@@ -14,15 +14,15 @@ class Report_page extends StatefulWidget {
 }
 
 class _Report_pageState extends State<Report_page> {
+  // Logic và các hàm không đổi
   File? selectedImage;
   String selectedTrashType = "";
   final TextEditingController descriptionController = TextEditingController();
   final ImagePicker picker = ImagePicker();
   bool isSending = false;
-
   DateTime? lastSubmitTime;
-
   final List<String> validTrashTypes = ["Vô cơ", "Hữu cơ", "tổng hợp"];
+  final ReportService reportService = ReportService(); // Khởi tạo Service
 
   void showSuccessDialog() {
     showDialog(
@@ -82,11 +82,34 @@ class _Report_pageState extends State<Report_page> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      // Cho phép chọn từ Gallery hoặc Camera
+      final choice = await showModalBottomSheet<ImageSource>(
+        context: context,
+        builder: (context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera),
+              title: const Text('Chụp ảnh'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Chọn từ thư viện'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == null) return; // Người dùng hủy bỏ
+
+      final XFile? image = await picker.pickImage(source: choice);
       if (image != null) {
         final file = File(image.path);
 
         final fileSize = await file.length();
+        // Kiểm tra kích thước file > 5MB
         if (fileSize > 5 * 1024 * 1024) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Ảnh quá lớn, tối đa 5MB")),
@@ -139,13 +162,12 @@ class _Report_pageState extends State<Report_page> {
     });
 
     try {
-      final reportService = ReportService();
-
+      // Giả định tọa độ cố định chỉ để mô phỏng
       bool success = await reportService.uploadReport(
         title: "Báo cáo rác thải",
         description: descriptionText,
-        latitude: "10.762622",
-        longitude: "106.660172",
+        latitude: "10.762622", // Tốt nhất nên lấy tọa độ thực tế
+        longitude: "106.660172", // Tốt nhất nên lấy tọa độ thực tế
         status: "PENDING",
         trashCategory: selectedTrashType,
         imagePath: selectedImage!.path,
@@ -153,9 +175,8 @@ class _Report_pageState extends State<Report_page> {
 
       if (success) {
         lastSubmitTime = DateTime.now();
-
         showSuccessDialog();
-
+        // Reset form
         setState(() {
           selectedImage = null;
           descriptionController.clear();
@@ -177,6 +198,8 @@ class _Report_pageState extends State<Report_page> {
     }
   }
 
+  // --- BUILD METHOD VÀ CÁC WIDGET CON ĐÃ TỐI ƯU ---
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -195,12 +218,10 @@ class _Report_pageState extends State<Report_page> {
               color: Colors.white,
             ),
           ),
-
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
           ),
-
           actions: [
             IconButton(
               icon: const Icon(Icons.help_outline, color: Colors.white),
@@ -210,11 +231,16 @@ class _Report_pageState extends State<Report_page> {
           ],
         ),
       ),
-
       body: SingleChildScrollView(
+        // Loại bỏ Padding 8.0 bên ngoài và chuyển vào các widget con
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16.0,
+            vertical: 8.0,
+          ), // Padding tổng thể
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment
+                .stretch, // Quan trọng: các phần tử con chiếm toàn bộ chiều rộng
             children: [
               _buildImagePickerSection(),
               const SizedBox(height: 20),
@@ -225,6 +251,7 @@ class _Report_pageState extends State<Report_page> {
               _buildSubmitButton(),
               const SizedBox(height: 15),
               _buildFooter(),
+              const SizedBox(height: 15), // Thêm khoảng cách ở cuối
             ],
           ),
         ),
@@ -232,11 +259,12 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
+  // Loại bỏ 'width: 300' và thay thế bằng 'width: double.infinity' cho Container
   Widget _buildImagePickerSection() {
     return Container(
       padding: const EdgeInsets.all(15),
-      height: 200,
-      width: 300,
+      height: 200, // Chiều cao cố định vẫn ổn vì nội dung không thay đổi
+      width: double.infinity, // Chiếm toàn bộ chiều rộng
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -262,32 +290,47 @@ class _Report_pageState extends State<Report_page> {
             ],
           ),
           const SizedBox(height: 10),
-          GestureDetector(
-            onTap: _pickImage,
-            child: DottedBorder(
-              color: Colors.grey,
-              strokeWidth: 1.2,
-              dashPattern: const [6, 4],
-              borderType: BorderType.RRect,
-              radius: const Radius.circular(8),
-              child: Container(
-                width: double.infinity,
-                height: 120,
-                color: Colors.grey[100],
-                child: selectedImage == null
-                    ? const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.camera_alt, size: 40, color: Colors.grey),
-                          SizedBox(height: 10),
-                          Text(
-                            'Nhấn để chụp ảnh\nhoặc chọn từ thư viện',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
+          Expanded(
+            // Đảm bảo DottedBorder chiếm hết không gian còn lại
+            child: GestureDetector(
+              onTap: _pickImage,
+              child: DottedBorder(
+                color: Colors.grey,
+                strokeWidth: 1.2,
+                dashPattern: const [6, 4],
+                borderType: BorderType.RRect,
+                radius: const Radius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.grey[100],
+                  child: selectedImage == null
+                      ? const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.camera_alt,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              'Nhấn để chụp ảnh\nhoặc chọn từ thư viện',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        )
+                      // Hiển thị ảnh đã chọn, sử dụng BoxFit.cover để đảm bảo ảnh không bị méo và lấp đầy khung
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            selectedImage!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
                           ),
-                        ],
-                      )
-                    : Image.file(selectedImage!, fit: BoxFit.cover),
+                        ),
+                ),
               ),
             ),
           ),
@@ -296,10 +339,11 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
+  // Loại bỏ 'width: 300' và thay thế bằng 'width: double.infinity' cho Container
   Widget _buildTrashTypeSection() {
     return Container(
       height: 120,
-      width: 300,
+      width: double.infinity, // Chiếm toàn bộ chiều rộng
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -339,12 +383,18 @@ class _Report_pageState extends State<Report_page> {
   Widget _buildTrashTypeButton(String label) {
     final isSelected = selectedTrashType == label;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 2,
+        vertical: 4,
+      ), // Thêm vertical padding cho nút
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           backgroundColor: isSelected ? Colors.green[200] : Colors.white,
           side: BorderSide(color: isSelected ? Colors.green : Colors.grey),
           minimumSize: const Size(20, 30),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+          ), // Tăng padding ngang
         ),
         onPressed: () {
           setState(() {
@@ -353,12 +403,16 @@ class _Report_pageState extends State<Report_page> {
         },
         child: Text(
           label,
-          style: const TextStyle(fontSize: 9, color: Colors.black),
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.black,
+          ), // Tăng kích thước chữ
         ),
       ),
     );
   }
 
+  // Không cần thay đổi width, vì nó đã nằm trong Column với crossAxisAlignment: CrossAxisAlignment.stretch
   Widget _buildDescriptionSection() {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -404,16 +458,20 @@ class _Report_pageState extends State<Report_page> {
             child: TextField(
               controller: descriptionController,
               maxLines: 4,
+              maxLength: 500, // Thêm maxLength để giới hạn input
               style: const TextStyle(fontSize: 14, color: Colors.black),
               decoration: const InputDecoration(
                 hintText:
-                    "Ví dụ: Nhiều chai nhựa và túi nilon bị vứt bừa bãi ở góc đường...( tối đa 500 ký tự )",
+                    "Ví dụ: Nhiều chai nhựa và túi nilon bị vứt bừa bãi ở góc đường...",
                 hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 10,
                 ),
+                // Sử dụng helperText để hiển thị giới hạn ký tự
+                helperText: "(tối đa 500 ký tự)",
+                helperStyle: TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ),
           ),
@@ -422,6 +480,7 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
+  // Nút gửi đã được thiết lập `minimumSize: const Size(double.infinity, 40)` nên không cần chỉnh sửa.
   Widget _buildSubmitButton() {
     return ElevatedButton.icon(
       onPressed: isSending ? null : _submitReport,
@@ -436,7 +495,10 @@ class _Report_pageState extends State<Report_page> {
             )
           : const Icon(Icons.file_upload_outlined, color: Colors.white),
       style: ElevatedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 40),
+        minimumSize: const Size(
+          double.infinity,
+          48,
+        ), // Tăng chiều cao lên 48 cho chuẩn
         backgroundColor: isSending
             ? Colors.grey
             : const Color.fromARGB(255, 94, 185, 103),
@@ -453,10 +515,11 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
+  // Loại bỏ 'width: 300' và thay thế bằng 'width: double.infinity' cho Container
   Widget _buildFooter() {
     return Container(
       height: 80,
-      width: 300,
+      width: double.infinity, // Chiếm toàn bộ chiều rộng
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 223, 236, 213),
         borderRadius: BorderRadius.circular(20),
