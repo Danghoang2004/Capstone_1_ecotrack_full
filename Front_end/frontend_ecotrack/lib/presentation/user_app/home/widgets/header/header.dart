@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend_ecotrack/presentation/user_app/notification/notification_screen.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/profile_controller.dart';
 
@@ -98,13 +99,25 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                     Positioned(
                       left: 0,
                       bottom: 6,
-                      child: SvgPicture.asset(
-                        'assets/icons/notifications.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: const ColorFilter.mode(
-                          AppColors.black,
-                          BlendMode.srcIn,
+                      child: GestureDetector(
+                        onTap: () {
+                          // Điều hướng sang trang thông báo
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                              const NotificationScreen(), // Thay bằng trang của bạn
+                            ),
+                          );
+                        },
+                        child: SvgPicture.asset(
+                          'assets/icons/notifications.svg',
+                          width: 24,
+                          height: 24,
+                          colorFilter: const ColorFilter.mode(
+                            AppColors.black,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),

@@ -71,7 +71,6 @@ class _MapPageState extends State<MapPage> {
 
   void _showReportDetails(Report r) {
     final String baseUrl = dotenv.env['API_BASE_URL']!;
-
     String imageUrl = r.imageUrl.startsWith("http")
         ? r.imageUrl
         : "$baseUrl${r.imageUrl}";
@@ -139,36 +138,36 @@ class _MapPageState extends State<MapPage> {
           : PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: AppBar(
-          backgroundColor: const Color(0xFF2E7D32),
-          elevation: 0,
-          title: const Text(
-            "Hiển thị báo cáo",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+                backgroundColor: const Color(0xFF2E7D32),
+                elevation: 0,
+                title: const Text(
+                  "Hiển thị báo cáo",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                centerTitle: true,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/user_app',
+                      (route) => false,
+                    );
+                  },
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.help_outline, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              ),
             ),
-          ),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/user_app',
-                (route) => false,
-              );
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.help_outline, color: Colors.white),
-              onPressed: () {},
-            ),
-            const SizedBox(width: 4),
-          ],
-            ),
-          ),
       body: Stack(
         children: [
           FlutterMap(

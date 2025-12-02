@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/presentation/user_app/notification/notification_icon_button.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({super.key});
@@ -46,26 +47,29 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ],
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.notifications_none_rounded,
-            color: Colors.black87,
-          ),
-          onPressed: () {},
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/avatar.jpg',
-              height: 32,
-              width: 32,
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-      ],
+      // actions: [
+      //   IconButton(
+      //     icon: const Icon(
+      //       Icons.notifications_none_rounded,
+      //       color: Colors.black87,
+      //     ),
+      //     onPressed: () {},
+      //   ),
+      //   Padding(
+      //     padding: const EdgeInsets.only(right: 16),
+      //     child: ClipOval(
+      //       child: Image.asset(
+      //         'assets/images/avatar.jpg',
+      //         height: 32,
+      //         width: 32,
+      //         fit: BoxFit.cover,
+      //       ),
+      //     ),
+      //   ),
+      // ],
+      actions: const [
+      NotificationIconButton(),
+    ],
     );
   }
 }
