@@ -81,8 +81,9 @@ class _PartnerSplashScreenState extends State<PartnerSplashScreen> {
 
       if (isPartner) {
         // Có token và là Partner -> Dashboard
-        if (mounted)
+        if (mounted) {
           Navigator.pushReplacementNamed(context, '/partner_dashboard');
+        }
         return;
       } else {
         // Có token nhưng không phải Partner -> Bắt buộc đăng xuất

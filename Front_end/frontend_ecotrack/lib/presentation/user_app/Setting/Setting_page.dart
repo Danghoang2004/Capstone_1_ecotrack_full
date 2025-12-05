@@ -157,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       trailing: Switch(
                         value: thongBao,
                         onChanged: (v) => setState(() => thongBao = v),
-                        activeColor: Colors.white,
+                        activeThumbColor: Colors.white,
                         activeTrackColor: const Color(0xFF2E7D32),
                       ),
                     ),

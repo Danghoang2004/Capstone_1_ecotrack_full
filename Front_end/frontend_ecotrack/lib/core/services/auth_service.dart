@@ -116,10 +116,12 @@ class AuthService {
     final email = data['email'];
 
     if (token != null) await _storage.write(key: 'jwt_token', value: token);
-    if (roles != null)
+    if (roles != null) {
       await _storage.write(key: 'user_roles', value: jsonEncode(roles));
-    if (username != null)
+    }
+    if (username != null) {
       await _storage.write(key: 'username', value: username);
+    }
     if (email != null) await _storage.write(key: 'email', value: email);
   }
 

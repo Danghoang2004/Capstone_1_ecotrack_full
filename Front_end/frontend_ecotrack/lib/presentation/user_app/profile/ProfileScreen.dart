@@ -451,7 +451,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             itemBuilder: (context, index) {
               final b = displayList[index];
               final bool has =
-                  (b.badgeId != 0 && (b.badgeName?.isNotEmpty ?? false));
+                  (b.badgeId != 0 && (b.badgeName.isNotEmpty ?? false));
               return Column(
                 children: [
                   CircleAvatar(

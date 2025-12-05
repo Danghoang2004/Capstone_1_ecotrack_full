@@ -57,7 +57,7 @@ class SessionService {
           }
         },
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       _isShowingDialog = false;
     }
   }

@@ -47,7 +47,7 @@ class TopThreeSection extends StatelessWidget {
               const SizedBox(width: 8),
               // Rank 1 (center - highest)
               Expanded(
-                child: topThree.length > 0
+                child: topThree.isNotEmpty
                     ? TopThreeCard(ranking: topThree[0], isGroup: false)
                     : _buildEmptyCard(1, context),
               ),
@@ -94,7 +94,7 @@ class TopThreeSection extends StatelessWidget {
               const SizedBox(width: 8),
               // Rank 1 (center - highest)
               Expanded(
-                child: topThree.length > 0
+                child: topThree.isNotEmpty
                     ? TopThreeCard(groupRanking: topThree[0], isGroup: true)
                     : _buildEmptyCard(1, context),
               ),
@@ -120,7 +120,7 @@ class TopThreeSection extends StatelessWidget {
     final podiumWidth = isDesktop ? 80.0 : double.infinity;
 
     // Chiều cao cột dưới theo rank - TOP 1 PHẢI CAO NHẤT
-    double _getPodiumHeight(int rank) {
+    double getPodiumHeight(int rank) {
       switch (rank) {
         case 1:
           return 80.0; // CAO NHẤT - TOP 1
@@ -133,7 +133,7 @@ class TopThreeSection extends StatelessWidget {
       }
     }
 
-    Color _getBadgeColor(int rank) {
+    Color getBadgeColor(int rank) {
       switch (rank) {
         case 1:
           return const Color(0xFFFFD700); // Vàng
@@ -146,7 +146,7 @@ class TopThreeSection extends StatelessWidget {
       }
     }
 
-    Color _getBorderColor(int rank) {
+    Color getBorderColor(int rank) {
       switch (rank) {
         case 1:
           return const Color(0xFFEFEB0A); // Màu vàng của bạn
@@ -160,7 +160,7 @@ class TopThreeSection extends StatelessWidget {
     }
 
     // Gradient cho cột dưới - DÙNG ĐÚNG MÀU CỦA BẠN
-    LinearGradient _getPodiumGradient(int rank) {
+    LinearGradient getPodiumGradient(int rank) {
       switch (rank) {
         case 1:
           // Top 1: Vàng #EFEB0A
@@ -208,11 +208,11 @@ class TopThreeSection extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: _getBadgeColor(rank),
+            color: getBadgeColor(rank),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: _getBadgeColor(rank).withOpacity(0.4),
+                color: getBadgeColor(rank).withOpacity(0.4),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -237,7 +237,7 @@ class TopThreeSection extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey[300],
-            border: Border.all(color: _getBorderColor(rank), width: 3),
+            border: Border.all(color: getBorderColor(rank), width: 3),
           ),
           child: Icon(Icons.person, size: avatarSize * 0.5, color: Colors.grey),
         ),
@@ -262,9 +262,9 @@ class TopThreeSection extends StatelessWidget {
         Center(
           child: Container(
             width: podiumWidth,
-            height: _getPodiumHeight(rank),
+            height: getPodiumHeight(rank),
             decoration: BoxDecoration(
-              gradient: _getPodiumGradient(rank),
+              gradient: getPodiumGradient(rank),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),

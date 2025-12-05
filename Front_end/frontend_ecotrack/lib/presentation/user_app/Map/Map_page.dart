@@ -19,7 +19,7 @@ class MapPage extends StatefulWidget {
 class _MapPageState extends State<MapPage> {
   final MapController _mapController = MapController();
   final LatLng _center = LatLng(16.0471, 108.2068); // Đà Nẵng
-  double _currentZoom = 12.0;
+  final double _currentZoom = 12.0;
 
   final ApiClient apiClient = ApiClient(storage: const FlutterSecureStorage());
 
@@ -139,41 +139,44 @@ class _MapPageState extends State<MapPage> {
           : PreferredSize(
               preferredSize: const Size.fromHeight(60),
               child: AppBar(
-          backgroundColor: const Color(0xFF2E7D32),
-          elevation: 0,
-          title: const Text(
-            "Hiển thị báo cáo",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+                backgroundColor: const Color(0xFF2E7D32),
+                elevation: 0,
+                title: const Text(
+                  "Hiển thị báo cáo",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                centerTitle: true,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/user_app',
+                      (route) => false,
+                    );
+                  },
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.help_outline, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                  const SizedBox(width: 4),
+                ],
+              ),
             ),
-          ),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/user_app',
-                (route) => false,
-              );
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.help_outline, color: Colors.white),
-              onPressed: () {},
-            ),
-            const SizedBox(width: 4),
-          ],
-            ),
-          ),
       body: Stack(
         children: [
           FlutterMap(
             mapController: _mapController,
-            options: MapOptions(center: _center, zoom: _currentZoom),
+            options: MapOptions(
+              initialCenter: _center,
+              initialZoom: _currentZoom,
+            ),
             children: [
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -184,7 +187,7 @@ class _MapPageState extends State<MapPage> {
                     point: LatLng(r.latitude, r.longitude),
                     width: 50,
                     height: 50,
-                    builder: (_) => GestureDetector(
+                    child: GestureDetector(
                       onTap: () => _showReportDetails(r),
                       child: Icon(
                         Icons.location_pin,
@@ -193,7 +196,7 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ),
                   );
-                }).toList(),
+                }).toList<Marker>(),
               ),
             ],
           ),

@@ -52,9 +52,7 @@ class _TestVoucherScreenState extends State<TestVoucherScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isCheckingAuth) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (!_isAuthenticated) {
@@ -411,155 +409,156 @@ class __TestVoucherContentState extends State<_TestVoucherContent> {
                     ),
                   )
                 : _availableVouchers.isEmpty
-                    ? Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.confirmation_number_outlined,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Chưa có voucher nào',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
+                ? Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.confirmation_number_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
                             ),
-                          ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Chưa có voucher nào',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                      )
-                    : SizedBox(
-                        height: 200,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _availableVouchers.length,
-                          itemBuilder: (context, index) {
-                            final voucher = _availableVouchers[index];
-                            final discountDisplay =
-                                voucher['discountType'] == 'PERCENT'
-                                    ? '${voucher['discountValue']}%'
-                                    : '${_formatCurrency(voucher['discountValue'])}';
-                            final remaining = (voucher['usageLimit'] ?? 0) -
-                                (voucher['usedCount'] ?? 0);
+                      ),
+                    ),
+                  )
+                : SizedBox(
+                    height: 200,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _availableVouchers.length,
+                      itemBuilder: (context, index) {
+                        final voucher = _availableVouchers[index];
+                        final discountDisplay =
+                            voucher['discountType'] == 'PERCENT'
+                            ? '${voucher['discountValue']}%'
+                            : _formatCurrency(voucher['discountValue']);
+                        final remaining =
+                            (voucher['usageLimit'] ?? 0) -
+                            (voucher['usedCount'] ?? 0);
 
-                            return GestureDetector(
-                              onTap: () => _selectVoucher(voucher),
-                              child: Container(
-                                width: 200,
-                                margin: const EdgeInsets.only(right: 12),
-                                child: Card(
-                                  elevation: 3,
-                                  color: const Color(0xFFF0FDF4),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Column(
+                        return GestureDetector(
+                          onTap: () => _selectVoucher(voucher),
+                          child: Container(
+                            width: 200,
+                            margin: const EdgeInsets.only(right: 12),
+                            child: Card(
+                              elevation: 3,
+                              color: const Color(0xFFF0FDF4),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF16A34A),
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                voucher['code'],
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF16A34A),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
                                             ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'Giảm $discountDisplay',
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Color(0xFF16A34A),
-                                              ),
+                                          ),
+                                          child: Text(
+                                            voucher['code'],
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
                                             ),
-                                            if (voucher['description'] != null &&
-                                                voucher['description']
-                                                    .toString()
-                                                    .isNotEmpty)
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.only(top: 4),
-                                                child: Text(
-                                                  voucher['description'],
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                          ],
+                                          ),
                                         ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Còn lại: $remaining',
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Giảm $discountDisplay',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF16A34A),
+                                          ),
+                                        ),
+                                        if (voucher['description'] != null &&
+                                            voucher['description']
+                                                .toString()
+                                                .isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 4,
+                                            ),
+                                            child: Text(
+                                              voucher['description'],
                                               style: TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.grey[600],
+                                                fontSize: 11,
+                                                color: Colors.grey[700],
                                               ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            const SizedBox(height: 4),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF16A34A),
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                              ),
-                                              child: const Text(
-                                                'Chọn',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
+                                          ),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Còn lại: $remaining',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF16A34A),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
                                             ),
-                                          ],
+                                          ),
+                                          child: const Text(
+                                            'Chọn',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
             const SizedBox(height: 24),
 
             // --- SECTION: ÁP DỤNG VOUCHER ---
@@ -669,7 +668,7 @@ class __TestVoucherContentState extends State<_TestVoucherContent> {
                                       ),
                                     ),
                                   Text(
-                                    'Giảm: ${_appliedCoupon!['discountType'] == 'PERCENT' ? '${_appliedCoupon!['discountValue']}%' : '${_formatCurrency(_appliedCoupon!['discountValue'])}'}',
+                                    'Giảm: ${_appliedCoupon!['discountType'] == 'PERCENT' ? '${_appliedCoupon!['discountValue']}%' : _formatCurrency(_appliedCoupon!['discountValue'])}',
                                     style: const TextStyle(
                                       color: Color(0xFF16A34A),
                                       fontWeight: FontWeight.w600,
@@ -755,8 +754,8 @@ class __TestVoucherContentState extends State<_TestVoucherContent> {
                       final voucher = _usedVouchers[index];
                       final discountDisplay =
                           voucher['discountType'] == 'PERCENT'
-                              ? '${voucher['discountValue']}%'
-                              : '${_formatCurrency(voucher['discountValue'])}';
+                          ? '${voucher['discountValue']}%'
+                          : _formatCurrency(voucher['discountValue']);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
@@ -894,7 +893,7 @@ class __TestVoucherContentState extends State<_TestVoucherContent> {
                                     ),
                                   ),
                                   Text(
-                                    '${_formatCurrency(purchase['finalPrice'])}',
+                                    _formatCurrency(purchase['finalPrice']),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -963,4 +962,3 @@ class __TestVoucherContentState extends State<_TestVoucherContent> {
     );
   }
 }
-

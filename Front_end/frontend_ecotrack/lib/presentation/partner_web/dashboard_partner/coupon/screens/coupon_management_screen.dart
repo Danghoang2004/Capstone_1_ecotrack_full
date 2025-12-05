@@ -128,7 +128,9 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xóa Coupon'),
-        content: Text('Bạn có chắc chắn muốn xóa coupon "${coupon.code}"? Hành động này không thể hoàn tác.'),
+        content: Text(
+          'Bạn có chắc chắn muốn xóa coupon "${coupon.code}"? Hành động này không thể hoàn tác.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -200,7 +202,7 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
             Builder(
               builder: (context) {
                 final stats = _controller.getStatistics();
-                if (isMobile)
+                if (isMobile) {
                   return Column(
                     children: [
                       StatCard(
@@ -236,7 +238,7 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
                       ),
                     ],
                   );
-                else
+                } else {
                   return Row(
                     children: [
                       Expanded(
@@ -280,6 +282,7 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
                       ),
                     ],
                   );
+                }
               },
             ),
 
@@ -328,18 +331,18 @@ class _CouponManagementScreenState extends State<CouponManagementScreen> {
                             height: 1,
                             color: Color(0xFFE5E7EB),
                           ),
-                           itemBuilder: (context, index) {
-                             return CouponItem(
-                               coupon: _controller.coupons[index],
-                               isMobile: isMobile,
-                               onEdit: () => _showEditCouponDialog(
-                                 _controller.coupons[index],
-                               ),
-                               onDelete: () => _showDeleteCouponDialog(
-                                 _controller.coupons[index],
-                               ),
-                             );
-                           },
+                          itemBuilder: (context, index) {
+                            return CouponItem(
+                              coupon: _controller.coupons[index],
+                              isMobile: isMobile,
+                              onEdit: () => _showEditCouponDialog(
+                                _controller.coupons[index],
+                              ),
+                              onDelete: () => _showDeleteCouponDialog(
+                                _controller.coupons[index],
+                              ),
+                            );
+                          },
                         ),
                 ],
               ),

@@ -44,7 +44,7 @@ class SessionCheckerService {
       // Nếu user bị disable, backend sẽ trả 401
       // ApiClient._handleResponse sẽ tự động gọi SessionService.handleSessionExpired()
       await _apiClient.get("/api/user/profile");
-    } catch (e, stackTrace) {
+    } catch (e) {
       // Lỗi đã được xử lý trong ApiClient
     }
   }

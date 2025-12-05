@@ -10,7 +10,7 @@ class UserManagementController {
   bool _isLoading = false;
   String? _error;
   String? _sortOrder; // 'high' hoặc 'low'
-  Set<int> _selectedUserIds = {}; // Set các user ID đã được chọn
+  final Set<int> _selectedUserIds = {}; // Set các user ID đã được chọn
 
   List<Map<String, dynamic>> get users => _users;
   List<Map<String, dynamic>> get filteredUsers => _filteredUsers;

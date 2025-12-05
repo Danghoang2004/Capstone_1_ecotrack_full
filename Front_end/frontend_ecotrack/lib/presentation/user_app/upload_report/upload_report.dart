@@ -121,7 +121,7 @@ class _CheckIn_screenState extends State<CheckIn_screen> {
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
                     "Quét mã QR để Check-in chiến dịch môi trường",
-                    style: const TextStyle(color: Colors.white70, fontSize: 16),
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
                 ),

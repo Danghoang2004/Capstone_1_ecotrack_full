@@ -73,15 +73,17 @@ class _AdminSplashScreenState extends State<AdminSplashScreen> {
       final isPartner = await _authService.isPartner(); // KIỂM TRA ROLE PARTNER
 
       if (isAdmin) {
-        if (mounted)
+        if (mounted) {
           Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        }
         return;
       }
 
       if (isPartner) {
         // KIỂM TRA PARTNER SAU ADMIN
-        if (mounted)
+        if (mounted) {
           Navigator.pushReplacementNamed(context, '/partner_dashboard');
+        }
         return;
       }
 

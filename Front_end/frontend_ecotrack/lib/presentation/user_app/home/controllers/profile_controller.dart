@@ -13,7 +13,7 @@ class ProfileController {
 
   String get imageUrl {
     if (_profile == null) return '';
-    final url = _profile!.avatarUrl?.trim();
+    final url = _profile!.avatarUrl.trim();
     if (url == null || url.isEmpty) return '';
     return url;
   }

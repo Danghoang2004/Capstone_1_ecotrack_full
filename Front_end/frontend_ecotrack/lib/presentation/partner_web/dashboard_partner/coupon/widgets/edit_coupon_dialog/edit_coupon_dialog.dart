@@ -34,11 +34,17 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
     _discountValueController = TextEditingController(
       text: widget.coupon.discountValueNumber.toStringAsFixed(0),
     );
-    _limitController = TextEditingController(text: widget.coupon.total.toString());
-    _descriptionController = TextEditingController(text: widget.coupon.description);
+    _limitController = TextEditingController(
+      text: widget.coupon.total.toString(),
+    );
+    _descriptionController = TextEditingController(
+      text: widget.coupon.description,
+    );
 
     // Set discount type
-    _selectedDiscountType = widget.coupon.discountType == 'PERCENT' ? 'percent' : 'fixed';
+    _selectedDiscountType = widget.coupon.discountType == 'PERCENT'
+        ? 'percent'
+        : 'fixed';
 
     // Set isActive
     _isActive = widget.coupon.isActive;
@@ -229,24 +235,36 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
                     TextField(
                       controller: _codeController,
                       readOnly: true, // Không cho edit mã coupon
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF111827)),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF111827),
+                      ),
                       decoration: InputDecoration(
                         hintText: 'vd: ECO25OFF',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                        ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 12,
                         ),
                         enabledBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE5E7EB),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Color(0xFF008000), width: 1.5),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF008000),
+                            width: 1.5,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         filled: true,
-                        fillColor: Colors.grey[100], // Màu xám để thể hiện readonly
+                        fillColor:
+                            Colors.grey[100], // Màu xám để thể hiện readonly
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -331,17 +349,25 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
                         ),
                         decoration: InputDecoration(
                           hintText: 'dd/mm/yyyy',
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 12,
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE5E7EB),
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Color(0xFF008000), width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF008000),
+                              width: 1.5,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           filled: true,
@@ -374,7 +400,9 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
                             _isActive ? 'Hoạt động' : 'Dừng hoạt động',
                             style: TextStyle(
                               fontSize: 14,
-                              color: _isActive ? const Color(0xFF16A34A) : Colors.grey[600],
+                              color: _isActive
+                                  ? const Color(0xFF16A34A)
+                                  : Colors.grey[600],
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -386,7 +414,7 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
                               _isActive = value;
                             });
                           },
-                          activeColor: const Color(0xFF16A34A),
+                          activeThumbColor: const Color(0xFF16A34A),
                         ),
                       ],
                     ),
@@ -409,31 +437,41 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
                         // Validate form
                         if (_codeController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Mã coupon không được để trống')),
+                            const SnackBar(
+                              content: Text('Mã coupon không được để trống'),
+                            ),
                           );
                           return;
                         }
                         if (_selectedDiscountType == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Vui lòng chọn loại giảm giá')),
+                            const SnackBar(
+                              content: Text('Vui lòng chọn loại giảm giá'),
+                            ),
                           );
                           return;
                         }
                         if (_discountValueController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Vui lòng nhập giá trị giảm')),
+                            const SnackBar(
+                              content: Text('Vui lòng nhập giá trị giảm'),
+                            ),
                           );
                           return;
                         }
                         if (_limitController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Vui lòng nhập giới hạn sử dụng')),
+                            const SnackBar(
+                              content: Text('Vui lòng nhập giới hạn sử dụng'),
+                            ),
                           );
                           return;
                         }
                         if (_selectedDate == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Vui lòng chọn ngày hết hạn')),
+                            const SnackBar(
+                              content: Text('Vui lòng chọn ngày hết hạn'),
+                            ),
                           );
                           return;
                         }
@@ -442,16 +480,24 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
                         final couponData = {
                           'code': _codeController.text.toUpperCase(),
                           'description': _descriptionController.text,
-                          'discountType': _selectedDiscountType, // "percent" hoặc "fixed"
-                          'discountValue': double.tryParse(_discountValueController.text) ?? 0.0,
-                          'usageLimit': int.tryParse(_limitController.text) ?? 0,
-                          'expiryDate': _selectedDate!.toIso8601String().split('T')[0], // Format: YYYY-MM-DD
+                          'discountType':
+                              _selectedDiscountType, // "percent" hoặc "fixed"
+                          'discountValue':
+                              double.tryParse(_discountValueController.text) ??
+                              0.0,
+                          'usageLimit':
+                              int.tryParse(_limitController.text) ?? 0,
+                          'expiryDate': _selectedDate!.toIso8601String().split(
+                            'T',
+                          )[0], // Format: YYYY-MM-DD
                           'isActive': _isActive,
                         };
 
                         // Gọi callback
                         if (widget.onUpdateCoupon != null) {
-                          final success = await widget.onUpdateCoupon!(couponData);
+                          final success = await widget.onUpdateCoupon!(
+                            couponData,
+                          );
                           if (success && context.mounted) {
                             Navigator.pop(context);
                           }
@@ -553,4 +599,3 @@ class _EditCouponDialogState extends State<EditCouponDialog> {
     );
   }
 }
-

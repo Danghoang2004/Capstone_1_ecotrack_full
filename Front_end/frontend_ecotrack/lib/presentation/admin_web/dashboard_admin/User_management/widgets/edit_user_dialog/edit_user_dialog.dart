@@ -310,7 +310,7 @@ class _EditUserDialogState extends State<EditUserDialog> {
                                         _isActive = value;
                                       });
                                     },
-                              activeColor: const Color(0xFF5EAC24),
+                              activeThumbColor: const Color(0xFF5EAC24),
                             ),
                           ],
                         ),

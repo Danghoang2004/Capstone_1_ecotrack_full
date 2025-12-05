@@ -282,10 +282,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fieldKey: _confirmFieldKey,
                   obscure: !_showConfirm,
                   validator: (v) {
-                    if (v == null || v.isEmpty)
+                    if (v == null || v.isEmpty) {
                       return "Vui lòng xác nhận mật khẩu";
-                    if (v != _passwordCtrl.text)
+                    }
+                    if (v != _passwordCtrl.text) {
                       return "Mật khẩu không trùng khớp";
+                    }
                     return null;
                   },
                   showVisibilityIcon: true,
