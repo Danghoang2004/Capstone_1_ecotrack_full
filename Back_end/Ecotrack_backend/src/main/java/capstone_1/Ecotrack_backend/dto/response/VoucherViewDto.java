@@ -12,14 +12,12 @@ public class VoucherViewDto {
     private Integer quantity;
     private Integer pointsRequired;
     private LocalDate expiryDate;
-
     private String partnerName;
     private String partnerLogoUrl;
 
-    public VoucherViewDto() {
-    }
+    private String category; // <-- THÊM
 
-    // --- GETTER & SETTER ---
+    // getters / setters
 
     public Long getVoucherId() {
         return voucherId;
@@ -99,5 +97,13 @@ public class VoucherViewDto {
 
     public void setPartnerLogoUrl(String partnerLogoUrl) {
         this.partnerLogoUrl = partnerLogoUrl;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

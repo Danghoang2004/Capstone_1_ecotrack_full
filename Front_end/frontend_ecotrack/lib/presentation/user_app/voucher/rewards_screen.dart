@@ -379,8 +379,8 @@ class RewardItem {
   final double rating;
   final bool showRating;
 
-  // category chỉ dùng ở FE để filter
-  final String category; // ALL / FOOD / SHOPPING / TRAVEL / SERVICE
+  // category dùng để filter: ALL / FOOD / SHOPPING / TRANSPORT / SERVICE
+  final String category;
 
   const RewardItem({
     required this.voucherId,
@@ -403,35 +403,11 @@ class RewardItem {
   /// Map từ JSON BE (VoucherViewDto) sang model dùng cho UI
   factory RewardItem.fromJson(Map<String, dynamic> json) {
     final int id = json['voucherId'] ?? 0;
-    final title = (json['title'] ?? '') as String;
-    final lowerTitle = title.toLowerCase();
+    final String title = (json['title'] ?? '') as String;
 
-    // ✅ PHÂN LOẠI CATEGORY Ở FE
-    String category;
-    if (lowerTitle.contains('buffet') ||
-        lowerTitle.contains('ăn sáng') ||
-        lowerTitle.contains('ăn trưa') ||
-        lowerTitle.contains('cơm') ||
-        lowerTitle.contains('trà sữa') ||
-        lowerTitle.contains('cafe') ||
-        lowerTitle.contains('cà phê') ||
-        lowerTitle.contains('nhà hàng')) {
-      category = 'FOOD'; // ĂN UỐNG
-    } else if (lowerTitle.contains('spa') ||
-        lowerTitle.contains('massage') ||
-        lowerTitle.contains('giặt') ||
-        lowerTitle.contains('vệ sinh') ||
-        lowerTitle.contains('cắt tóc')) {
-      category = 'SERVICE'; // DỊCH VỤ
-    } else if (lowerTitle.contains('bus') ||
-        lowerTitle.contains('buýt') ||
-        lowerTitle.contains('xe') ||
-        lowerTitle.contains('taxi') ||
-        lowerTitle.contains('tàu')) {
-      category = 'TRAVEL'; // DI CHUYỂN
-    } else {
-      category = 'SHOPPING'; // MUA SẮM
-    }
+    // 🔹 Lấy trực tiếp category từ BE, default = SHOPPING nếu null
+    //   BE nên trả: FOOD / SHOPPING / TRANSPORT / SERVICE
+    String category = (json['category'] ?? 'SHOPPING').toString().toUpperCase();
 
     return RewardItem(
       voucherId: id,
@@ -443,7 +419,7 @@ class RewardItem {
       partnerName: json['partnerName'] ?? 'Eco Partner',
       distance: 'Online voucher',
       expiry: json['expiryDate']?.toString() ?? '',
-      priceText: json['value'] ?? '',
+      priceText: json['value']?.toString() ?? '',
       originalPriceText: null,
       pointsText: '${json['pointsRequired'] ?? 0} điểm',
       rating: 4.5,

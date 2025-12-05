@@ -4,60 +4,151 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "vouchers")
+@Table(name = "coupons") // <-- BẢNG THẬT TRONG DB
 public class Voucher {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "voucher_id")
-    private Long voucherId;
+    @Column(name = "coupon_id")
+    private Long voucherId; // FE dùng voucherId
 
     @Column(name = "partner_id", nullable = false)
     private Long partnerId;
 
+    // dùng code làm title hiển thị
+    @Column(name = "code", nullable = false)
     private String title;
+
+    @Column(name = "description")
     private String description;
 
-    // '20%', '30k', 'Gift', 'Combo', ...
-    private String value;
+    @Column(name = "discount_value", nullable = false)
+    private Double value; // số, lát DTO convert sang String
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "usage_limit", nullable = false)
+    private Integer usageLimit; // tổng số lượt dùng
 
-    private Integer quantity;
+    @Column(name = "used_count", nullable = false)
+    private Integer usedCount; // đã dùng bao nhiêu
 
-    @Column(name = "points_required")
-    private Integer pointsRequired;
-
-    @Column(name = "expiry_date")
+    @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
 
-    // getter & setter
+    @Column(name = "is_active", nullable = false)
+    private Boolean active;
 
-    public Long getVoucherId() { return voucherId; }
-    public void setVoucherId(Long voucherId) { this.voucherId = voucherId; }
+    @Column(name = "badge_label")
+    private String badgeLabel;
 
-    public Long getPartnerId() { return partnerId; }
-    public void setPartnerId(Long partnerId) { this.partnerId = partnerId; }
+    @Column(name = "category")
+    private String category; // FOOD / SHOPPING / TRANSPORT / SERVICE
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    // ===== convenience getter =====
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    // Số lượng còn lại
+    @Transient
+    public Integer getQuantity() {
+        if (usageLimit == null)
+            return 0;
+        int used = (usedCount == null ? 0 : usedCount);
+        return usageLimit - used;
+    }
 
-    public String getValue() { return value; }
-    public void setValue(String value) { this.value = value; }
+    // Điểm cần để đổi – demo: lấy bằng discount_value
+    @Transient
+    public Integer getPointsRequired() {
+        if (value == null)
+            return 0;
+        return value.intValue();
+    }
 
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    // ===== getters / setters =====
 
-    public Integer getQuantity() { return quantity; }
-    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public Long getVoucherId() {
+        return voucherId;
+    }
 
-    public Integer getPointsRequired() { return pointsRequired; }
-    public void setPointsRequired(Integer pointsRequired) { this.pointsRequired = pointsRequired; }
+    public void setVoucherId(Long voucherId) {
+        this.voucherId = voucherId;
+    }
 
-    public LocalDate getExpiryDate() { return expiryDate; }
-    public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
+    public Long getPartnerId() {
+        return partnerId;
+    }
+
+    public void setPartnerId(Long partnerId) {
+        this.partnerId = partnerId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Double getValue() {
+        return value;
+    }
+
+    public void setValue(Double value) {
+        this.value = value;
+    }
+
+    public Integer getUsageLimit() {
+        return usageLimit;
+    }
+
+    public void setUsageLimit(Integer usageLimit) {
+        this.usageLimit = usageLimit;
+    }
+
+    public Integer getUsedCount() {
+        return usedCount;
+    }
+
+    public void setUsedCount(Integer usedCount) {
+        this.usedCount = usedCount;
+    }
+
+    public LocalDate getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public String getBadgeLabel() {
+        return badgeLabel;
+    }
+
+    public void setBadgeLabel(String badgeLabel) {
+        this.badgeLabel = badgeLabel;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 }
