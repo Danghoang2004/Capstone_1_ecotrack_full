@@ -55,7 +55,7 @@ class _HomeQuizState extends State<HomeQuiz> {
               onPressed: () {
                 Navigator.pushNamedAndRemoveUntil(
                   context,
-                  '/user_app', // 👉 route về màn user main
+                  '/minigame', // 👉 route về màn user main
                   (route) => false,
                 );
               },

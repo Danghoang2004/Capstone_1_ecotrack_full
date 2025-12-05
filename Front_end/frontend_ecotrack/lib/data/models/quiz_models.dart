@@ -16,7 +16,9 @@ class QuizDetail {
     return QuizDetail(
       id: _asInt(json['id']),
       title: (json['title'] ?? '').toString(),
-      pointsReward: json['pointsReward'] == null ? null : _asInt(json['pointsReward']),
+      pointsReward: json['pointsReward'] == null
+          ? null
+          : _asInt(json['pointsReward']),
       questions: rawQs
           .map((e) => QQuestion.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
@@ -53,11 +55,16 @@ class QQuestion {
           .toList();
     } else if (rawOpts is Map) {
       // chuyển {A:"...",B:"..."} -> List<QOption> và sắp theo A→D
-      opts = (rawOpts as Map)
-          .entries
-          .map((e) => QOption(key: e.key.toString(), text: (e.value ?? '').toString()))
-          .toList()
-        ..sort((a, b) => a.key.compareTo(b.key));
+      opts =
+          (rawOpts as Map).entries
+              .map(
+                (e) => QOption(
+                  key: e.key.toString(),
+                  text: (e.value ?? '').toString(),
+                ),
+              )
+              .toList()
+            ..sort((a, b) => a.key.compareTo(b.key));
     } else {
       opts = const <QOption>[];
     }
@@ -72,7 +79,7 @@ class QQuestion {
 }
 
 class QOption {
-  final String key;   // "A"/"B"/"C"/"D"
+  final String key; // "A"/"B"/"C"/"D"
   final String text;
 
   QOption({required this.key, required this.text});
@@ -126,6 +133,98 @@ class SubmitResponse {
       total: _asInt(json['total']),
       passed: (json['passed'] ?? false) == true,
       correctnessList: list,
+    );
+  }
+}
+
+// ================== QUIZ OVERVIEW / SUMMARY ==================
+
+class QuizOverviewItem {
+  final int quizId;
+  final String title;
+  final bool completed;
+  final int? _percent; // cho phép null bên trong
+  final int? _questionCount;
+  final int? _timeSec;
+  final int? _rewardPoints;
+
+  QuizOverviewItem({
+    required this.quizId,
+    required this.title,
+    required this.completed,
+    int? percent,
+    int? questionCount,
+    int? timeSec,
+    int? rewardPoints,
+  }) : _percent = percent,
+       _questionCount = questionCount,
+       _timeSec = timeSec,
+       _rewardPoints = rewardPoints;
+
+  // ====== fromJson an toàn, tự convert mọi kiểu về int ======
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
+  }
+
+  factory QuizOverviewItem.fromJson(Map<String, dynamic> json) {
+    return QuizOverviewItem(
+      quizId: _toInt(json['quizId']),
+      title: json['title'] as String? ?? '',
+      completed: json['completed'] as bool? ?? false,
+      percent: _toInt(json['percent']),
+      questionCount: 20,
+      timeSec: _toInt(json['timeSec']),
+      rewardPoints: _toInt(json['rewardPoints']),
+    );
+  }
+
+  // ====== getter công khai, luôn trả về int (không null) ======
+
+  int get percent => _percent ?? 0;
+  int get questionCount => _questionCount ?? 0;
+  int get timeSec => _timeSec ?? 0;
+  int get rewardPoints => _rewardPoints ?? 0;
+
+  // Giữ cho code cũ vẫn xài được:
+
+  String get description => '';
+
+  String get difficulty {
+    if (questionCount <= 10) return 'Dễ';
+    if (questionCount <= 15) return 'Trung bình';
+    return 'Khó';
+  }
+
+  int get durationSeconds => timeSec;
+
+  int get correctPercent => percent;
+}
+
+/// Tổng quan cho màn hình Overview (3 ô trên cùng + list quiz)
+class QuizSummary {
+  final int completed;
+  final int total;
+  final int totalPoints;
+  final List<QuizOverviewItem> items;
+
+  QuizSummary({
+    required this.completed,
+    required this.total,
+    required this.totalPoints,
+    required this.items,
+  });
+
+  factory QuizSummary.fromJson(Map<String, dynamic> json) {
+    return QuizSummary(
+      completed: json['completed'] as int,
+      total: json['total'] as int,
+      totalPoints: json['totalPoints'] as int,
+      items: (json['items'] as List<dynamic>)
+          .map((e) => QuizOverviewItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

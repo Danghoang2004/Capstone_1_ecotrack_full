@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  final String baseUrl = 'http://192.168.1.6:8080';
+  final String baseUrl = 'http://192.168.1.4:8080';
   final FlutterSecureStorage storage;
 
   ApiClient({required this.storage});
@@ -113,5 +113,31 @@ class QuizRepository {
     final res = await _api.post('/api/quizzes/$quizId/submit', payload);
     final data = _api.decodeUtf8Json(res);
     return SubmitResponse.fromJson((data as Map).cast<String, dynamic>());
+  }
+}
+
+class QuizOverviewRepository {
+  final ApiClient _api;
+
+  QuizOverviewRepository(this._api);
+
+  Future<List<QuizOverviewItem>> fetchQuizOverview() async {
+    final res = await _api.get(
+      '/api/quizzes/overview',
+    ); // nếu bạn có API list quiz
+    final data = _api.decodeUtf8Json(res);
+
+    return (data as List)
+        .map(
+          (e) => QuizOverviewItem.fromJson((e as Map).cast<String, dynamic>()),
+        )
+        .toList();
+  }
+
+  // ⭐ NEW: gọi API /summary để lấy điểm tích lũy
+  Future<QuizSummary> fetchSummary() async {
+    final res = await _api.get('/api/quizzes/summary');
+    final data = _api.decodeUtf8Json(res);
+    return QuizSummary.fromJson((data as Map).cast<String, dynamic>());
   }
 }

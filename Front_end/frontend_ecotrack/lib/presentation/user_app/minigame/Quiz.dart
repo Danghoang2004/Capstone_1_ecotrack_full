@@ -81,7 +81,17 @@ class _QuizScreenState extends State<QuizScreen> {
   // ================================================
   // CHỌN ĐÁP ÁN
   // ================================================
-  void _choose(String key) => setState(() => selectedKey = key);
+  void _choose(String key) {
+    // ĐÃ HẾT GIỜ → KHÔNG CHO CHỌN
+    // if (_isTimeUp) return;
+
+    // ĐÃ CHỌN RỒI → KHÔNG CHO CHỌN LẠI
+    if (selectedKey != null) return;
+
+    setState(() {
+      selectedKey = key;
+    });
+  }
 
   // ================================================
   // NEXT / SUBMIT
