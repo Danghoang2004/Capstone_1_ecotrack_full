@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
-  final String baseUrl = 'http://192.168.1.116:8080';
+  static const String baseUrl = 'http://192.168.100.5:8080';
   
   final FlutterSecureStorage storage;
 

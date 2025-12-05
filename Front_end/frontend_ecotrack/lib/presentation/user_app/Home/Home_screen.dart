@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
+import 'package:frontend_ecotrack/presentation/user_app/reward/reward_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/App_bar.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -181,15 +182,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icons.videogame_asset_outlined,
                     "Mini Game",
                     "Quizz môi trường",
+                    onTap: () {
+                      // TODO: mở MiniGameScreen khi có
+                    },
                   ),
                   _featureCard(
                     Icons.card_giftcard_outlined,
                     "Đổi thưởng",
                     "Coupon & Ưu đãi",
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RewardScreen()),
+                      );
+                    },
                   ),
                 ],
               ),
-
               const SizedBox(height: 4),
 
               // --- Hoạt động gần đây ---
@@ -421,24 +430,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _featureCard(IconData icon, String title, String subtitle) {
+  Widget _featureCard(
+    IconData icon,
+    String title,
+    String subtitle, {
+    required VoidCallback onTap,
+  }) {
     return Expanded(
-      child: Container(
-        height: 100,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.green.shade100),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.green, size: 30),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            Text(subtitle, style: const TextStyle(fontSize: 12)),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 100,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.green.shade100),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.green, size: 30),
+              const SizedBox(height: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(subtitle, style: const TextStyle(fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );
