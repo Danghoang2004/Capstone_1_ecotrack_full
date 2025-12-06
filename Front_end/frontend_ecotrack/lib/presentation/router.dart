@@ -4,7 +4,7 @@ import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
-import 'package:frontend_ecotrack/presentation/user_app/upload_report/upload_report.dart';
+import 'package:frontend_ecotrack/presentation/user_app/minigame/quiz_overview_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
 import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
@@ -45,6 +45,16 @@ class AppRouter {
       case '/partner_dashboard':
         return MaterialPageRoute(
           builder: (_) => const PartnerDashboardScreen(),
+        );
+      case '/minigame':
+        // chỉ cần userId, quizId sẽ chọn ở màn overview
+        final args = settings.arguments as Map<String, dynamic>?;
+
+        final int userId =
+            (args?['userId'] as int?) ?? 0; // hoặc current user id
+
+        return MaterialPageRoute(
+          builder: (context) => QuizOverviewScreen(userId: userId),
         );
       default:
         return MaterialPageRoute(

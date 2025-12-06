@@ -5,7 +5,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  // IP backend của bạn
   final String baseUrl = dotenv.env['API_BASE_URL']!;
 
   // --- 1. Đăng ký ---

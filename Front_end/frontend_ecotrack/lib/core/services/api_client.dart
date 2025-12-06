@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:frontend_ecotrack/data/models/quiz_models.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -130,5 +131,59 @@ class ApiClient {
 
   dynamic decodeUtf8Json(http.Response response) {
     return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+}
+
+class QuizRepository {
+  // tạo 1 ApiClient dùng chung cho quiz
+  final ApiClient _api = ApiClient(storage: const FlutterSecureStorage());
+
+  Future<QuizDetail> getQuiz(int quizId) async {
+    final http.Response res = await _api.get('/api/quizzes/$quizId');
+
+    if (res.statusCode >= 400) {
+      throw Exception('Lỗi gọi API quiz: ${res.statusCode} - ${res.body}');
+    }
+
+    final data = _api.decodeUtf8Json(res);
+    return QuizDetail.fromJson((data as Map).cast<String, dynamic>());
+  }
+
+  Future<SubmitResponse> submit(int quizId, Map<int, String> answers) async {
+    final payload = {
+      'answers': answers.entries
+          .map((e) => {'questionId': e.key, 'selected': e.value})
+          .toList(),
+    };
+
+    final res = await _api.post('/api/quizzes/$quizId/submit', payload);
+    final data = _api.decodeUtf8Json(res);
+    return SubmitResponse.fromJson((data as Map).cast<String, dynamic>());
+  }
+}
+
+class QuizOverviewRepository {
+  final ApiClient _api;
+
+  QuizOverviewRepository(this._api);
+
+  Future<List<QuizOverviewItem>> fetchQuizOverview() async {
+    final res = await _api.get(
+      '/api/quizzes/overview',
+    ); // nếu bạn có API list quiz
+    final data = _api.decodeUtf8Json(res);
+
+    return (data as List)
+        .map(
+          (e) => QuizOverviewItem.fromJson((e as Map).cast<String, dynamic>()),
+        )
+        .toList();
+  }
+
+  // ⭐ NEW: gọi API /summary để lấy điểm tích lũy
+  Future<QuizSummary> fetchSummary() async {
+    final res = await _api.get('/api/quizzes/summary');
+    final data = _api.decodeUtf8Json(res);
+    return QuizSummary.fromJson((data as Map).cast<String, dynamic>());
   }
 }

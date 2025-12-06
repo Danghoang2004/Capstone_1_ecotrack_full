@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../widgets/header/header.dart';
 import '../widgets/welcome/welcome_card.dart';
@@ -10,7 +9,6 @@ import '../widgets/ranking/ranking_section.dart';
 import '../widgets/recent_activity/recent_activity_section.dart';
 import '../widgets/campaign_takes_place/campaign_takes_place_section.dart';
 import '../widgets/welcome_dialog/welcome_dialog.dart';
-import '../../upload_report/upload_report.dart';
 import '../controllers/home_controller.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -219,7 +217,22 @@ class _HomeScreenState extends State<HomeScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            children: const [MiniGameCard(), SizedBox(width: 12), RewardCard()],
+            children: [
+              MiniGameCard(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/minigame',
+                    arguments: {
+                      'userId':
+                          homeController.profileController.profile?.userId ?? 0,
+                    },
+                  );
+                },
+              ),
+              SizedBox(width: 12),
+              RewardCard(),
+            ],
           ),
         ),
 
@@ -344,8 +357,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
 
                 Row(
-                  children: const [
-                    MiniGameCard(),
+                  children: [
+                    MiniGameCard(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/minigame',
+                          arguments: {
+                            'userId':
+                                homeController
+                                    .profileController
+                                    .profile
+                                    ?.userId ??
+                                0,
+                          },
+                        );
+                      },
+                    ),
                     SizedBox(width: 16),
                     RewardCard(),
                   ],

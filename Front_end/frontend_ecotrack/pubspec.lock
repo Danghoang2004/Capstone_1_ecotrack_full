@@ -786,7 +786,10 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.7"
+<<<<<<< HEAD
 
+=======
+>>>>>>> feature/funtions_user_fulljwt-Quiz_Game
   tuple:
     dependency: transitive
     description:
