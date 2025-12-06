@@ -1,0 +1,12 @@
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+
+    private final UserRepository userRepository;
+
+    public boolean login(LoginRequest request) {
+        return userRepository.findByEmail(request.getEmail())
+                .map(user -> user.getPassword().equals(request.getPassword()))
+                .orElse(false);
+    }
+}

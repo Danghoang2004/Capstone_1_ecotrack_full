@@ -1,0 +1,12 @@
+@RestController
+@RequestMapping("/api/campaigns")
+@RequiredArgsConstructor
+public class CampaignController {
+
+    private final CampaignRepository campaignRepository;
+
+    @GetMapping
+    public List<Campaign> getAll() {
+        return campaignRepository.findAll();
+    }
+}
