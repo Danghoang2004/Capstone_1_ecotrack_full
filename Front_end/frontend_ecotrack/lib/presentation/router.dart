@@ -10,6 +10,7 @@ import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.d
 import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
 import 'auth_user/register_screen.dart';
 
 class AppRouter {
@@ -26,7 +27,9 @@ class AppRouter {
       case '/report':
         return MaterialPageRoute(builder: (_) => const Report_page());
       case '/profile':
-        return MaterialPageRoute(builder: (_) => const ProfileScreen());
+        return MaterialPageRoute(
+          builder: (_) => const ProfileScreen(hideAppBar: false),
+        );
       case '/user_app':
         final showWelcomeDialog = settings.arguments as bool? ?? false;
         return MaterialPageRoute(
@@ -56,6 +59,9 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (context) => QuizOverviewScreen(userId: userId),
         );
+      case '/voucher':
+        return MaterialPageRoute(builder: (_) => const RewardsScreen());
+
       default:
         return MaterialPageRoute(
           builder: (_) =>

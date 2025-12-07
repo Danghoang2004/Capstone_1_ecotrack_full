@@ -58,7 +58,7 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
     screens = [
       HomeScreen(showWelcomeDialog: widget.showWelcomeDialog),
       MapPage(hideAppBar: false), // Mobile: hiển thị AppBar
-      ProfileScreen(),
+      ProfileScreen(hideAppBar: false),
       SettingsScreen(),
       const RankingScreen(hideHeader: false), // Ranking screen
     ];

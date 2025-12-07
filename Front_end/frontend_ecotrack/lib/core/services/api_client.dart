@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'dart:typed_data';
 import 'package:frontend_ecotrack/data/models/quiz_models.dart';
+import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,9 +10,7 @@ import 'package:frontend_ecotrack/core/services/session_service.dart';
 
 class ApiClient {
   final String baseUrl = dotenv.env['API_BASE_URL']!;
-
   final FlutterSecureStorage storage;
-
   ApiClient({required this.storage});
 
   // Helper method để check và handle 401
@@ -185,5 +185,47 @@ class QuizOverviewRepository {
     final res = await _api.get('/api/quizzes/summary');
     final data = _api.decodeUtf8Json(res);
     return QuizSummary.fromJson((data as Map).cast<String, dynamic>());
+  }
+}
+
+class VoucherApi {
+  final ApiClient _client;
+
+  VoucherApi(this._client);
+
+  /// Lấy danh sách voucher từ BE
+  Future<List<RewardItem>> fetchRewards() async {
+    final res = await _client.get('/api/v1/vouchers');
+
+    if (res.statusCode == 200) {
+      final List data = _client.decodeUtf8Json(res);
+      return data.map((e) => RewardItem.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load vouchers: ${res.body}');
+    }
+  }
+
+  /// Gọi API đổi voucher
+  Future<void> redeemVoucher(int voucherId, int userId) async {
+    final res = await _client.post(
+      '/api/v1/vouchers/$voucherId/redeem?userId=$userId',
+      {}, // body rỗng
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception('Redeem failed: ${res.body}');
+    }
+  }
+
+  /// Lấy điểm user cho màn voucher
+  Future<int> fetchUserPoints(int userId) async {
+    final res = await _client.get('/api/v1/vouchers/user/$userId/voucher-page');
+
+    if (res.statusCode == 200) {
+      final Map<String, dynamic> data = _client.decodeUtf8Json(res);
+      return (data['points'] ?? 0) as int;
+    } else {
+      throw Exception('Failed to load user points: ${res.body}');
+    }
   }
 }

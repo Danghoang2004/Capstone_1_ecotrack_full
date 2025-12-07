@@ -231,7 +231,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               SizedBox(width: 12),
-              RewardCard(),
+              RewardCard(
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/voucher',
+                    arguments: {
+                      'userId':
+                          homeController.profileController.profile?.userId ?? 0,
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -375,7 +386,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     SizedBox(width: 16),
-                    RewardCard(),
+                    RewardCard(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/voucher',
+                          arguments: {
+                            'userId':
+                                homeController
+                                    .profileController
+                                    .profile
+                                    ?.userId ??
+                                0,
+                          },
+                        );
+                      },
+                    ),
                   ],
                 ),
               ],
