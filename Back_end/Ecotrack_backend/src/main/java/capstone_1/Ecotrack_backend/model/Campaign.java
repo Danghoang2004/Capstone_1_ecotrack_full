@@ -60,4 +60,6 @@ public class Campaign {
     // --- MỚI: Cột lưu đường dẫn QR Code ---
     @Column(name = "qr_code_url")
     private String qrCodeUrl;
+    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<CampaignParticipant> participants = new java.util.ArrayList<>();
 }

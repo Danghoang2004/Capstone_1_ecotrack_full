@@ -786,7 +786,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.7"
-
   tuple:
     dependency: transitive
     description:
