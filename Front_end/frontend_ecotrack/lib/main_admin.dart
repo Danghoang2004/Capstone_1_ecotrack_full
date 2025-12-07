@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
+import 'package:frontend_ecotrack/core/services/partner_service.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDashboardScreen.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_partner/partner_dashboard_screen.dart';
@@ -28,7 +29,8 @@ class AdminApp extends StatelessWidget {
         // CHỈ CÓ CÁC ROUTES CỦA ADMIN và parter
         '/admin_login': (context) => const AdminLoginScreen(),
         '/admin_dashboard': (context) => const AdminDashboardScreen(),
-        '/partner_dashboard': (context) => const PartnerDashboardScreen(),
+        '/partner_dashboard': (context) =>
+            PartnerDashboardScreen(api: PartnerApi()),
       },
       // Định nghĩa route mặc định
       onGenerateRoute: (settings) {

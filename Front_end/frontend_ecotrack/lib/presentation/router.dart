@@ -30,6 +30,7 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => OtpScreenSingle(email: email));
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screen());
+
       default:
         return MaterialPageRoute(
           builder: (_) =>

@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   // IP backend của bạn
-  final String baseUrl = 'http://192.168.1.89:8080';
+  final String baseUrl = 'http://192.168.1.4:8080';
 
   // --- 1. Đăng ký ---
   Future<Map<String, dynamic>> register(
