@@ -1,0 +1,23 @@
+@RestController
+@RequestMapping("/api/partner/campaigns")
+@RequiredArgsConstructor
+public class PartnerCampaignController {
+
+    private final PartnerCampaignService service;
+
+    @GetMapping("/{partnerId}")
+    public List<SponsoredCampaignDTO> getSponsoredCampaigns(@PathVariable Long partnerId) {
+        return service.getSponsoredCampaigns(partnerId);
+    }
+
+    @PostMapping
+    public SponsorTransaction sponsorCampaign(@RequestBody SponsorTransaction body) {
+        return service.sponsor(body);
+    }
+
+    @PutMapping("/{campaignId}/status")
+    public Campaign updateStatus(@PathVariable Long campaignId,
+                                     @RequestParam String status) {
+        return service.updateCampaignStatus(campaignId, status);
+    }
+}

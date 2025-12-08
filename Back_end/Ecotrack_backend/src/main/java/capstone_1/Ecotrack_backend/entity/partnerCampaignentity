@@ -1,0 +1,15 @@
+@Entity
+@Table(name = "campaign")
+@Data
+public class Campaign {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long campaign_id;
+
+    private String name;
+    private String location;
+    private String start_date;
+    private String end_date;
+    private String status;
+}

@@ -1,0 +1,37 @@
+@Service
+@RequiredArgsConstructor
+public class PartnerCampaignService {
+
+    private final CampaignRepository campaignRepo;
+    private final SponsorTransactionRepository transactionRepo;
+
+    public List<SponsoredCampaignDTO> getSponsoredCampaigns(Long partnerId) {
+        List<SponsorTransaction> transactions =
+                transactionRepo.findByPartnerId(partnerId);
+
+        List<SponsoredCampaignDTO> result = new ArrayList<>();
+
+        for (SponsorTransaction t : transactions) {
+            Campaign c = campaignRepo.findById(t.getCampaign_id()).orElse(null);
+            if (c == null) continue;
+
+            SponsoredCampaignDTO dto = new SponsoredCampaignDTO();
+            dto.setTitle(c.getName());
+            dto.setStatus(c.getStatus());
+            dto.setSubtitle("156 người tham gia   Tài trợ: " + t.getAmount() + "đ");
+            dto.setRoi("300%"); // Tạm giả lập
+            result.add(dto);
+        }
+        return result;
+    }
+
+    public SponsorTransaction sponsor(SponsorTransaction req) {
+        return transactionRepo.save(req);
+    }
+
+    public Campaign updateCampaignStatus(Long id, String status) {
+        Campaign c = campaignRepo.findById(id).orElseThrow();
+        c.setStatus(status);
+        return campaignRepo.save(c);
+    }
+}

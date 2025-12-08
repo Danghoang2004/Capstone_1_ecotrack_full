@@ -1,0 +1,5 @@
+public interface CampaignRepository extends JpaRepository<Campaign, Long> {
+}
+public interface SponsorTransactionRepository extends JpaRepository<SponsorTransaction, Long> {
+    List<SponsorTransaction> findByPartnerId(Long partnerId);
+}

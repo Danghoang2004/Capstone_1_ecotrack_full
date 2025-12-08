@@ -1,0 +1,7 @@
+@Data
+public class SponsoredCampaignDTO {
+    private String title;
+    private String subtitle;
+    private String roi;
+    private String status;
+}

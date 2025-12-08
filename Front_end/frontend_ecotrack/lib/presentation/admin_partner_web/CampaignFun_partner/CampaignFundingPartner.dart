@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 
 void main() {
   runApp(const EcoTrackApp());
+
+public class SponsoredCampaignDTO {
+    private String title;
+    private String subtitle;
+    private String roi;
+    private String status;
 }
+}
+
 
 class EcoTrackApp extends StatelessWidget {
   const EcoTrackApp({super.key});
+
 
   @override
   Widget build(BuildContext context) {

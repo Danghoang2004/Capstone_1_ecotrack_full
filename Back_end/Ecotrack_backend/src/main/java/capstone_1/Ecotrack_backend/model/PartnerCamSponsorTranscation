@@ -1,0 +1,14 @@
+@Entity
+@Table(name = "sponsor_transactions")
+@Data
+public class SponsorTransaction {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long transaction_id;
+
+    private Long partner_id;
+    private Long campaign_id;
+    private Double amount;
+    private String transaction_date;
+}
