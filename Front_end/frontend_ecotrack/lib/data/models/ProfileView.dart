@@ -1,3 +1,5 @@
+// lib/data/models/ProfileView.dart
+
 class ProfileView {
   final int userId;
   final String fullName;
@@ -6,6 +8,10 @@ class ProfileView {
   final String username;
 
   final String? location;
+  final String? phoneNumber; // Mới thêm
+  final String? gender; // Mới thêm (M, F, O)
+  final DateTime? birthDate; // Mới thêm
+
   final String? levelName;
   final String? levelIcon;
 
@@ -28,6 +34,9 @@ class ProfileView {
     required this.email,
     required this.username,
     this.location,
+    this.phoneNumber,
+    this.gender,
+    this.birthDate,
     this.levelName,
     this.levelIcon,
     required this.points,
@@ -49,6 +58,17 @@ class ProfileView {
       email: json['email'] ?? "",
       username: json['username'] ?? "",
       location: json['location'],
+
+      // Map đúng với tên field bên Java trả về
+      // Trong Java bạn đặt là phone_number nên JSON key sẽ là 'phone_number'
+      phoneNumber: json['phone_number'] ?? json['phoneNumber'],
+      gender: json['gender'],
+
+      // Xử lý ngày tháng từ chuỗi yyyy-MM-dd
+      birthDate: json['birthDate'] != null
+          ? DateTime.tryParse(json['birthDate'].toString())
+          : null,
+
       levelName: json['levelName'],
       levelIcon: json['levelIcon'],
       points: json['points'] ?? 0,
@@ -57,16 +77,20 @@ class ProfileView {
       reportCount: json['reportCount'] ?? 0,
       groupCount: json['groupCount'] ?? 0,
       rank: json['rank'],
-      badges: (json['badges'] as List<dynamic>)
-          .map((e) => BadgeModel.fromJson(e))
-          .toList(),
-      recentActivities: (json['recentActivities'] as List<dynamic>)
-          .map((e) => ActivityModel.fromJson(e))
-          .toList(),
+      badges:
+          (json['badges'] as List<dynamic>?)
+              ?.map((e) => BadgeModel.fromJson(e))
+              .toList() ??
+          [],
+      recentActivities:
+          (json['recentActivities'] as List<dynamic>?)
+              ?.map((e) => ActivityModel.fromJson(e))
+              .toList() ??
+          [],
       topRankings: json['topRankings'] != null
           ? (json['topRankings'] as List<dynamic>)
-              .map((e) => TopRankingModel.fromJson(e))
-              .toList()
+                .map((e) => TopRankingModel.fromJson(e))
+                .toList()
           : null,
     );
   }
@@ -99,9 +123,7 @@ class TopRankingModel {
       points: json['points'] ?? 0,
       avatarUrl: json['avatarUrl'],
       location: json['location'],
-      titles: json['titles'] != null
-          ? List<String>.from(json['titles'])
-          : [],
+      titles: json['titles'] != null ? List<String>.from(json['titles']) : [],
     );
   }
 }

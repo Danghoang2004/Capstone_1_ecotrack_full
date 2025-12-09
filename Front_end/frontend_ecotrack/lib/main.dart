@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_ecotrack/presentation/router.dart';
 import 'package:frontend_ecotrack/core/services/session_service.dart';

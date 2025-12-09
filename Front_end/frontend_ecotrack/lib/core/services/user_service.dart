@@ -1,8 +1,10 @@
 // lib/core/services/user_service.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
+import 'package:http/http.dart' as http;
 
 class UserService {
   final FlutterSecureStorage storage = const FlutterSecureStorage();
@@ -94,6 +96,73 @@ class UserService {
       final body = jsonDecode(utf8.decode(response.bodyBytes));
       final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
       throw Exception(error);
+    }
+  }
+
+  Future<void> updateProfileFull({
+    required String fullName,
+    required String location,
+    required String phoneNumber,
+    String? currentPassword,
+    String? newPassword,
+    String? confirmPassword,
+    File? avatarFile,
+  }) async {
+    // SỬA Ở ĐÂY: Lấy baseUrl từ đối tượng apiClient
+    // apiClient.baseUrl là thuộc tính public bạn đã khai báo trong class ApiClient
+    var uri = Uri.parse('${apiClient.baseUrl}/api/user/profile/update');
+
+    var request = http.MultipartRequest('POST', uri);
+
+    // Thêm Token
+    final token = await storage.read(key: 'jwt_token');
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    // Thêm các fields text
+    request.fields['fullName'] = fullName;
+    request.fields['location'] = location;
+    request.fields['phoneNumber'] = phoneNumber;
+
+    if (currentPassword != null && currentPassword.isNotEmpty) {
+      request.fields['currentPassword'] = currentPassword;
+    }
+    if (newPassword != null && newPassword.isNotEmpty) {
+      request.fields['newPassword'] = newPassword;
+    }
+    if (confirmPassword != null && confirmPassword.isNotEmpty) {
+      request.fields['confirmPassword'] = confirmPassword;
+    }
+
+    // Thêm file ảnh (nếu có)
+    if (avatarFile != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'avatar', // Key này phải trùng với @RequestParam("avatar") ở Java
+          avatarFile.path,
+        ),
+      );
+    }
+
+    // Gửi request
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      // Decode để lấy thông báo lỗi chi tiết từ backend
+      String errorMsg = response.body;
+      try {
+        final body = jsonDecode(utf8.decode(response.bodyBytes));
+        if (body is Map && body.containsKey('error')) {
+          errorMsg =
+              body['error']; // Lấy message lỗi cụ thể (ví dụ: "Sai mật khẩu")
+        } else if (body is Map && body.containsKey('message')) {
+          errorMsg = body['message'];
+        }
+      } catch (_) {}
+
+      throw Exception(errorMsg);
     }
   }
 }

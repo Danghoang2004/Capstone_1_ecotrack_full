@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Entity
 @Table(name = "campaigns")
@@ -60,4 +61,8 @@ public class Campaign {
     // --- MỚI: Cột lưu đường dẫn QR Code ---
     @Column(name = "qr_code_url")
     private String qrCodeUrl;
+
+    @OneToMany(mappedBy = "campaign")
+    private List<CampaignParticipant> participants;
+
 }

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
+import 'package:frontend_ecotrack/presentation/user_app/home/widgets/campaign_takes_place/CampaignTakesPlaceSection.dart';
+
 import '../widgets/header/header.dart';
 import '../widgets/welcome/welcome_card.dart';
 import '../widgets/actions/mini_game.dart';
 import '../widgets/actions/reward.dart';
 import '../widgets/ranking/ranking_section.dart';
 import '../widgets/recent_activity/recent_activity_section.dart';
-import '../widgets/campaign_takes_place/campaign_takes_place_section.dart';
 import '../widgets/welcome_dialog/welcome_dialog.dart';
 import '../controllers/home_controller.dart';
 
@@ -91,9 +93,17 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
     final maxContentWidth = isDesktop ? 1200.0 : double.infinity;
-
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: HomeColors.bgHeader, // MÀU HEADER
+        statusBarBrightness: Brightness.light, // iOS
+        statusBarIconBrightness: Brightness.dark, // Android icons đen
+      ),
+    );
     return Scaffold(
-      backgroundColor: isDesktop ? Colors.white : HomeColors.background,
+      backgroundColor: isDesktop
+          ? Colors.white
+          : const Color.fromARGB(255, 255, 255, 255),
       body: SafeArea(
         child: Column(
           children: [
@@ -214,6 +224,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 24),
 
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Đố Vui Và Đổi Thưởng',
+                style: TextStyle(
+                  fontSize: 20, // giống Bảng Xếp Hạng Tuần
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
