@@ -23,6 +23,12 @@ class ApiClient {
     return response;
   }
 
+  String buildImageUrl(String? path) {
+    if (path == null || path.isEmpty) return "";
+    if (path.startsWith("http")) return path;
+    return "$baseUrl$path";
+  }
+
   Future<Map<String, String>> _headers({bool json = true}) async {
     final token = await storage.read(key: 'jwt_token');
 

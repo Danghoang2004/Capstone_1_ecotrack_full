@@ -6,11 +6,13 @@ import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/minigame/quiz_overview_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/edit_profile_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
 import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
+import '../data/models/ProfileView.dart';
 import 'auth_user/register_screen.dart';
 
 class AppRouter {
@@ -61,7 +63,14 @@ class AppRouter {
         );
       case '/voucher':
         return MaterialPageRoute(builder: (_) => const RewardsScreen());
+      case '/editprofile':
+      // 1. Lấy dữ liệu từ arguments và ép kiểu về ProfileView
+        final profile = settings.arguments as ProfileView;
 
+        // 2. Bỏ từ khóa 'const' vì profile là biến động
+        return MaterialPageRoute(
+          builder: (_) => EditProfileScreen(currentProfile: profile),
+        );
       default:
         return MaterialPageRoute(
           builder: (_) =>

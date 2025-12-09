@@ -34,6 +34,9 @@ public class UserProfile {
     @Column(name = "location", length = 150)
     private String location;
 
+    @Column(name = "phone_number")
+    private String phone_number;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "level_id")
     private Level level;
@@ -47,7 +50,7 @@ public class UserProfile {
     public UserProfile() {
     }
 
-    public UserProfile(Long profileId, User user, String fullName, String avatarUrl, Gender gender, LocalDate birthDate, String location, Level level, Integer quizStreak, LocalDate lastQuizDate) {
+    public UserProfile(Long profileId, User user, String fullName, String avatarUrl, Gender gender, LocalDate birthDate, String location, String phone_number, Level level, Integer quizStreak, LocalDate lastQuizDate) {
         this.profileId = profileId;
         this.user = user;
         this.fullName = fullName;
@@ -55,6 +58,7 @@ public class UserProfile {
         this.gender = gender;
         this.birthDate = birthDate;
         this.location = location;
+        this.phone_number = phone_number;
         this.level = level;
         this.quizStreak = quizStreak;
         this.lastQuizDate = lastQuizDate;
@@ -138,5 +142,13 @@ public class UserProfile {
 
     public void setLastQuizDate(LocalDate lastQuizDate) {
         this.lastQuizDate = lastQuizDate;
+    }
+
+    public String getPhone_number() {
+        return phone_number;
+    }
+
+    public void setPhone_number(String phone_number) {
+        this.phone_number = phone_number;
     }
 }

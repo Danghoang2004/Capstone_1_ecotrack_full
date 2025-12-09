@@ -139,6 +139,8 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
             topRight: Radius.circular(15),
           ),
           child: BottomNavigationBar(
+            backgroundColor: Colors.white.withOpacity(0.6), // 👈 sửa tại đây
+            elevation: 0,
             currentIndex: currentIndex,
             onTap: (value) {
               setState(() {
@@ -146,8 +148,6 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
               });
             },
             type: BottomNavigationBarType.fixed,
-            backgroundColor: const Color.fromARGB(255, 160, 231, 124),
-            elevation: 12,
             selectedItemColor: const Color.fromARGB(255, 2, 85, 2),
             unselectedItemColor: Colors.grey,
             selectedFontSize: 12,

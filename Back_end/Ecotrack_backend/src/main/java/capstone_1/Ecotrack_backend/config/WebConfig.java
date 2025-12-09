@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private static final String UPLOAD_DIR = "file:D:/Code/Capstone_1_ecotrack_full/Back_end/Ecotrack_backend/uploads/";
+    private static final String UPLOAD_DIR = "file:D:/project_Capstone_1_full/Back_end/Ecotrack_backend/uploads/";
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

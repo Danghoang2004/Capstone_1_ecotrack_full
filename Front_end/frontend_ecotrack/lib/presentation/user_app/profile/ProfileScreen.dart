@@ -1,5 +1,6 @@
 // lib/presentation/user_app/profile/ProfileScreen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
 import '../../../core/services/user_service.dart' hide UnauthorizedException;
 import 'package:frontend_ecotrack/core/errors/unauthorized_exception.dart';
@@ -127,7 +128,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================== HEADER / APPBAR ===================
 
   SliverAppBar _buildSliverAppBar(ProfileView view) {
-    final hasAvatar = view.avatarUrl.isNotEmpty;
+    final String baseUrl = dotenv.env['API_BASE_URL']!;
+
+    final String? avatarNetworkUrl = view.avatarUrl.isNotEmpty
+        ? '$baseUrl${view.avatarUrl}'
+        : null;
     final displayName = view.fullName.isNotEmpty
         ? view.fullName
         : (view.username.isNotEmpty ? view.username : 'Người dùng');
@@ -187,9 +192,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     onPressed: () {},
                   ),
+                  // Tìm đến nút icon edit của bạn trong ProfileScreen
                   IconButton(
-                    icon: const Icon(Icons.share, color: Colors.white),
-                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                    ), // Thêm color: Colors.white cho nổi
+                    onPressed: () async {
+                      // 'view' chính là dữ liệu profile hiện tại được truyền vào hàm này
+                      // Không cần check null vì view đã là non-nullable trong hàm này
+
+                      // GỌI LỆNH CHUYỂN TRANG
+                      final result = await Navigator.pushNamed(
+                        context,
+                        '/editprofile',
+                        arguments:
+                            view, // <--- SỬA LỖI: Thay _profileData bằng view
+                      );
+
+                      // Xử lý khi quay lại (nếu người dùng đã bấm lưu thành công và trả về true)
+                      if (result == true) {
+                        print("Đã cập nhật profile, đang tải lại dữ liệu...");
+                        // Reload lại dữ liệu bằng cách gọi lại API
+                        setState(() {
+                          _viewFuture = _userService.getProfileView();
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -202,10 +231,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white,
-                  backgroundImage: hasAvatar
-                      ? AssetImage('assets/images/avatar.jpg')
+                  backgroundImage: avatarNetworkUrl != null
+                      ? NetworkImage(avatarNetworkUrl)
                       : null,
-                  child: !hasAvatar
+                  child: avatarNetworkUrl == null
                       ? const Icon(Icons.person, size: 50, color: Colors.grey)
                       : null,
                 ),

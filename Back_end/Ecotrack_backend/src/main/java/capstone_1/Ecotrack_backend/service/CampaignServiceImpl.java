@@ -1,6 +1,7 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.request.CampaignRequestDto;
+import capstone_1.Ecotrack_backend.dto.response.CampaignResponse;
 import capstone_1.Ecotrack_backend.model.Campaign;
 import capstone_1.Ecotrack_backend.model.Partner;
 import capstone_1.Ecotrack_backend.repository.CampaignRepository;
@@ -9,6 +10,8 @@ import capstone_1.Ecotrack_backend.service.CampaignService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class CampaignServiceImpl implements CampaignService {
@@ -67,5 +70,34 @@ public class CampaignServiceImpl implements CampaignService {
         } catch (Exception e) {
             throw new RuntimeException("Lỗi khi tạo QR Code: " + e.getMessage());
         }
+    }
+    public List<CampaignResponse> getActiveCampaigns() {
+        return campaignRepository.findActiveCampaigns().stream()
+                .map(c -> new CampaignResponse(
+                        c.getCampaignId(),
+                        c.getTitle(),
+                        c.getDescription(),
+                        c.getImageUrl(),
+                        c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                        campaignRepository.countParticipants(c.getCampaignId()),
+                        c.getLocationAddress(),
+                        c.getRewardPoints()
+                ))
+                .toList();
+    }
+
+    public List<CampaignResponse> getUpcomingCampaigns() {
+        return campaignRepository.findUpcomingCampaigns().stream()
+                .map(c -> new CampaignResponse(
+                        c.getCampaignId(),
+                        c.getTitle(),
+                        c.getDescription(),
+                        c.getImageUrl(),
+                        c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                        campaignRepository.countParticipants(c.getCampaignId()),
+                        c.getLocationAddress(),
+                        c.getRewardPoints()
+                ))
+                .toList();
     }
 }

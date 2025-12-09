@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend_ecotrack/presentation/user_app/notification/notification_screen.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/profile_controller.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class HeaderWidget extends StatefulWidget {
   final ProfileController controller;
@@ -25,13 +26,25 @@ class _HeaderWidgetState extends State<HeaderWidget> {
     });
   }
 
+  String? get _avatarNetworkUrl {
+    final imageUrl = widget.controller.imageUrl;
+
+    if (imageUrl.isEmpty) return null;
+
+    // backend đã trả full URL → dùng luôn
+    if (imageUrl.startsWith('http')) return imageUrl;
+
+    final baseUrl = dotenv.env['API_BASE_URL']!;
+    return '$baseUrl$imageUrl';
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      // Sửa padding: cộng topPadding vào phần trên của padding
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         color: isDesktop ? Colors.white : HomeColors.bgHeader,
         boxShadow: isDesktop
@@ -106,7 +119,7 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                              const NotificationScreen(), // Thay bằng trang của bạn
+                                  const NotificationScreen(), // Thay bằng trang của bạn
                             ),
                           );
                         },
@@ -156,15 +169,11 @@ class _HeaderWidgetState extends State<HeaderWidget> {
   }
 
   Widget _buildAvatar() {
-    final imageUrl = widget.controller.imageUrl;
-    final hasValidUrl =
-        imageUrl.isNotEmpty &&
-        imageUrl !=
-            'https://hoanghamobile.com/tin-tuc/wp-content/uploads/2024/11/tai-hinh-nen-dep-mien-phi.jpg' &&
-        (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+    final avatarUrl = _avatarNetworkUrl;
 
     Widget avatarWidget;
-    if (!hasValidUrl) {
+
+    if (avatarUrl == null) {
       avatarWidget = CircleAvatar(
         radius: 16,
         backgroundColor: Colors.grey[400],
@@ -174,12 +183,7 @@ class _HeaderWidgetState extends State<HeaderWidget> {
       avatarWidget = CircleAvatar(
         radius: 16,
         backgroundColor: Colors.grey[300],
-        backgroundImage: NetworkImage(imageUrl),
-        onBackgroundImageError: (exception, stackTrace) {
-          if (mounted) {
-            setState(() {});
-          }
-        },
+        backgroundImage: NetworkImage(avatarUrl),
         child: widget.controller.isLoading
             ? const SizedBox(
                 width: 16,

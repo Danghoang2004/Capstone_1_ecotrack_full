@@ -59,11 +59,14 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile userProfile;
 
+    @OneToMany(mappedBy = "user")
+    private Set<CampaignParticipant> campaignParticipants;
+
     // constructors, getters, setters
     public User() {
     }
 
-    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled, Boolean accountNonLocked, Boolean credentialsNonExpired, String verificationCode, boolean isVerified, String providerId, Set<Role> roles, UserProfile userProfile) {
+    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled, Boolean accountNonLocked, Boolean credentialsNonExpired, String verificationCode, boolean isVerified, String providerId, LocalDateTime lastCredentialsUpdate, Set<Role> roles, UserProfile userProfile, Set<CampaignParticipant> campaignParticipants) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -75,8 +78,10 @@ public class User {
         this.verificationCode = verificationCode;
         this.isVerified = isVerified;
         this.providerId = providerId;
+        this.lastCredentialsUpdate = lastCredentialsUpdate;
         this.roles = roles;
         this.userProfile = userProfile;
+        this.campaignParticipants = campaignParticipants;
     }
 
     // getters and setters below...
@@ -190,5 +195,13 @@ public class User {
 
     public void setLastCredentialsUpdate(LocalDateTime lastCredentialsUpdate) {
         this.lastCredentialsUpdate = lastCredentialsUpdate;
+    }
+
+    public Set<CampaignParticipant> getCampaignParticipants() {
+        return campaignParticipants;
+    }
+
+    public void setCampaignParticipants(Set<CampaignParticipant> campaignParticipants) {
+        this.campaignParticipants = campaignParticipants;
     }
 }

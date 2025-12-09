@@ -2,13 +2,17 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.request.RegisterRequest;
+import capstone_1.Ecotrack_backend.dto.request.UpdateProfileRequest;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -67,11 +71,9 @@ public class UserServiceImpl implements UserService {
         return savedUser;
     }
 
-
     private String generateVerificationCode() {
         return String.valueOf(new Random().nextInt(900000) + 100000);
     }
-
 
     public void guiEmailXacThuc(String email, String code) {
         String subject = "Mã xác thực tài khoản EcoTrack";
@@ -92,7 +94,6 @@ public class UserServiceImpl implements UserService {
                 subject,
                 text);
     }
-
 
     @Transactional
     public boolean verifyAccount(String email, String code) {
