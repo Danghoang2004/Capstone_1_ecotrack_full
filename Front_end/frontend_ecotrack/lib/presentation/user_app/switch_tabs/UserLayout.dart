@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/presentation/user_app/Report/ListReport_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Map/Map_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Setting/Setting_page.dart';
@@ -46,6 +47,7 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
   final List<_NavItem> navItems = [
     _NavItem(icon: Icons.home_rounded, label: 'Home'),
     _NavItem(icon: Icons.map, label: 'Map'),
+    _NavItem(icon: Icons.list, label: 'List_Report'),
     _NavItem(icon: Icons.person_rounded, label: 'Profile'),
     _NavItem(icon: Icons.settings, label: 'Setting'),
   ];
@@ -58,6 +60,7 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
     screens = [
       HomeScreen(showWelcomeDialog: widget.showWelcomeDialog),
       MapPage(hideAppBar: false), // Mobile: hiển thị AppBar
+      ListReportPage(),
       ProfileScreen(hideAppBar: false),
       SettingsScreen(),
       const RankingScreen(hideHeader: false), // Ranking screen
@@ -167,6 +170,13 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
                   child: Icon(Icons.map),
                 ),
                 label: 'Map',
+              ),
+              const BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 2),
+                  child: Icon(Icons.list),
+                ),
+                label: 'List Report',
               ),
               const BottomNavigationBarItem(
                 icon: Padding(
