@@ -5,6 +5,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:frontend_ecotrack/core/services/report_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
+import 'package:geolocator/geolocator.dart';
 
 class Report_page extends StatefulWidget {
   const Report_page({super.key});
@@ -128,6 +129,51 @@ class _Report_pageState extends State<Report_page> {
     }
   }
 
+  // --- [MỚI] HÀM LẤY VỊ TRÍ GPS ---
+  Future<Position?> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Kiểm tra GPS có bật không
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng bật định vị (GPS) trên điện thoại'),
+        ),
+      );
+      return null;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quyền truy cập vị trí bị từ chối')),
+        );
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Quyền vị trí bị từ chối vĩnh viễn. Hãy vào Cài đặt để cấp quyền.',
+          ),
+        ),
+      );
+      return null;
+    }
+
+    // Lấy vị trí hiện tại (High accuracy để chính xác nhất)
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+  }
+  // --------------------------------
+
   Future<void> _submitReport() async {
     final descriptionText = descriptionController.text.trim();
 
@@ -162,12 +208,25 @@ class _Report_pageState extends State<Report_page> {
     });
 
     try {
-      // Giả định tọa độ cố định chỉ để mô phỏng
+      // --- [MỚI] GỌI HÀM LẤY VỊ TRÍ ---
+      Position? currentPosition = await _determinePosition();
+
+      // Nếu không lấy được vị trí (do user từ chối hoặc tắt GPS), dừng lại
+      if (currentPosition == null) {
+        setState(() {
+          isSending = false;
+        });
+        return;
+      }
+      // --------------------------------
+
       bool success = await reportService.uploadReport(
         title: "Báo cáo rác thải",
         description: descriptionText,
-        latitude: "10.762622", // Tốt nhất nên lấy tọa độ thực tế
-        longitude: "106.660172", // Tốt nhất nên lấy tọa độ thực tế
+        // --- [MỚI] TRUYỀN TỌA ĐỘ THỰC TẾ ---
+        latitude: currentPosition.latitude.toString(),
+        longitude: currentPosition.longitude.toString(),
+        // -----------------------------------
         status: "PENDING",
         trashCategory: selectedTrashType,
         imagePath: selectedImage!.path,
@@ -192,9 +251,11 @@ class _Report_pageState extends State<Report_page> {
         context,
       ).showSnackBar(SnackBar(content: Text("Lỗi khi gửi: $e")));
     } finally {
-      setState(() {
-        isSending = false;
-      });
+      if (mounted) {
+        setState(() {
+          isSending = false;
+        });
+      }
     }
   }
 
@@ -232,15 +293,10 @@ class _Report_pageState extends State<Report_page> {
         ),
       ),
       body: SingleChildScrollView(
-        // Loại bỏ Padding 8.0 bên ngoài và chuyển vào các widget con
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16.0,
-            vertical: 8.0,
-          ), // Padding tổng thể
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment
-                .stretch, // Quan trọng: các phần tử con chiếm toàn bộ chiều rộng
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildImagePickerSection(),
               const SizedBox(height: 20),
@@ -251,7 +307,7 @@ class _Report_pageState extends State<Report_page> {
               _buildSubmitButton(),
               const SizedBox(height: 15),
               _buildFooter(),
-              const SizedBox(height: 15), // Thêm khoảng cách ở cuối
+              const SizedBox(height: 15),
             ],
           ),
         ),
@@ -259,12 +315,11 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
-  // Loại bỏ 'width: 300' và thay thế bằng 'width: double.infinity' cho Container
   Widget _buildImagePickerSection() {
     return Container(
       padding: const EdgeInsets.all(15),
-      height: 200, // Chiều cao cố định vẫn ổn vì nội dung không thay đổi
-      width: double.infinity, // Chiếm toàn bộ chiều rộng
+      height: 200,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -291,7 +346,6 @@ class _Report_pageState extends State<Report_page> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            // Đảm bảo DottedBorder chiếm hết không gian còn lại
             child: GestureDetector(
               onTap: _pickImage,
               child: DottedBorder(
@@ -320,7 +374,6 @@ class _Report_pageState extends State<Report_page> {
                             ),
                           ],
                         )
-                      // Hiển thị ảnh đã chọn, sử dụng BoxFit.cover để đảm bảo ảnh không bị méo và lấp đầy khung
                       : ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.file(
@@ -339,11 +392,10 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
-  // Loại bỏ 'width: 300' và thay thế bằng 'width: double.infinity' cho Container
   Widget _buildTrashTypeSection() {
     return Container(
       height: 120,
-      width: double.infinity, // Chiếm toàn bộ chiều rộng
+      width: double.infinity,
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -383,18 +435,13 @@ class _Report_pageState extends State<Report_page> {
   Widget _buildTrashTypeButton(String label) {
     final isSelected = selectedTrashType == label;
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 2,
-        vertical: 4,
-      ), // Thêm vertical padding cho nút
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           backgroundColor: isSelected ? Colors.green[200] : Colors.white,
           side: BorderSide(color: isSelected ? Colors.green : Colors.grey),
           minimumSize: const Size(20, 30),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-          ), // Tăng padding ngang
+          padding: const EdgeInsets.symmetric(horizontal: 10),
         ),
         onPressed: () {
           setState(() {
@@ -403,16 +450,12 @@ class _Report_pageState extends State<Report_page> {
         },
         child: Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black,
-          ), // Tăng kích thước chữ
+          style: const TextStyle(fontSize: 12, color: Colors.black),
         ),
       ),
     );
   }
 
-  // Không cần thay đổi width, vì nó đã nằm trong Column với crossAxisAlignment: CrossAxisAlignment.stretch
   Widget _buildDescriptionSection() {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -458,7 +501,7 @@ class _Report_pageState extends State<Report_page> {
             child: TextField(
               controller: descriptionController,
               maxLines: 4,
-              maxLength: 500, // Thêm maxLength để giới hạn input
+              maxLength: 500,
               style: const TextStyle(fontSize: 14, color: Colors.black),
               decoration: const InputDecoration(
                 hintText:
@@ -469,7 +512,6 @@ class _Report_pageState extends State<Report_page> {
                   horizontal: 12,
                   vertical: 10,
                 ),
-                // Sử dụng helperText để hiển thị giới hạn ký tự
                 helperText: "(tối đa 500 ký tự)",
                 helperStyle: TextStyle(fontSize: 10, color: Colors.grey),
               ),
@@ -480,7 +522,6 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
-  // Nút gửi đã được thiết lập `minimumSize: const Size(double.infinity, 40)` nên không cần chỉnh sửa.
   Widget _buildSubmitButton() {
     return ElevatedButton.icon(
       onPressed: isSending ? null : _submitReport,
@@ -495,10 +536,7 @@ class _Report_pageState extends State<Report_page> {
             )
           : const Icon(Icons.file_upload_outlined, color: Colors.white),
       style: ElevatedButton.styleFrom(
-        minimumSize: const Size(
-          double.infinity,
-          48,
-        ), // Tăng chiều cao lên 48 cho chuẩn
+        minimumSize: const Size(double.infinity, 48),
         backgroundColor: isSending
             ? Colors.grey
             : const Color.fromARGB(255, 94, 185, 103),
@@ -515,11 +553,10 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
-  // Loại bỏ 'width: 300' và thay thế bằng 'width: double.infinity' cho Container
   Widget _buildFooter() {
     return Container(
       height: 80,
-      width: double.infinity, // Chiếm toàn bộ chiều rộng
+      width: double.infinity,
       decoration: BoxDecoration(
         color: const Color.fromARGB(255, 223, 236, 213),
         borderRadius: BorderRadius.circular(20),

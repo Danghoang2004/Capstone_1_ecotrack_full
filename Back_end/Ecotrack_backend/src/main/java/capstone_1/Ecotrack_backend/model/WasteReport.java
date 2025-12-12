@@ -39,26 +39,40 @@ public class WasteReport {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "ai_verified")
+    private Boolean aiVerified;
+
+    @Column(name = "ai_confidence")
+    private Double aiConfidence;
+
+    @Column(name = "ai_analysis_json", columnDefinition = "TEXT")
+    private String aiAnalysisJson;
+
+    @Column(name = "ai_analyzed_image_url")
+    private String aiAnalyzedImageUrl;
+
     public enum Status {
-        PENDING,
-        VERIFIED,
-        REJECTED
+        PENDING, VERIFIED, REJECTED, CLEANED
     }
 
     public WasteReport() {
     }
 
-    public WasteReport(Long reportId, Long userId, String title, String description, BigDecimal gpsLat, BigDecimal gpsLong, String imageUrl, String category, Status status, LocalDateTime createdAt) {
+    public WasteReport(Long reportId, Long userId, String title, String description, BigDecimal gpsLat, String imageUrl, BigDecimal gpsLong, String category, Status status, LocalDateTime createdAt, Boolean aiVerified, Double aiConfidence, String aiAnalysisJson, String aiAnalyzedImageUrl) {
         this.reportId = reportId;
         this.userId = userId;
         this.title = title;
         this.description = description;
         this.gpsLat = gpsLat;
-        this.gpsLong = gpsLong;
         this.imageUrl = imageUrl;
+        this.gpsLong = gpsLong;
         this.category = category;
         this.status = status;
         this.createdAt = createdAt;
+        this.aiVerified = aiVerified;
+        this.aiConfidence = aiConfidence;
+        this.aiAnalysisJson = aiAnalysisJson;
+        this.aiAnalyzedImageUrl = aiAnalyzedImageUrl;
     }
 
     public Long getReportId() {
@@ -139,5 +153,37 @@ public class WasteReport {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getAiVerified() {
+        return aiVerified;
+    }
+
+    public void setAiVerified(Boolean aiVerified) {
+        this.aiVerified = aiVerified;
+    }
+
+    public Double getAiConfidence() {
+        return aiConfidence;
+    }
+
+    public void setAiConfidence(Double aiConfidence) {
+        this.aiConfidence = aiConfidence;
+    }
+
+    public String getAiAnalysisJson() {
+        return aiAnalysisJson;
+    }
+
+    public void setAiAnalysisJson(String aiAnalysisJson) {
+        this.aiAnalysisJson = aiAnalysisJson;
+    }
+
+    public String getAiAnalyzedImageUrl() {
+        return aiAnalyzedImageUrl;
+    }
+
+    public void setAiAnalyzedImageUrl(String aiAnalyzedImageUrl) {
+        this.aiAnalyzedImageUrl = aiAnalyzedImageUrl;
     }
 }

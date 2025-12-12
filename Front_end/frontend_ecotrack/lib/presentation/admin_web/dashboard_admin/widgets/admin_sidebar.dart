@@ -4,12 +4,13 @@ class AdminSidebar extends StatefulWidget {
   final String selectedMenu;
   final VoidCallback? onLogout;
   final bool isMobile;
-
+  final Function(String)? onNavigate;
   const AdminSidebar({
     super.key,
     required this.selectedMenu,
     this.onLogout,
     this.isMobile = false,
+    this.onNavigate,
   });
 
   @override
@@ -59,7 +60,9 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(
+                      color: const Color.fromARGB(255, 255, 255, 255),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -149,9 +152,25 @@ class _AdminSidebarState extends State<AdminSidebar> {
                 _MenuItem(
                   icon: Icons.people_outline,
                   label: 'Quản lý người dùng',
-                  isSelected: true,
+                  isSelected: widget.selectedMenu == 'users', // Logic chọn menu
                   isCollapsed: isCollapsed,
-                  onTap: () {},
+                  onTap: () => widget.onNavigate?.call(
+                    'users',
+                  ), // Gọi callback chuyển trang
+                ),
+                _MenuItem(
+                  icon: Icons.assignment_outlined, // Icon báo cáo
+                  label: 'Quản lý báo cáo',
+                  isSelected: widget.selectedMenu == 'reports',
+                  isCollapsed: isCollapsed,
+                  onTap: () => widget.onNavigate?.call('reports'),
+                ),
+                _MenuItem(
+                  icon: Icons.map_outlined, // Icon bản đồ
+                  label: 'Bản đồ rác thải',
+                  isSelected: widget.selectedMenu == 'map',
+                  isCollapsed: isCollapsed,
+                  onTap: () => widget.onNavigate?.call('map'),
                 ),
               ],
             ),
