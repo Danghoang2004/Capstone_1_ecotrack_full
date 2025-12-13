@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final String baseUrl = dotenv.env['API_BASE_URL']!;
+
   // --- 1. Đăng ký ---
   Future<Map<String, dynamic>> register(
     String email,
@@ -171,5 +172,15 @@ class AuthService {
       }
     }
     return [];
+  }
+
+  // Lấy username đã lưu sau khi login
+  Future<String?> getUsername() async {
+    return await _storage.read(key: 'username');
+  }
+
+  // Lấy email đã lưu sau khi login
+  Future<String?> getEmail() async {
+    return await _storage.read(key: 'email');
   }
 }

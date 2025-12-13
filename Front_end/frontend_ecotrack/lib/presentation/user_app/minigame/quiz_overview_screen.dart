@@ -88,7 +88,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: _buildBottomBar(),
+          // bottomNavigationBar: _buildBottomBar(),
         );
       },
     );
@@ -97,53 +97,75 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
   // ================= HEADER =================
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(1, 13, 40, 17),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      width: double.infinity,
       decoration: const BoxDecoration(
         color: Color(0xFF00994D),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // NÚT THOÁT
-          IconButton(
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Colors.white,
-              size: 16,
-            ),
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/user_app', // route màn hình chính user
-                (route) => false,
-              );
-            },
-          ),
-
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EcoTrack',
-                  style: TextStyle(
+      child: SafeArea(
+        bottom: false, // Không cần padding dưới cho SafeArea
+        child: Padding(
+          padding: const EdgeInsets.only(
+            top: 10,
+          ), // Thêm chút khoảng cách từ status bar xuống
+          child: Row(
+            // 👇 QUAN TRỌNG: Căn giữa theo chiều dọc
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // NÚT THOÁT
+              Transform.translate(
+                offset: const Offset(
+                  -10,
+                  0,
+                ), // Dịch sang trái 5 đơn vị (x = -5)
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
                     color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    size: 20,
                   ),
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/user_app',
+                      (route) => false,
+                    );
+                  },
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Bảo vệ môi trường cùng nhau',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+              const Expanded(
+                child: Column(
+                  // 👇 QUAN TRỌNG: Co cụm chiều cao cột lại vừa đủ nội dung
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'EcoTrack',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2, // Điều chỉnh dòng để chữ không bị lệch
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Bảo vệ môi trường cùng nhau',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -351,32 +373,32 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
   }
 
   // =============== BOTTOM BAR (chỉ là UI giống hình) ===============
-  Widget _buildBottomBar() {
-    return Container(
-      height: 60,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: const [
-          _BottomItem(icon: Icons.campaign, label: 'Chiến dịch', active: false),
-          _BottomItem(
-            icon: Icons.emoji_events,
-            label: 'Huy hiệu',
-            active: false,
-          ),
-          _BottomItem(icon: Icons.menu_book, label: 'Kiến thức', active: true),
-        ],
-      ),
-    );
-  }
+  // Widget _buildBottomBar() {
+  //   return Container(
+  //     height: 60,
+  //     decoration: const BoxDecoration(
+  //       color: Colors.white,
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black12,
+  //           blurRadius: 8,
+  //           offset: Offset(0, -2),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Row(
+  //       children: const [
+  //         _BottomItem(icon: Icons.campaign, label: 'Chiến dịch', active: false),
+  //         _BottomItem(
+  //           icon: Icons.emoji_events,
+  //           label: 'Huy hiệu',
+  //           active: false,
+  //         ),
+  //         _BottomItem(icon: Icons.menu_book, label: 'Kiến thức', active: true),
+  //       ],
+  //     ),
+  //   );
+  // }
 }
 
 // ======================= WIDGET PHỤ =======================

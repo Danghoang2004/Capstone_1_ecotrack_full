@@ -6,7 +6,6 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Trả về trực tiếp AdminLayout
     return const AdminLayout();
   }
 }

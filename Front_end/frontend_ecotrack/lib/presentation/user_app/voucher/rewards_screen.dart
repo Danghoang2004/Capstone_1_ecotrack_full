@@ -116,10 +116,10 @@ class _RewardsScreenState extends State<RewardsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: Colors.green.shade100,
+        backgroundColor: const Color.fromARGB(255, 30, 139, 34),
         elevation: 0,
         automaticallyImplyLeading: false,
-        toolbarHeight: 40,
+        toolbarHeight: 55,
         titleSpacing: 0,
         title: Padding(
           padding: const EdgeInsets.only(left: 0.1, right: 5),

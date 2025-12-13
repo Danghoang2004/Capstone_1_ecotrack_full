@@ -1,9 +1,9 @@
-import 'dart:io'; // Import để dùng File
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:image_picker/image_picker.dart'; // Import thư viện chọn ảnh
+import 'package:image_picker/image_picker.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final ProfileView currentProfile;
@@ -169,7 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       backgroundColor: bgGrey,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: primaryGreen,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(

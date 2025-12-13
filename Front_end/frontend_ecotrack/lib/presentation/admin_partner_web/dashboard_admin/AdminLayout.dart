@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+// --- IMPORT CÁC WIDGET CỦA BẠN ---
+import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDarhboard_data.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminMapPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminReportPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_management/screens/user_management_screen.dart';
+import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_header.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_sidebar.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -13,33 +16,55 @@ class AdminLayout extends StatefulWidget {
 }
 
 class _AdminLayoutState extends State<AdminLayout> {
-  // Mặc định vào trang users
-  String _selectedMenu = 'users';
+  String _selectedMenu = 'dashboard';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      backgroundColor: Colors.white,
+      // SỬ DỤNG COLUMN ĐỂ HEADER NẰM TRÊN CÙNG
+      body: Column(
         children: [
-          // Sidebar
-          AdminSidebar(
-            selectedMenu: _selectedMenu,
-            onNavigate: (menu) {
-              debugPrint(
-                "ADMIN CLICK MENU: $menu",
-              ); // Xem log này trong Console
-              setState(() {
-                _selectedMenu = menu;
-              });
-            },
-          ),
+          // -----------------------------------------------------------
+          // 1. HEADER (NẰM TRÊN CÙNG - FULL WIDTH)
+          // -----------------------------------------------------------
+          const AdminHeader(),
 
-          // Nội dung chính
+          // -----------------------------------------------------------
+          // 2. BODY (SIDEBAR + CONTENT)
+          // Dùng Expanded để phần này chiếm toàn bộ chiều cao còn lại
+          // -----------------------------------------------------------
           Expanded(
-            // Dùng KeyedSubtree để buộc vẽ lại khi menu đổi
-            child: KeyedSubtree(
-              key: ValueKey(_selectedMenu),
-              child: _buildContent(),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // A. SIDEBAR (BÊN TRÁI)
+                AdminSidebar(
+                  selectedMenu: _selectedMenu,
+                  onNavigate: (menu) {
+                    setState(() {
+                      _selectedMenu = menu;
+                    });
+                  },
+                  onLogout: () {
+                    print("Logout clicked");
+                  },
+                ),
+
+                // B. CONTENT (BÊN PHẢI - GIÃN NỞ)
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    height: double
+                        .infinity, // Đảm bảo full chiều cao khớp với sidebar
+                    color: const Color(0xFFF5F7FA), // Màu nền nội dung
+                    child: KeyedSubtree(
+                      key: ValueKey(_selectedMenu),
+                      child: _buildContent(),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -49,14 +74,16 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   Widget _buildContent() {
     switch (_selectedMenu) {
-      case 'users':
+      case "dashboard":
+        return const AdminDashboardDataScreen();
+      case "users":
         return const UserManagementScreen();
-      case 'reports':
+      case "reports":
         return const AdminReportPage();
-      case 'map':
+      case "map":
         return const AdminMapPage();
       default:
-        return Center(child: Text("Menu '$_selectedMenu' không tồn tại"));
+        return const Center(child: Text("Chức năng đang phát triển"));
     }
   }
 }

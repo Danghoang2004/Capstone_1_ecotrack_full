@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
-import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/App_bar.dart';
+import 'package:frontend_ecotrack/presentation/user_app/Home/controllers/profile_controller.dart';
+
+import 'package:frontend_ecotrack/presentation/user_app/Home/widgets/header/header.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool hideAppBar;
@@ -12,9 +14,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // trạng thái mẫu cho switches / dropdown
+  // 1. KHỞI TẠO CONTROLLER (Sửa lỗi Undefined name 'controller')
+  final ProfileController _profileController = ProfileController();
+
+  // Trạng thái mẫu cho switches / dropdown
   bool thongBao = true;
-  bool thongBaoEmail = true;
   bool thongbaoPush = true;
   bool amThanh = true;
   bool cheDoToi = false;
@@ -22,7 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   final List<String> languages = ['Tiếng Việt', 'English'];
 
-  // helper: card box decoration
+  // Helper: card box decoration
   BoxDecoration cardDecoration() => BoxDecoration(
     color: Colors.white,
     borderRadius: BorderRadius.circular(12),
@@ -34,32 +38,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     ],
   );
-
-  Widget sectionTitle(String title, {String? subtitle}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1B5E20),
-          ),
-        ),
-        if (subtitle != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.black.withOpacity(0.5),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
 
   Widget settingRow({
     required Widget leading,
@@ -90,339 +68,299 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final edge = 18.0;
+
     return Scaffold(
-      appBar: widget.hideAppBar ? null : CustomAppBar(),
+      backgroundColor: const Color(0xFFF5F7FA), // Màu nền nhẹ cho toàn màn hình
+      // BỎ APPBAR, DÙNG BODY VỚI COLUMN
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: edge),
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            children: [
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  'Quản lý cài đặt ứng dụng của bạn',
-                  style: TextStyle(
-                    color: const Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
+        child: Column(
+          children: [
+            // 2. HEADER WIDGET (Nằm trên cùng của Column)
+            if (!widget.hideAppBar)
+              HeaderWidget(controller: _profileController),
 
-              // Thông báo card
-              Container(
-                decoration: cardDecoration(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            // 3. PHẦN NỘI DUNG CÀI ĐẶT (Cuộn được)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: edge),
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
                   children: [
-                    settingRow(
-                      leading: const Icon(
-                        Icons.notifications_active,
-                        color: Color(0xFF2E7D32),
-                      ),
-                      title: const Text(
-                        'Thông báo',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    dividerThin(),
-                    settingRow(
-                      leading: const Icon(
-                        Icons.notifications,
-                        color: Color(0xFF2E7D32),
-                      ),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Bật Thông Báo',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Nhận thông báo từ ứng dụng',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      trailing: Switch(
-                        value: thongBao,
-                        onChanged: (v) => setState(() => thongBao = v),
-                        activeColor: Colors.white,
-                        activeTrackColor: const Color(0xFF2E7D32),
-                      ),
-                    ),
-                    dividerThin(),
-                    settingRow(
-                      leading: const Icon(
-                        Icons.email,
-                        color: Color(0xFF2E7D32),
-                      ),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Thông Báo Email',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Nhận cập nhật qua email',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      trailing: Switch(
-                        value: thongBaoEmail,
-                        onChanged: (v) => setState(() => thongBaoEmail = v),
-                        activeTrackColor: const Color(0xFF2E7D32),
-                      ),
-                    ),
-                    dividerThin(),
-                    settingRow(
-                      leading: const Icon(
-                        Icons.push_pin,
-                        color: Color(0xFF2E7D32),
-                      ),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Thông Báo Push',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Nhận thông báo push trên thiết bị',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      trailing: Switch(
-                        value: thongbaoPush,
-                        onChanged: (v) => setState(() => thongbaoPush = v),
-                        activeTrackColor: const Color(0xFF2E7D32),
-                      ),
-                    ),
-                    dividerThin(),
-                    settingRow(
-                      leading: const Icon(
-                        Icons.volume_up,
-                        color: Color(0xFF2E7D32),
-                      ),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Âm Thanh',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Bật âm thanh cho thông báo',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      trailing: Switch(
-                        value: amThanh,
-                        onChanged: (v) => setState(() => amThanh = v),
-                        activeTrackColor: const Color(0xFF2E7D32),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                    const SizedBox(height: 16),
 
-              const SizedBox(height: 18),
-
-              // Hiển thị & ngôn ngữ
-              Container(
-                decoration: cardDecoration(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Column(
-                  children: [
-                    settingRow(
-                      leading: const Icon(
-                        Icons.language,
-                        color: Color(0xFF2E7D32),
+                    // --- PHẦN 1: THÔNG BÁO ---
+                    Container(
+                      decoration: cardDecoration(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
                       ),
-                      title: Column(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Hiển Thị & Ngôn Ngữ',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                        children: [
+                          settingRow(
+                            leading: const Icon(
+                              Icons.notifications,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Bật Thông Báo',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Nhận thông báo từ ứng dụng',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: Switch(
+                              value: thongBao,
+                              onChanged: (v) => setState(() => thongBao = v),
+                              activeColor: Colors.white,
+                              activeTrackColor: const Color(0xFF2E7D32),
+                            ),
+                          ),
+                          dividerThin(),
+                          settingRow(
+                            leading: const Icon(
+                              Icons.push_pin,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Thông Báo Push',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Nhận thông báo push trên thiết bị',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: Switch(
+                              value: thongbaoPush,
+                              onChanged: (v) =>
+                                  setState(() => thongbaoPush = v),
+                              activeTrackColor: const Color(0xFF2E7D32),
+                            ),
+                          ),
+                          dividerThin(),
+                          settingRow(
+                            leading: const Icon(
+                              Icons.volume_up,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Âm Thanh',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Bật âm thanh cho thông báo',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: Switch(
+                              value: amThanh,
+                              onChanged: (v) => setState(() => amThanh = v),
+                              activeTrackColor: const Color(0xFF2E7D32),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    dividerThin(),
-                    settingRow(
-                      leading: const Icon(
-                        Icons.translate,
-                        color: Color(0xFF2E7D32),
+
+                    const SizedBox(height: 18),
+
+                    // --- PHẦN 2: HIỂN THỊ & NGÔN NGỮ ---
+                    Container(
+                      decoration: cardDecoration(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
                       ),
-                      title: const Text(
-                        'Ngôn Ngữ',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: ngonNgu,
-                            items: languages
-                                .map(
-                                  (e) => DropdownMenuItem(
-                                    value: e,
-                                    child: Text(e),
+                      child: Column(
+                        children: [
+                          settingRow(
+                            leading: const Icon(
+                              Icons.language,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Hiển Thị & Ngôn Ngữ',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                )
-                                .toList(),
-                            onChanged: (v) =>
-                                setState(() => ngonNgu = v ?? ngonNgu),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ),
-                    ),
-                    dividerThin(),
-                    settingRow(
-                      leading: const Icon(
-                        Icons.dark_mode,
-                        color: Color(0xFF2E7D32),
-                      ),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Chế Độ Tối',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          dividerThin(),
+                          settingRow(
+                            leading: const Icon(
+                              Icons.translate,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            title: const Text(
+                              'Ngôn Ngữ',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: ngonNgu,
+                                  items: languages
+                                      .map(
+                                        (e) => DropdownMenuItem(
+                                          value: e,
+                                          child: Text(e),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setState(() => ngonNgu = v ?? ngonNgu),
+                                ),
+                              ),
+                            ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Bật giao diện tối',
-                            style: TextStyle(fontSize: 12),
+                          dividerThin(),
+                          settingRow(
+                            leading: const Icon(
+                              Icons.dark_mode,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Chế Độ Tối',
+                                  style: TextStyle(fontWeight: FontWeight.w600),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Bật giao diện tối',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: Switch(
+                              value: cheDoToi,
+                              onChanged: (v) => setState(() => cheDoToi = v),
+                              activeTrackColor: const Color(0xFF2E7D32),
+                            ),
                           ),
                         ],
                       ),
-                      trailing: Switch(
-                        value: cheDoToi,
-                        onChanged: (v) => setState(() => cheDoToi = v),
-                        activeTrackColor: const Color(0xFF2E7D32),
-                      ),
                     ),
-                  ],
-                ),
-              ),
 
-              const SizedBox(height: 18),
+                    const SizedBox(height: 18),
 
-              // Bảo mật
-              Container(
-                decoration: cardDecoration(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 18,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Bảo Mật',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    // --- PHẦN 3: TÀI KHOẢN & BẢO MẬT (Chứa Đăng Xuất) ---
+                    Container(
+                      decoration: cardDecoration(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 18,
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: xử lý đổi mật khẩu
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Tài Khoản & Bảo Mật',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Đổi Mật Khẩu',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
+                          const SizedBox(height: 20),
+
+                          // Nút Đăng Xuất
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                await AuthService().logout(); // Xoá JWT
+                                if (!mounted) return;
+
+                                // Chuyển về trang login
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  '/login',
+                                  (route) => false,
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.logout,
+                                color: Color.fromARGB(255, 243, 243, 243),
+                              ), // Icon màu đỏ
+                              label: const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 14.0),
+                                child: Text(
+                                  'Đăng xuất',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Color.fromARGB(255, 255, 255, 255),
+                                    fontWeight: FontWeight.bold,
+                                  ), // Chữ màu đỏ
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromARGB(
+                                  255,
+                                  196,
+                                  17,
+                                  44,
+                                ), // Nền đỏ rất nhạt
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: const BorderSide(
+                                    color: Color.fromARGB(255, 190, 18, 36),
+                                  ), // Viền đỏ nhạt
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Đăng xuất tài khoản ra khỏi ứng dụng Ecotrack',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Cập nhật mật khẩu của bạn để bảo vệ tài khoản',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.black.withOpacity(0.6),
-                      ),
-                    ),
+
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 18),
-
-              // Logout button (đỏ)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    await AuthService().logout(); // Xoá JWT khỏi local
-
-                    if (!mounted) return;
-
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/login',
-                      (route) => false,
-                    );
-                  },
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 14.0),
-                    child: Text(
-                      'Đăng xuất',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD32F2F),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 32),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
