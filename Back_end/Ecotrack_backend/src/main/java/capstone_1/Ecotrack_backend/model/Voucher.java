@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "coupons") // <-- BẢNG THẬT TRONG DB
+@Table(name = "coupons")
 public class Voucher {
 
     @Id
@@ -43,7 +43,8 @@ public class Voucher {
     @Column(name = "category")
     private String category; // FOOD / SHOPPING / TRANSPORT / SERVICE
 
-    // ===== convenience getter =====
+    @Column(name = "thumbnail_url", length = 255)
+    private String thumbnailUrl;
 
     // Số lượng còn lại
     @Transient
@@ -62,7 +63,6 @@ public class Voucher {
         return value.intValue();
     }
 
-    // ===== getters / setters =====
 
     public Long getVoucherId() {
         return voucherId;
@@ -150,5 +150,11 @@ public class Voucher {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 }

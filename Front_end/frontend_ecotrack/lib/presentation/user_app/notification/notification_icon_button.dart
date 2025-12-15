@@ -9,16 +9,11 @@ class NotificationIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: const Icon(
-        Icons.notifications_none_rounded,
-        color: Colors.black87,
-      ),
+      icon: const Icon(Icons.notifications_none_rounded, color: Colors.black87),
       onPressed: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const NotificationScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const NotificationScreen()),
         );
       },
     );

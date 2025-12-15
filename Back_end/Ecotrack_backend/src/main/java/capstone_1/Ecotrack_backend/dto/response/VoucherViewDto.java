@@ -15,7 +15,7 @@ public class VoucherViewDto {
     private String partnerName;
     private String partnerLogoUrl;
 
-    private String category; // <-- THÊM
+    private String category;
 
     // getters / setters
 

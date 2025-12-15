@@ -55,7 +55,7 @@ public class VoucherService {
                     // điểm cần đổi: ưu tiên getter getPointsRequired() nếu có, fallback
                     // discount_value
                     dto.setPointsRequired(calculatePointsRequired(v));
-
+                    dto.setImageUrl(v.getThumbnailUrl());
                     dto.setExpiryDate(v.getExpiryDate());
 
                     // gửi category lên FE: FOOD / SHOPPING / TRANSPORT / SERVICE

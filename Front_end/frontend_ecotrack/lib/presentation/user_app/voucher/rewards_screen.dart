@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
-import 'package:frontend_ecotrack/core/services/auth_service.dart';
-import 'package:frontend_ecotrack/core/services/user_service.dart'; // nhớ sửa đúng package cho project bạn
+import 'package:frontend_ecotrack/core/services/user_service.dart';
 
 const Color primaryGreen = Color(0xFF06923E);
 
@@ -20,12 +19,12 @@ class _RewardsScreenState extends State<RewardsScreen> {
   final storage = const FlutterSecureStorage();
   final UserService _userService = UserService();
 
-  int? _currentUserId; // ❌ bỏ final int = 1, để nullable
+  int? _currentUserId;
   int _userPoints = 0;
-  // ====== STATE DÙNG CHO FILTER ======
+
   List<RewardItem> _allRewards = [];
   List<RewardItem> _displayRewards = [];
-  String _selectedCategory = 'ALL'; // ALL / FOOD / SHOPPING / TRAVEL / SERVICE
+  String _selectedCategory = 'ALL';
   bool _loading = true;
   String? _error;
 
@@ -35,62 +34,65 @@ class _RewardsScreenState extends State<RewardsScreen> {
     apiClient = ApiClient(storage: storage);
     api = VoucherApi(apiClient);
     _initData();
-    _loadRewards();
-    _loadUserPoints();
   }
 
   Future<void> _initData() async {
     try {
-      // 1. Gọi API profile: /api/user/profile
       final profile = await _userService.getProfileView();
-
-      setState(() {
-        _currentUserId = profile.userId;
-        _userPoints = profile.points; // điểm ban đầu từ profile
-      });
-
-      // 2. Sau khi có userId → load vouchers + điểm voucher-page
+      if (mounted) {
+        setState(() {
+          _currentUserId = profile.userId;
+          _userPoints = profile.points;
+        });
+      }
       await _loadRewards();
-      await _loadUserPoints();
     } catch (e) {
-      setState(() {
-        _error = 'Lỗi tải dữ liệu: $e';
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Lỗi tải dữ liệu: $e';
+          _loading = false;
+        });
+      }
     }
   }
 
   Future<void> _loadUserPoints() async {
     try {
       final profile = await _userService.getProfileView();
-
-      setState(() {
-        _currentUserId = profile.userId; // lấy userId từ BE
-        _userPoints = profile.points; // điểm hiện tại
-      });
+      if (mounted) {
+        setState(() {
+          _currentUserId = profile.userId;
+          _userPoints = profile.points;
+        });
+      }
     } catch (e) {
-      print("Lỗi load điểm: $e");
+      debugPrint("Lỗi load điểm: $e");
     }
   }
 
   Future<void> _loadRewards() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final list = await api.fetchRewards(); // gọi API BE
-      setState(() {
-        _allRewards = list;
-        _applyFilter(); // áp dụng filter hiện tại
-        _loading = false;
-      });
+      final list = await api.fetchRewards();
+      if (mounted) {
+        setState(() {
+          _allRewards = list;
+          _applyFilter();
+          _loading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -127,9 +129,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 4),
               const Text(
@@ -201,13 +201,12 @@ class _RewardsScreenState extends State<RewardsScreen> {
       itemCount: _displayRewards.length,
       itemBuilder: (context, index) {
         final r = _displayRewards[index];
-
         return Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: RewardCard(
             tagText: r.tagText,
             tagColor: r.tagColor,
-            imagePlaceholder: r.imageIcon,
+            imageUrl: r.imageUrl, // Sử dụng imageUrl thay vì icon
             title: r.title,
             subtitle: r.subtitle,
             partnerName: r.partnerName,
@@ -220,17 +219,14 @@ class _RewardsScreenState extends State<RewardsScreen> {
             showRating: r.showRating,
             onRedeem: () async {
               try {
-                // tốt nhất là dùng voucherId từ BE
                 if (_currentUserId == null) return;
-
                 await api.redeemVoucher(r.voucherId, _currentUserId!);
-
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Đổi voucher thành công')),
                 );
                 _loadRewards();
-                _loadUserPoints(); // load lại list sau khi đổi
+                _loadUserPoints();
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(
@@ -245,7 +241,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
   }
 }
 
-/// Hàng filter loại voucher
+// ... _CategoryFilterRow và _CategoryFixedItem giữ nguyên ...
 class _CategoryFilterRow extends StatelessWidget {
   final String selectedCategory;
   final ValueChanged<String> onChanged;
@@ -287,7 +283,6 @@ class _CategoryFilterRow extends StatelessWidget {
           children: items.map((item) {
             final key = item['key'] as String;
             final selected = key == selectedCategory;
-
             return Expanded(
               child: _CategoryFixedItem(
                 name: item['name'] as String,
@@ -358,16 +353,13 @@ class _CategoryFixedItem extends StatelessWidget {
   }
 }
 
-//
-// MODEL + CARD
-//
+// --- MODEL & CARD (Sửa logic ảnh) ---
 
-/// Model dữ liệu 1 reward – dùng để map từ JSON / DB
 class RewardItem {
   final int voucherId;
   final String tagText;
   final Color tagColor;
-  final IconData imageIcon;
+  final String? imageUrl; // Dùng String cho URL ảnh
   final String title;
   final String subtitle;
   final String partnerName;
@@ -378,15 +370,13 @@ class RewardItem {
   final String pointsText;
   final double rating;
   final bool showRating;
-
-  // category dùng để filter: ALL / FOOD / SHOPPING / TRANSPORT / SERVICE
   final String category;
 
   const RewardItem({
     required this.voucherId,
     required this.tagText,
     required this.tagColor,
-    required this.imageIcon,
+    this.imageUrl,
     required this.title,
     required this.subtitle,
     required this.partnerName,
@@ -400,20 +390,20 @@ class RewardItem {
     required this.category,
   });
 
-  /// Map từ JSON BE (VoucherViewDto) sang model dùng cho UI
-  factory RewardItem.fromJson(Map<String, dynamic> json) {
+  // Sửa: Nhận thêm ApiClient để build URL ảnh đầy đủ
+  factory RewardItem.fromJson(Map<String, dynamic> json, ApiClient api) {
     final int id = json['voucherId'] ?? 0;
     final String title = (json['title'] ?? '') as String;
-
-    // 🔹 Lấy trực tiếp category từ BE, default = SHOPPING nếu null
-    //   BE nên trả: FOOD / SHOPPING / TRANSPORT / SERVICE
     String category = (json['category'] ?? 'SHOPPING').toString().toUpperCase();
+
+    // Dùng hàm buildImageUrl từ ApiClient
+    String? imgUrl = api.buildImageUrl(json['imageUrl']);
 
     return RewardItem(
       voucherId: id,
       tagText: 'Ưu đãi',
       tagColor: primaryGreen,
-      imageIcon: Icons.card_giftcard,
+      imageUrl: imgUrl, // Gán URL ảnh
       title: title,
       subtitle: json['description'] ?? '',
       partnerName: json['partnerName'] ?? 'Eco Partner',
@@ -432,7 +422,7 @@ class RewardItem {
 class RewardCard extends StatelessWidget {
   final String tagText;
   final Color tagColor;
-  final IconData imagePlaceholder;
+  final String? imageUrl; // Nhận URL ảnh
   final String title;
   final String subtitle;
   final String partnerName;
@@ -449,7 +439,7 @@ class RewardCard extends StatelessWidget {
     super.key,
     required this.tagText,
     required this.tagColor,
-    required this.imagePlaceholder,
+    this.imageUrl, // Nullable
     required this.title,
     required this.subtitle,
     required this.partnerName,
@@ -481,20 +471,32 @@ class RewardCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Khung ảnh vuông bên trái
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Container(
               width: 60,
               height: 60,
-              color: tagColor.withOpacity(0.15),
-              child: Icon(imagePlaceholder, size: 32, color: tagColor),
+              color: tagColor.withOpacity(0.1),
+              child: (imageUrl != null && imageUrl!.isNotEmpty)
+                  ? Image.network(
+                      imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(Icons.broken_image, color: tagColor);
+                      },
+                    )
+                  : Icon(Icons.card_giftcard, size: 30, color: tagColor),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
+
+          // Nội dung bên phải
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Tag + Title
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -530,6 +532,8 @@ class RewardCard extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // Description
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
@@ -537,7 +541,10 @@ class RewardCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                 ),
+
                 const SizedBox(height: 4),
+
+                // Partner + Rating
                 Row(
                   children: [
                     Text(
@@ -558,7 +565,10 @@ class RewardCard extends StatelessWidget {
                     ],
                   ],
                 ),
+
                 const SizedBox(height: 3),
+
+                // Distance + Date
                 Row(
                   children: [
                     Icon(
@@ -584,7 +594,10 @@ class RewardCard extends StatelessWidget {
                     Text('Đến $expiry', style: const TextStyle(fontSize: 10)),
                   ],
                 ),
+
                 const SizedBox(height: 4),
+
+                // Footer: Price + Points + Button
                 Row(
                   children: [
                     Column(
@@ -633,12 +646,11 @@ class RewardCard extends StatelessWidget {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryGreen,
-                          padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
                           ),
                           elevation: 0,
-                          visualDensity: VisualDensity.compact,
                         ),
                         onPressed: onRedeem,
                         child: const Text(

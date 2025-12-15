@@ -93,46 +93,51 @@ class _HomeScreenState extends State<HomeScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
     final maxContentWidth = isDesktop ? 1200.0 : double.infinity;
+
+    // --- FIX: Đặt status bar trong suốt để HeaderWidget có thể hiển thị màu nền xuyên qua ---
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
-        statusBarColor: HomeColors.bgHeader, // MÀU HEADER
-        statusBarBrightness: Brightness.light, // iOS
-        statusBarIconBrightness: Brightness.dark, // Android icons đen
+        statusBarColor: Colors.transparent, // Quan trọng: Trong suốt
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
       ),
     );
+    // -------------------------------------------------------------------------------------
+
     return Scaffold(
       backgroundColor: isDesktop
           ? Colors.white
           : const Color.fromARGB(255, 255, 255, 255),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (!widget.hideHeader)
-              HeaderWidget(controller: homeController.profileController),
 
-            Expanded(
-              child: ScrollConfiguration(
-                behavior: ScrollConfiguration.of(context).copyWith(
-                  overscroll: false,
-                  physics: const ClampingScrollPhysics(),
-                ),
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Center(
-                    child: Container(
-                      constraints: BoxConstraints(maxWidth: maxContentWidth),
-                      child: isDesktop
-                          ? _buildDesktopLayout()
-                          : _buildMobileLayout(),
-                    ),
+      // --- FIX: Loại bỏ SafeArea bao quanh Column để Header tràn lên mép trên ---
+      body: Column(
+        children: [
+          if (!widget.hideHeader)
+            HeaderWidget(controller: homeController.profileController),
+
+          Expanded(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                overscroll: false,
+                physics: const ClampingScrollPhysics(),
+              ),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Center(
+                  child: Container(
+                    constraints: BoxConstraints(maxWidth: maxContentWidth),
+                    child: isDesktop
+                        ? _buildDesktopLayout()
+                        : _buildMobileLayout(),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
+      // -----------------------------------------------------------------------
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/LoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignListScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
@@ -47,6 +48,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const RankingScreen());
       case '/partner_login':
         return MaterialPageRoute(builder: (_) => const PartnerLoginScreen());
+      case '/campaigns':
+        return MaterialPageRoute(builder: (_) => const CampaignListScreen());
       case '/partner_dashboard':
         return MaterialPageRoute(
           builder: (_) => const PartnerDashboardScreen(),
@@ -64,7 +67,7 @@ class AppRouter {
       case '/voucher':
         return MaterialPageRoute(builder: (_) => const RewardsScreen());
       case '/editprofile':
-      // 1. Lấy dữ liệu từ arguments và ép kiểu về ProfileView
+        // 1. Lấy dữ liệu từ arguments và ép kiểu về ProfileView
         final profile = settings.arguments as ProfileView;
 
         // 2. Bỏ từ khóa 'const' vì profile là biến động

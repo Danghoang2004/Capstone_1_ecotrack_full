@@ -15,10 +15,10 @@ import java.util.List;
 public class VoucherController {
 
     private final VoucherService voucherService;
-    private final UserPointsService userPointsService;   // ✅ thêm service điểm
+    private final UserPointsService userPointsService;
 
     public VoucherController(VoucherService voucherService,
-                             UserPointsService userPointsService) { // ✅ inject cả 2
+                             UserPointsService userPointsService) {
         this.voucherService = voucherService;
         this.userPointsService = userPointsService;
     }

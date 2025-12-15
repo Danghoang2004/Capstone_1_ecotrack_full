@@ -60,11 +60,18 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
             title,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-          Text(
-            action,
-            style: TextStyle(
-              color: const Color.fromARGB(255, 10, 10, 10),
-              fontWeight: FontWeight.w500,
+
+          /// 👉 CLICK "Xem tất cả"
+          InkWell(
+            onTap: () {
+              Navigator.pushNamed(context, '/campaigns');
+            },
+            child: Text(
+              action,
+              style: const TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

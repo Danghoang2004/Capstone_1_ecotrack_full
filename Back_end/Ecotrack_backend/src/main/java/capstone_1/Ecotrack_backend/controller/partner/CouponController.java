@@ -148,7 +148,7 @@ public class CouponController {
             }
 
             // Tạo thư mục upload nếu chưa có
-            String uploadDir = "D:/Code/Capstone_1_ecotrack_full/Back_end/Ecotrack_backend/uploads/coupons/";
+            String uploadDir = "D:/project_Capstone_1_full/Back_end/Ecotrack_backend/uploads/coupons/";
             Files.createDirectories(Paths.get(uploadDir));
 
             // Tạo tên file unique

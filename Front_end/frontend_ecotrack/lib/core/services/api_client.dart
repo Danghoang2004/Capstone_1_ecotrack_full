@@ -205,7 +205,7 @@ class VoucherApi {
 
     if (res.statusCode == 200) {
       final List data = _client.decodeUtf8Json(res);
-      return data.map((e) => RewardItem.fromJson(e)).toList();
+      return data.map((e) => RewardItem.fromJson(e, _client)).toList();
     } else {
       throw Exception('Failed to load vouchers: ${res.body}');
     }

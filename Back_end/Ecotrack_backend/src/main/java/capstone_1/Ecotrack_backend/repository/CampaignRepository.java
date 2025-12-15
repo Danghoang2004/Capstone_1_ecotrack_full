@@ -1,6 +1,7 @@
 package capstone_1.Ecotrack_backend.repository;
 
 import capstone_1.Ecotrack_backend.model.Campaign;
+import capstone_1.Ecotrack_backend.model.CampaignDetailProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,5 +20,32 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
     @Query("SELECT COUNT(cp) FROM CampaignParticipant cp WHERE cp.id.campaignId = :campaignId")
     Integer countParticipants(Long campaignId);
+
+    @Query(value = """
+SELECT
+  c.campaign_id AS id,
+  c.title,
+  c.description,
+  c.image_url AS imageUrl,
+  c.location_address AS location,
+  c.start_date AS startDate,
+  c.end_date AS endDate,
+  CONCAT(c.start_time, ' - ', c.end_time) AS timeRange,
+  c.max_participants AS maxParticipants,
+  c.reward_points AS rewardPoints,
+
+  COUNT(DISTINCT cp.user_id) AS participantCount,
+  COUNT(DISTINCT cl.user_id) AS likeCount,
+  COUNT(DISTINCT cc.comment_id) AS commentCount
+
+FROM campaigns c
+LEFT JOIN campaign_participants cp ON cp.campaign_id = c.campaign_id
+LEFT JOIN campaign_likes cl ON cl.campaign_id = c.campaign_id
+LEFT JOIN campaign_comments cc ON cc.campaign_id = c.campaign_id
+WHERE c.campaign_id = :id
+GROUP BY c.campaign_id
+""", nativeQuery = true)
+    CampaignDetailProjection findCampaignDetail(@Param("id") Long id);
+
 
 }

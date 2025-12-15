@@ -42,9 +42,17 @@ class _HeaderWidgetState extends State<HeaderWidget> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 900;
+
+    // --- FIX: Lấy chiều cao Status Bar hiện tại ---
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+    // ----------------------------------------------
+
     return Container(
-      // Sửa padding: cộng topPadding vào phần trên của padding
-      padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
+      // --- FIX: Cộng thêm statusBarHeight vào padding top ---
+      // Điều này đẩy nội dung xuống dưới tai thỏ, nhưng giữ màu nền phủ kín
+      padding: EdgeInsets.fromLTRB(16, 12 + statusBarHeight, 16, 12),
+
+      // ----------------------------------------------------
       decoration: BoxDecoration(
         color: isDesktop ? Colors.white : HomeColors.bgHeader,
         boxShadow: isDesktop

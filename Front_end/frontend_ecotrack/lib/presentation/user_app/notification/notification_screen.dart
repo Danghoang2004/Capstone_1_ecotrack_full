@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/notification_service.dart';
+import 'package:frontend_ecotrack/presentation/user_app/notification/notification_detail_screen.dart';
 
 /// Model 1 notification trong app
 class NotificationItem {
@@ -118,8 +119,11 @@ class _NotificationScreenState extends State<NotificationScreen>
           preferredSize: const Size.fromHeight(60),
           child: Padding(
             padding: const EdgeInsets.only(bottom: 10.0),
-            child: Padding( // ⬅️ Widget Padding được thêm để tạo khoảng cách 10px 2 bên
-              padding: const EdgeInsets.symmetric(horizontal: 10.0), // ⬅️ Khoảng cách 10px trái/phải
+            child: Padding(
+              // ⬅️ Widget Padding được thêm để tạo khoảng cách 10px 2 bên
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+              ), // ⬅️ Khoảng cách 10px trái/phải
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(4),
@@ -133,7 +137,9 @@ class _NotificationScreenState extends State<NotificationScreen>
                       controller: _tabController,
                       isScrollable: false,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 10), // Padding nội bộ của text trong Tab
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                      ), // Padding nội bộ của text trong Tab
                       labelColor: Colors.white,
                       unselectedLabelColor: const Color(0xFF2F6B2F),
                       dividerColor: Colors.transparent,
@@ -152,7 +158,6 @@ class _NotificationScreenState extends State<NotificationScreen>
             ),
           ),
         ),
-
       ),
       body: TabBarView(
         controller: _tabController,
@@ -209,9 +214,11 @@ class _NotificationScreenState extends State<NotificationScreen>
   Widget _buildCard(NotificationItem item) {
     return InkWell(
       onTap: () async {
+        // 1️⃣ Nếu chưa đọc → đánh dấu đã đọc
         if (!item.isRead) {
           try {
             await _service.markAsRead(item.id);
+
             setState(() {
               final idx = _all.indexWhere((n) => n.id == item.id);
               if (idx != -1) {
@@ -231,7 +238,16 @@ class _NotificationScreenState extends State<NotificationScreen>
             );
           }
         }
+
+        // 2️⃣ LUÔN mở màn hình chi tiết
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => NotificationDetailScreen(item: item),
+          ),
+        );
       },
+
       child: Container(
         decoration: BoxDecoration(
           // 🔹 Giữ nguyên kiểu card bo tròn, viền nhạt
