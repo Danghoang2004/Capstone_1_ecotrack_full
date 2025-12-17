@@ -62,7 +62,7 @@ public class Campaign {
     @Column(name = "qr_code_url")
     private String qrCodeUrl;
 
-    @OneToMany(mappedBy = "campaign")
-    private List<CampaignParticipant> participants;
+    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<CampaignParticipant> participants = new java.util.ArrayList<>();
 
 }
