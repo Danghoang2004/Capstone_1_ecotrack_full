@@ -6,8 +6,6 @@ import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerL
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
 
 Future<void> main() async {
-  // Đảm bảo rằng ứng dụng này được chạy riêng cho Web
-  // lệnh chạy: flutter run -d chrome --target=lib/main_partner.dart
   await dotenv.load(fileName: ".env");
   runApp(const PartnerApp());
 }
@@ -24,7 +22,6 @@ class PartnerApp extends StatelessWidget {
         primarySwatch: Colors.green,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      // Thêm locale support cho DatePicker
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -32,28 +29,23 @@ class PartnerApp extends StatelessWidget {
       ],
       supportedLocales: const [Locale('en', 'US'), Locale('vi', 'VN')],
       locale: const Locale('vi', 'VN'),
-      // Bắt đầu từ màn hình chờ để kiểm tra token và vai trò
       home: const PartnerSplashScreen(),
       routes: {
-        // CHỈ CÓ CÁC ROUTES CỦA PARTNER
         '/partner_login': (context) => const PartnerLoginScreen(),
         '/partner_dashboard': (context) => const PartnerDashboardScreen(),
       },
-      // Định nghĩa route mặc định
       onGenerateRoute: (settings) {
         if (settings.name == '/') {
           return MaterialPageRoute(
             builder: (context) => const PartnerSplashScreen(),
           );
         }
-        // Chặn các route khác không tồn tại
         return MaterialPageRoute(builder: (context) => const NotFoundScreen());
       },
     );
   }
 }
 
-// Màn hình chờ để kiểm tra trạng thái đăng nhập
 class PartnerSplashScreen extends StatefulWidget {
   const PartnerSplashScreen({super.key});
 
@@ -71,7 +63,6 @@ class _PartnerSplashScreenState extends State<PartnerSplashScreen> {
   }
 
   Future<void> _checkAuthStatus() async {
-    // Độ trễ nhẹ để trải nghiệm tốt hơn
     await Future.delayed(const Duration(milliseconds: 500));
 
     final token = await _authService.getToken();
@@ -80,17 +71,13 @@ class _PartnerSplashScreenState extends State<PartnerSplashScreen> {
       final isPartner = await _authService.isPartner();
 
       if (isPartner) {
-        // Có token và là Partner -> Dashboard
         if (mounted)
           Navigator.pushReplacementNamed(context, '/partner_dashboard');
         return;
       } else {
-        // Có token nhưng không phải Partner -> Bắt buộc đăng xuất
         await _authService.logout();
       }
     }
-
-    // Không có token hoặc không phải Partner -> Login Partner
     if (mounted) Navigator.pushReplacementNamed(context, '/partner_login');
   }
 

@@ -1,5 +1,3 @@
-// lib/data/models/ProfileView.dart
-
 class ProfileView {
   final int userId;
   final String fullName;

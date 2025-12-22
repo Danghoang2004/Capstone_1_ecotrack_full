@@ -12,12 +12,8 @@ class ApiClient {
   final String baseUrl = dotenv.env['API_BASE_URL']!;
   final FlutterSecureStorage storage;
   ApiClient({required this.storage});
-
-  // Helper method để check và handle 401
   Future<http.Response> _handleResponse(http.Response response) async {
     if (response.statusCode == 401) {
-      // Bất kỳ 401 nào cũng được xem là session expired
-      // (có thể do token hết hạn, user bị disable, hoặc thông tin thay đổi)
       await SessionService.handleSessionExpired();
     }
     return response;
@@ -37,10 +33,7 @@ class ApiClient {
     if (json) {
       map['Content-Type'] = 'application/json; charset=utf-8';
     }
-
     map['Accept'] = 'application/json; charset=utf-8';
-    // Note: 'Accept-Charset' is a forbidden header in browsers, removed to prevent errors
-
     if (token != null) {
       map['Authorization'] = 'Bearer $token';
     }
@@ -186,7 +179,7 @@ class QuizOverviewRepository {
         .toList();
   }
 
-  // ⭐ NEW: gọi API /summary để lấy điểm tích lũy
+  // gọi API /summary để lấy điểm tích lũy
   Future<QuizSummary> fetchSummary() async {
     final res = await _api.get('/api/quizzes/summary');
     final data = _api.decodeUtf8Json(res);

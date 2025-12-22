@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/core/services/auth_service.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/admin_question/AdminQuizPage.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/AdminCampainPage.dart';
 
-// --- IMPORT CÁC WIDGET CỦA BẠN ---
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDarhboard_data.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminMapPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminReportPage.dart';
@@ -22,18 +24,9 @@ class _AdminLayoutState extends State<AdminLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // SỬ DỤNG COLUMN ĐỂ HEADER NẰM TRÊN CÙNG
       body: Column(
         children: [
-          // -----------------------------------------------------------
-          // 1. HEADER (NẰM TRÊN CÙNG - FULL WIDTH)
-          // -----------------------------------------------------------
           const AdminHeader(),
-
-          // -----------------------------------------------------------
-          // 2. BODY (SIDEBAR + CONTENT)
-          // Dùng Expanded để phần này chiếm toàn bộ chiều cao còn lại
-          // -----------------------------------------------------------
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,18 +39,21 @@ class _AdminLayoutState extends State<AdminLayout> {
                       _selectedMenu = menu;
                     });
                   },
-                  onLogout: () {
-                    print("Logout clicked");
+                  onLogout: () async {
+                    final authService = AuthService();
+                    await authService.logout();
+                    if (mounted) {
+                      Navigator.of(
+                        context,
+                      ).pushReplacementNamed('/admin_login');
+                    }
                   },
                 ),
-
-                // B. CONTENT (BÊN PHẢI - GIÃN NỞ)
                 Expanded(
                   child: Container(
                     width: double.infinity,
-                    height: double
-                        .infinity, // Đảm bảo full chiều cao khớp với sidebar
-                    color: const Color(0xFFF5F7FA), // Màu nền nội dung
+                    height: double.infinity,
+                    color: const Color(0xFFF5F7FA),
                     child: KeyedSubtree(
                       key: ValueKey(_selectedMenu),
                       child: _buildContent(),
@@ -82,6 +78,10 @@ class _AdminLayoutState extends State<AdminLayout> {
         return const AdminReportPage();
       case "map":
         return const AdminMapPage();
+      case "campaign":
+        return const AdminCampaignPage();
+      case "quiz":
+        return const AdminQuizPage();
       default:
         return const Center(child: Text("Chức năng đang phát triển"));
     }

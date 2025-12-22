@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/LoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignListScreen.dart';
@@ -48,6 +49,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const RankingScreen());
       case '/partner_login':
         return MaterialPageRoute(builder: (_) => const PartnerLoginScreen());
+      case '/admin_login':
+        return MaterialPageRoute(builder: (_) => const AdminLoginScreen());
       case '/campaigns':
         return MaterialPageRoute(builder: (_) => const CampaignListScreen());
       case '/partner_dashboard':

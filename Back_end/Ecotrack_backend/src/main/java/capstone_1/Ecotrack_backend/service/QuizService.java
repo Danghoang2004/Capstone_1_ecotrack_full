@@ -129,9 +129,7 @@ public class QuizService {
                                 items);
         }
 
-        // =========================================================
-        // CHẤM ĐIỂM QUIZ
-        // =========================================================
+
         public SubmitResponse submit(Long quizId, Long userId, SubmitRequest req) {
 
                 // Lấy quiz + user từ DB

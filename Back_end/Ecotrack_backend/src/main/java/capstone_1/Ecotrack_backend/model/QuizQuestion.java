@@ -10,17 +10,17 @@ public class QuizQuestion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "question_id")          // ✅ map đúng cột
+    @Column(name = "question_id")
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
-    @Column(name = "question_text")        // ✅ map đúng cột
+    @Column(name = "question_text")
     private String questionText;
 
-    @Column(name = "option_a")             // ✅ map đúng cột
+    @Column(name = "option_a")
     private String optionA;
 
     @Column(name = "option_b")

@@ -21,7 +21,6 @@ class _AdminSidebarState extends State<AdminSidebar> {
 
   @override
   Widget build(BuildContext context) {
-    // Logic width giống Partner
     double sidebarWidth = _isCollapsed ? 80 : 260;
 
     return AnimatedContainer(
@@ -29,48 +28,10 @@ class _AdminSidebarState extends State<AdminSidebar> {
       curve: Curves.easeInOut,
       width: sidebarWidth,
       height: double.infinity,
-      color: Colors.transparent,
       child: Stack(
         children: [
           _buildSidebarContent(sidebarWidth, _isCollapsed),
-
-          // Nút collapse (Nút tròn bên phải sidebar)
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _isCollapsed = !_isCollapsed;
-                  });
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.shade300),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    _isCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                    size: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildCollapseButton(),
         ],
       ),
     );
@@ -83,18 +44,13 @@ class _AdminSidebarState extends State<AdminSidebar> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(right: BorderSide(color: Colors.grey.shade200)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(2, 0),
-          ),
-        ],
       ),
       child: Column(
         children: [
-          const SizedBox(height: 16),
-          // MENU LIST - Giữ nguyên logic các mục của Admin
+          // Khoảng trống phía trên thay cho User Header cũ
+          const SizedBox(height: 20),
+
+          // DANH SÁCH MENU
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -131,11 +87,27 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   isCollapsed: isCollapsed,
                   onTap: widget.onNavigate,
                 ),
+                _MenuItem(
+                  icon: Icons.campaign_outlined,
+                  label: 'Quản Lý Chiến Dịch',
+                  keyName: 'campaign',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
+                _MenuItem(
+                  icon: Icons.question_answer_outlined,
+                  label: 'Quản Lý Câu Hỏi',
+                  keyName: 'quiz',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
               ],
             ),
           ),
 
-          // LOGOUT
+          // NÚT ĐĂNG XUẤT
           Padding(
             padding: const EdgeInsets.all(16),
             child: _MenuItemWidget(
@@ -151,9 +123,40 @@ class _AdminSidebarState extends State<AdminSidebar> {
       ),
     );
   }
+
+  Widget _buildCollapseButton() {
+    return Positioned(
+      right: 0,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: InkWell(
+          onTap: () => setState(() => _isCollapsed = !_isCollapsed),
+          child: Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+              ],
+            ),
+            child: Icon(
+              _isCollapsed ? Icons.chevron_right : Icons.chevron_left,
+              size: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-// Widget Helper để render từng mục menu (Logic mapping)
+// --- CÁC WIDGET HỖ TRỢ MENU (GIỮ NGUYÊN LOGIC CŨ) ---
+
 class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -183,7 +186,6 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-// Widget UI gốc (Giống hệt Partner)
 class _MenuItemWidget extends StatelessWidget {
   final IconData icon;
   final String label;

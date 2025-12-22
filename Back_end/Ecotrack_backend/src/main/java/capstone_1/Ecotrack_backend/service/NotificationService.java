@@ -46,7 +46,6 @@ public class NotificationService {
         n.setRead(true);
     }
 
-    // Gọi hàm này từ các service khác khi muốn tạo thông báo mới
     @Transactional
     public Notification createNotification(
             Long userId,

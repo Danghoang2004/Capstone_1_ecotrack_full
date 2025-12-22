@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Formula;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -64,5 +65,9 @@ public class Campaign {
 
     @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<CampaignParticipant> participants = new java.util.ArrayList<>();
+
+    // THÊM DÒNG NÀY:
+    @Formula("(SELECT COUNT(*) FROM campaign_participants cp WHERE cp.campaign_id = campaign_id)")
+    private Integer currentParticipants;
 
 }

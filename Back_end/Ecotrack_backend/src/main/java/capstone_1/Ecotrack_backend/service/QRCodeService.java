@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 @Service
 public class QRCodeService {
 
-    // Đường dẫn gốc bạn đã cấu hình trong WebConfig
+
     private static final String UPLOAD_DIR = "D:/project_Capstone_1_full/Back_end/Ecotrack_backend/uploads/";
     private static final String QR_SUB_DIR = "campaign_qrs/"; // Thư mục con cho gọn
 

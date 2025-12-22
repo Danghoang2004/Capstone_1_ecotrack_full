@@ -68,4 +68,17 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
             WHERE c.partner.partnerId = :partnerId
             """)
     double avgRoiByPartner(Long partnerId);
+
+    @Query("SELECT COUNT(c) FROM Campaign c WHERE CURRENT_DATE BETWEEN c.startDate AND c.endDate")
+    long countActiveCampaigns();
+
+    @Query("SELECT COUNT(c) FROM Campaign c WHERE c.startDate > CURRENT_DATE")
+    long countUpcomingCampaigns();
+
+    @Query("SELECT COUNT(cp) FROM CampaignParticipant cp")
+    long countAllParticipants();
+
+    // Giả sử tính tổng điểm thưởng làm kinh phí tạm thời
+    @Query("SELECT SUM(c.rewardPoints) FROM Campaign c")
+    Double sumTotalPoints();
 }

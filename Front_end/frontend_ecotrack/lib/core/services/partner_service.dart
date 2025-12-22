@@ -1,5 +1,3 @@
-// lib/core/services/partner_api.dart
-
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -10,12 +8,8 @@ import 'package:frontend_ecotrack/data/models/partner_dashboard_models.dart';
 class PartnerApi {
   final ApiClient client;
 
-  /// Nếu bạn không truyền gì: PartnerApi()
-  /// nó sẽ tự tạo ApiClient với FlutterSecureStorage.
   PartnerApi({ApiClient? client})
     : client = client ?? ApiClient(storage: const FlutterSecureStorage());
-
-  /// Gọi BE lấy dữ liệu dashboard tài trợ
   Future<PartnerSponsorshipDashboard> fetchDashboard() async {
     final response = await client.get('/api/partner/dashboard/sponsorship');
 
@@ -28,6 +22,21 @@ class PartnerApi {
     return PartnerSponsorshipDashboard.fromJson(json);
   }
 
-  // Sau này nếu cần thêm API khác (tạo tài trợ, tạo chiến dịch, …)
-  // bạn thêm method vào đây.
+  Future<Map<String, dynamic>> getSettings() async {
+    final res = await client.get('/api/partner/settings');
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to load partner settings');
+    }
+
+    return client.decodeUtf8Json(res);
+  }
+
+  Future<void> updateSettings(Map<String, dynamic> body) async {
+    final res = await client.put('/api/partner/settings', body);
+
+    if (res.statusCode != 200) {
+      throw Exception('Failed to update partner settings');
+    }
+  }
 }
