@@ -8,12 +8,14 @@ class CampaignSidePanel extends StatelessWidget {
   final CampaignPanel panel;
   final int? campaignId;
   final VoidCallback onClose;
+  final VoidCallback? onSuccess;
 
   const CampaignSidePanel({
     super.key,
     required this.panel,
     this.campaignId,
     required this.onClose,
+    this.onSuccess,
   });
 
   @override
@@ -104,9 +106,9 @@ class CampaignSidePanel extends StatelessWidget {
     // hoặc bạn có thể thêm Padding bọc ngoài ở đây nếu cần.
     switch (panel) {
       case CampaignPanel.create:
-        return const CreateCampaignForm();
+        return CreateCampaignForm(onSuccess: onSuccess);
       case CampaignPanel.edit:
-        return EditCampaignForm(id: campaignId!);
+        return EditCampaignForm(id: campaignId!, onSuccess: onSuccess);
       case CampaignPanel.detail:
         return CampaignDetailView(id: campaignId!);
       default:

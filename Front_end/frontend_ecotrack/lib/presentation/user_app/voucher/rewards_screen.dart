@@ -118,24 +118,24 @@ class _RewardsScreenState extends State<RewardsScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 30, 139, 34),
+        backgroundColor: const Color(0xFF2E7D32),
         elevation: 0,
         automaticallyImplyLeading: false,
-        toolbarHeight: 55,
+        toolbarHeight: 70,
         titleSpacing: 0,
         title: Padding(
           padding: const EdgeInsets.only(left: 0.1, right: 5),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 4),
               const Text(
                 'Đổi thưởng',
                 style: TextStyle(
-                  color: Colors.black,
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),

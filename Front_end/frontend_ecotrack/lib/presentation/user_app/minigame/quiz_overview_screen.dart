@@ -15,7 +15,7 @@ class QuizOverviewScreen extends StatefulWidget {
 }
 
 class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
-  // 👉 dùng trực tiếp ApiClient, không qua QuizRepository nữa
+  // 👉 Dùng trực tiếp ApiClient, không qua QuizRepository
   final ApiClient _api = ApiClient(storage: const FlutterSecureStorage());
 
   late Future<QuizSummary> _future;
@@ -71,9 +71,56 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFFF5F6FA),
+          // ================= SỬ DỤNG APPBAR TIÊU CHUẨN =================
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF2E7D32),
+            elevation: 0,
+            toolbarHeight: 70, // Tăng nhẹ chiều cao để cân đối với subtitle
+            automaticallyImplyLeading:
+                false, // Tắt nút back mặc định để tự tùy chỉnh
+            leading: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () {
+                // Giữ nguyên logic điều hướng ban đầu
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/user_app',
+                  (route) => false,
+                );
+              },
+            ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'EcoTrack',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Bảo vệ môi trường cùng nhau',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+            centerTitle: false,
+          ),
           body: Column(
             children: [
-              _buildHeader(context),
+              // Đã loại bỏ _buildHeader cũ ở đây
               _buildStatsRow(completed, total, totalPoint),
               _buildFilterRow(completed, total - completed),
               Expanded(
@@ -88,89 +135,12 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
               ),
             ],
           ),
-          // bottomNavigationBar: _buildBottomBar(),
         );
       },
     );
   }
 
-  // ================= HEADER =================
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF00994D),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        bottom: false, // Không cần padding dưới cho SafeArea
-        child: Padding(
-          padding: const EdgeInsets.only(
-            top: 10,
-          ), // Thêm chút khoảng cách từ status bar xuống
-          child: Row(
-            // 👇 QUAN TRỌNG: Căn giữa theo chiều dọc
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // NÚT THOÁT
-              Transform.translate(
-                offset: const Offset(
-                  -10,
-                  0,
-                ), // Dịch sang trái 5 đơn vị (x = -5)
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/user_app',
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-              const Expanded(
-                child: Column(
-                  // 👇 QUAN TRỌNG: Co cụm chiều cao cột lại vừa đủ nội dung
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'EcoTrack',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        height: 1.2, // Điều chỉnh dòng để chữ không bị lệch
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Bảo vệ môi trường cùng nhau',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ================ STATS 3 Ô TRÊN =================
+  // ================ STATS 3 Ô TRÊN (Giữ nguyên) =================
   Widget _buildStatsRow(int done, int total, int points) {
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 1),
@@ -192,7 +162,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
     );
   }
 
-  // ================ FILTER (TẤT CẢ / HOÀN THÀNH / CHƯA LÀM) ================
+  // ================ FILTER (Giữ nguyên) ================
   Widget _buildFilterRow(int done, int notDone) {
     return Container(
       color: const Color(0xFFF5F6FA),
@@ -221,7 +191,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
     );
   }
 
-  // ================== 1 ITEM QUIZ ==================
+  // ================== 1 ITEM QUIZ (Giữ nguyên) ==================
   Widget _buildQuizCard(BuildContext context, QuizOverviewItem q) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -236,7 +206,6 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ===== TIÊU ĐỀ + MÔ TẢ =====
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -251,14 +220,11 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-
                     const SizedBox(height: 3),
-
                     const Text(
                       "Bài kiểm tra kiến thức về môi trường",
                       style: TextStyle(fontSize: 10, color: Colors.black45),
                     ),
-
                     Text(
                       q.description,
                       style: const TextStyle(
@@ -269,9 +235,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(width: 2),
-
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -295,10 +259,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 1),
-
-          // ===== DÒNG GIỮA =====
           Row(
             children: [
               _InfoChip(
@@ -323,10 +284,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
                 ),
             ],
           ),
-
           const SizedBox(height: 2),
-
-          // ===== PROGRESS BAR + MŨI TÊN =====
           Row(
             children: [
               Expanded(
@@ -371,37 +329,9 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
       ),
     );
   }
-
-  // =============== BOTTOM BAR (chỉ là UI giống hình) ===============
-  // Widget _buildBottomBar() {
-  //   return Container(
-  //     height: 60,
-  //     decoration: const BoxDecoration(
-  //       color: Colors.white,
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.black12,
-  //           blurRadius: 8,
-  //           offset: Offset(0, -2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Row(
-  //       children: const [
-  //         _BottomItem(icon: Icons.campaign, label: 'Chiến dịch', active: false),
-  //         _BottomItem(
-  //           icon: Icons.emoji_events,
-  //           label: 'Huy hiệu',
-  //           active: false,
-  //         ),
-  //         _BottomItem(icon: Icons.menu_book, label: 'Kiến thức', active: true),
-  //       ],
-  //     ),
-  //   );
-  // }
 }
 
-// ======================= WIDGET PHỤ =======================
+// ======================= WIDGET PHỤ (Giữ nguyên hoàn toàn) =======================
 
 class _StatCard extends StatelessWidget {
   final String label;
@@ -412,10 +342,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 6, // 👈 giảm chiều cao
-        horizontal: 2,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -500,33 +427,6 @@ class _InfoChip extends StatelessWidget {
             text,
             style: const TextStyle(fontSize: 8, color: Colors.black87),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? const Color(0xFF00C853) : Colors.grey;
-    return Expanded(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 10, color: color)),
         ],
       ),
     );

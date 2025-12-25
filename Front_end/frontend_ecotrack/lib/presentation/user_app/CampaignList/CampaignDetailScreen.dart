@@ -75,10 +75,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7F6),
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF2E7D32),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           "Chi tiết chiến dịch",
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600 , fontSize: 20 , color: Colors.white),
         ),
         centerTitle: true,
       ),

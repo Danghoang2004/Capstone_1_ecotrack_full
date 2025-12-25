@@ -27,7 +27,6 @@ class _CampaignListState extends State<CampaignList> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo API service
     _campaignApi = CampaignApi(
       ApiClient(storage: const FlutterSecureStorage()),
     );
@@ -36,41 +35,127 @@ class _CampaignListState extends State<CampaignList> {
 
   void _refreshList() {
     setState(() {
-      // Giả sử CampaignApi của bạn có hàm getAll() hoặc tương đương
       _campaignsFuture = _campaignApi.fetchCampaigns();
     });
   }
 
+  // 1. Overlay thông báo xóa thành công (Tự đóng)
+  void _showDeleteSuccessOverlay(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
+        });
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.delete_forever, color: Colors.redAccent, size: 64),
+                SizedBox(height: 16),
+                Text(
+                  "Đã xóa!",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  "Chiến dịch đã được loại bỏ khỏi hệ thống.",
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 2. Hàm xóa chiến dịch với Dialog xác nhận ở giữa
   Future<void> _deleteCampaign(int id) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Xác nhận xóa"),
-        content: const Text("Bạn có chắc chắn muốn xóa chiến dịch này không?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Hủy"),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange,
+                size: 60,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Xác nhận xóa",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "Bạn có chắc chắn muốn xóa chiến dịch này không? Hành động này không thể hoàn tác.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: Colors.grey),
+                      ),
+                      child: const Text(
+                        "Hủy bỏ",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "Xác nhận xóa",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Xóa", style: TextStyle(color: Colors.red)),
-          ),
-        ],
+        ),
       ),
     );
 
     if (confirmed == true) {
       try {
-        await _campaignApi.delete(id); // Giả sử có hàm delete(id)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Đã xóa chiến dịch thành công")),
-        );
-        _refreshList(); // Tải lại danh sách sau khi xóa
+        await _campaignApi.delete(id);
+        if (mounted) {
+          _showDeleteSuccessOverlay(context); // Hiển thị overlay thành công
+          _refreshList(); // Tải lại danh sách
+        }
       } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Lỗi khi xóa: $e")));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Lỗi khi xóa: $e")));
+        }
       }
     }
   }
@@ -80,59 +165,10 @@ class _CampaignListState extends State<CampaignList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // HEADER
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Quản Lý Chiến Dịch",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Tạo, chỉnh sửa và theo dõi các chiến dịch thực tế",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-            ElevatedButton.icon(
-              onPressed: widget.onCreate,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text("Tạo chiến dịch mới"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00BFA5),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ],
-        ),
+        _buildHeader(),
         const SizedBox(height: 24),
-
-        // SEARCH BAR (UI tạm thời, bạn có thể thêm logic filter sau)
-        TextField(
-          decoration: InputDecoration(
-            hintText: "Tìm kiếm chiến dịch...",
-            prefixIcon: const Icon(Icons.search),
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
+        _buildSearchBar(),
         const SizedBox(height: 20),
-
-        // DANH SÁCH DỮ LIỆU THẬT
         FutureBuilder<List<Campaign>>(
           future: _campaignsFuture,
           builder: (context, snapshot) {
@@ -144,12 +180,10 @@ class _CampaignListState extends State<CampaignList> {
                 ),
               );
             }
-            if (snapshot.hasError) {
-              return Center(child: Text("Lỗi tải dữ liệu: ${snapshot.error}"));
-            }
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            if (snapshot.hasError)
+              return Center(child: Text("Lỗi: ${snapshot.error}"));
+            if (!snapshot.hasData || snapshot.data!.isEmpty)
               return const Center(child: Text("Không có chiến dịch nào"));
-            }
 
             return Column(
               children: snapshot.data!
@@ -162,22 +196,65 @@ class _CampaignListState extends State<CampaignList> {
     );
   }
 
+  // --- Các Widget thành phần đã được tách ra cho gọn ---
+
+  Widget _buildHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Quản Lý Chiến Dịch",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "Tạo, chỉnh sửa và theo dõi các chiến dịch thực tế",
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        ElevatedButton.icon(
+          onPressed: widget.onCreate,
+          icon: const Icon(Icons.add, size: 18),
+          label: const Text("Tạo chiến dịch mới"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF00BFA5),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: "Tìm kiếm chiến dịch...",
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCampaignCard(Campaign c) {
-    // Logic xác định trạng thái dựa trên ngày tháng
     final now = DateTime.now();
     final start = DateTime.tryParse(c.startDate) ?? now;
-    String status = "Sắp diễn ra";
-    Color statusColor = Colors.blue;
-    double progress = 0;
-    if (c.maxParticipants > 0) {
-      progress = c.currentParticipants / c.maxParticipants;
-    }
-    if (progress > 1.0) progress = 1.0;
-
-    if (now.isAfter(start)) {
-      status = "Đang diễn ra";
-      statusColor = Colors.green;
-    }
+    String status = now.isAfter(start) ? "Đang diễn ra" : "Sắp diễn ra";
+    Color statusColor = now.isAfter(start) ? Colors.green : Colors.blue;
+    double progress = (c.maxParticipants > 0)
+        ? (c.currentParticipants / c.maxParticipants).clamp(0.0, 1.0)
+        : 0.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -216,7 +293,6 @@ class _CampaignListState extends State<CampaignList> {
                       Icons.visibility_outlined,
                       color: Colors.blueGrey,
                     ),
-                    tooltip: "Xem chi tiết",
                   ),
                   IconButton(
                     onPressed: () => widget.onEdit(c.id!),
@@ -236,65 +312,29 @@ class _CampaignListState extends State<CampaignList> {
           Text(
             c.description ?? "Không có mô tả",
             maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: Colors.grey,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                c.location,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              const SizedBox(width: 20),
-              const Icon(
-                Icons.calendar_today_outlined,
-                size: 16,
-                color: Colors.grey,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                "${c.startDate} - ${c.endDate}",
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ],
-          ),
+          _buildInfoRow(c),
           const SizedBox(height: 24),
           Row(
             children: [
-              SizedBox(
-                width: 220,
-                child: _buildStatItem(
-                  "Người tham gia",
-                  "${c.currentParticipants}/${c.maxParticipants}",
-                  progress,
-                  Colors.blue,
-                ),
+              _buildStatItem(
+                "Người tham gia",
+                "${c.currentParticipants}/${c.maxParticipants}",
+                progress,
+                Colors.blue,
               ),
-              SizedBox(width: 150),
-              SizedBox(
-                width: 220,
-                child: _buildStatItem(
-                  "Kinh phí",
-                  "15.000.000 đ",
-                  0.75,
-                  Colors.green,
-                ),
-              ),
-              SizedBox(width: 150),
+              const SizedBox(width: 60),
+              _buildStatItem("Kinh phí", "15.000.000 đ", 0.75, Colors.green),
+              const SizedBox(width: 60),
               _buildSimpleStat(
                 "Điểm thưởng",
                 "${c.rewardPoints} điểm",
                 Icons.stars_rounded,
                 Colors.orange,
               ),
-
+              const SizedBox(width: 60),
               _buildSimpleStat(
                 "Tổ chức",
                 c.partnerName ?? "Đang cập nhật...",
@@ -305,6 +345,26 @@ class _CampaignListState extends State<CampaignList> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInfoRow(Campaign c) {
+    return Row(
+      children: [
+        const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+        const SizedBox(width: 4),
+        Text(
+          c.location,
+          style: const TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+        const SizedBox(width: 20),
+        const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
+        const SizedBox(width: 4),
+        Text(
+          "${c.startDate} - ${c.endDate}",
+          style: const TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+      ],
     );
   }
 
@@ -326,14 +386,12 @@ class _CampaignListState extends State<CampaignList> {
     );
   }
 
-  // Sửa lại hàm buildStatItem để giao diện giống hệt ảnh mẫu
   Widget _buildStatItem(
     String label,
     String value,
     double progress,
-    Color color, {
-    String? subtitle,
-  }) {
+    Color color,
+  ) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,11 +402,7 @@ class _CampaignListState extends State<CampaignList> {
               const SizedBox(width: 4),
               Text(
                 label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -356,16 +410,8 @@ class _CampaignListState extends State<CampaignList> {
           Text(
             value,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            overflow: TextOverflow.ellipsis,
           ),
-          if (subtitle != null)
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
-              overflow: TextOverflow.ellipsis,
-            ),
           const SizedBox(height: 8),
-          // Thanh tiến trình chạy theo % thật
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -400,10 +446,11 @@ class _CampaignListState extends State<CampaignList> {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 4),
           Text(
             value,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

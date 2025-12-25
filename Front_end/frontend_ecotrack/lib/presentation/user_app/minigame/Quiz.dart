@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/quiz_models.dart';
 import 'Result.dart';
@@ -27,14 +28,24 @@ class _QuizScreenState extends State<QuizScreen> {
   int remain = perQSec;
   Timer? _timer;
 
-  bool _isTimeUp = false; // hết giờ
-  bool _showTimeUpMessage = false; // popup hết giờ
+  bool _isTimeUp = false;
+  bool _showTimeUpMessage = false;
 
   @override
   void initState() {
     super.initState();
-    _future = repo.getQuiz(widget.quizId);
 
+    // BẮT BUỘC bật lại status bar
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
+
+    _future = repo.getQuiz(widget.quizId);
     _future.then((q) {
       if (!mounted) return;
       setState(() => _quiz = q);
@@ -42,9 +53,6 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  // ================================================
-  // TIMER
-  // ================================================
   void _startTimer() {
     _timer?.cancel();
 
@@ -61,8 +69,8 @@ class _QuizScreenState extends State<QuizScreen> {
         t.cancel();
         setState(() {
           remain = 0;
-          _isTimeUp = true; // ❗ hết giờ
-          _showTimeUpMessage = true; // ❗ bật popup
+          _isTimeUp = true;
+          _showTimeUpMessage = true;
         });
 
         Future.delayed(const Duration(seconds: 2), () {
@@ -78,14 +86,7 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  // ================================================
-  // CHỌN ĐÁP ÁN
-  // ================================================
   void _choose(String key) {
-    // ĐÃ HẾT GIỜ → KHÔNG CHO CHỌN
-    // if (_isTimeUp) return;
-
-    // ĐÃ CHỌN RỒI → KHÔNG CHO CHỌN LẠI
     if (selectedKey != null) return;
 
     setState(() {
@@ -93,9 +94,6 @@ class _QuizScreenState extends State<QuizScreen> {
     });
   }
 
-  // ================================================
-  // NEXT / SUBMIT
-  // ================================================
   void _nextOrSubmit() async {
     _timer?.cancel();
 
@@ -122,9 +120,6 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  // ================================================
-  // NỘP BÀI
-  // ================================================
   Future<void> _submitToServer() async {
     try {
       final res = await repo.submit(widget.quizId, answers);
@@ -166,88 +161,24 @@ class _QuizScreenState extends State<QuizScreen> {
     super.dispose();
   }
 
-  // ================================================
-  // HEADER
-  // ================================================
-  Widget _header(int total) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(1, 24, 20, 16),
-      decoration: const BoxDecoration(
-        color: Color(0xFF4CAF50),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // BÊN TRÁI
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  size: 20,
-                  color: Colors.white,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                onPressed: () => Navigator.pop(context),
-              ),
-              const SizedBox(width: 2),
-              Text(
-                'Câu ${idx + 1} / $total',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
-                ),
-              ),
-            ],
-          ),
-
-          // BÊN PHẢI
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$remain s',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const Text(
-                'Timer',
-                style: TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ================================================
-  // TIẾN TRÌNH
-  // ================================================
   Widget _progressBar(int total) {
     final v = (idx + (selectedKey != null ? 1 : 0)) / total;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
         child: LinearProgressIndicator(
           value: v.clamp(0.0, 1.0),
-          minHeight: 10,
-          backgroundColor: Colors.white,
-          color: const Color(0xFF4CAF50),
+          minHeight: 6,
+          backgroundColor: Colors.white.withOpacity(0.3),
+          color: Colors.white,
         ),
       ),
     );
   }
 
   // ================================================
-  // MÀU LỰA CHỌN
+  // MÀU LỰA CHỌN (Giữ nguyên)
   // ================================================
   Color _tileColor(QQuestion q, String key) {
     if (selectedKey == null) return Colors.grey.shade200;
@@ -260,9 +191,6 @@ class _QuizScreenState extends State<QuizScreen> {
     return Colors.grey.shade200;
   }
 
-  // ================================================
-  // HIỂN THỊ CÂU HỎI
-  // ================================================
   Widget _questionCard(QQuestion q) {
     return Container(
       margin: const EdgeInsets.fromLTRB(10, 8, 10, 12),
@@ -324,9 +252,9 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  // ================================================
-  // NÚT NEXT
-  // ================================================
+  // ================================
+  // NÚT NEXT / NỘP BÀI (ĐÃ ĐỒNG BỘ)
+  // ================================
   Widget _nextButton(bool isLast) {
     final bool canGoNext = selectedKey != null || _isTimeUp;
 
@@ -334,6 +262,7 @@ class _QuizScreenState extends State<QuizScreen> {
       padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
       child: SizedBox(
         width: double.infinity,
+        height: 52, // 👈 BẰNG chiều cao option tile
         child: ElevatedButton(
           onPressed: () {
             if (!canGoNext) {
@@ -350,21 +279,25 @@ class _QuizScreenState extends State<QuizScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: canGoNext ? const Color(0xFF4CAF50) : Colors.grey,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            elevation: 1,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12), // 👈 giống option
             ),
-            elevation: 2,
           ),
-          child: Text(isLast ? 'Hoàn thành' : 'Câu tiếp theo'),
+          child: Text(
+            isLast ? 'Hoàn thành' : 'Câu tiếp theo',
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.3,
+            ),
+          ),
         ),
       ),
     );
   }
 
-  // ================================================
-  // BUILD
-  // ================================================
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuizDetail>(
@@ -406,16 +339,63 @@ class _QuizScreenState extends State<QuizScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2E7D32),
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios,
+                  size: 20,
+                  color: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: Text(
+                'Câu ${idx + 1} / $total',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$remain s',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const Text(
+                        'Timer',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(20),
+                child: _progressBar(total),
+              ),
+            ),
             body: Stack(
               children: [
                 Column(
                   children: [
-                    _header(total),
-                    _progressBar(total),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
+                            const SizedBox(height: 10),
                             _questionCard(q),
                             const SizedBox(height: 6),
                             _nextButton(isLast),
@@ -426,7 +406,6 @@ class _QuizScreenState extends State<QuizScreen> {
                   ],
                 ),
 
-                // 🔥 POPUP HẾT THỜI GIAN
                 if (_showTimeUpMessage)
                   Center(
                     child: Container(
@@ -437,7 +416,7 @@ class _QuizScreenState extends State<QuizScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
-                        '⏳ Hết thời gian!\n'
+                        'Hết thời gian!\n'
                         'Bạn có thể chọn đáp án hoặc bấm "Câu tiếp theo".',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white, fontSize: 16),

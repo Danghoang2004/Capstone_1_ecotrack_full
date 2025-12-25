@@ -15,7 +15,7 @@ class AdminReportPage extends StatefulWidget {
 }
 
 class _AdminReportPageState extends State<AdminReportPage> {
-  final ReportService _reportService = ReportService();
+  final ReportServiceAdmin _reportService = ReportServiceAdmin();
   final TextEditingController _searchController = TextEditingController();
   final ApiClient apiClient = ApiClient(storage: const FlutterSecureStorage());
   List<Report> _reports = [];

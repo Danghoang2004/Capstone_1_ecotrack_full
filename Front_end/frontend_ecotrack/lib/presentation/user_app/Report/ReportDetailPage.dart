@@ -19,11 +19,16 @@ class ReportDetailPage extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'PENDING': return Colors.orange;
-      case 'VERIFIED': return Colors.blue;
-      case 'CLEANED': return Colors.green;
-      case 'REJECTED': return Colors.red;
-      default: return Colors.grey;
+      case 'PENDING':
+        return Colors.orange;
+      case 'VERIFIED':
+        return Colors.blue;
+      case 'CLEANED':
+        return Colors.green;
+      case 'REJECTED':
+        return Colors.red;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -46,9 +51,15 @@ class ReportDetailPage extends StatelessWidget {
               background: Image.network(
                 displayImageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_,__,___) => Container(
-                    color: Colors.grey[300],
-                    child: const Center(child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey))
+                errorBuilder: (_, __, ___) => Container(
+                  color: Colors.grey[300],
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -69,14 +80,20 @@ class ReportDetailPage extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: _getStatusColor(report.status),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           report.status,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const Spacer(),
@@ -90,15 +107,25 @@ class ReportDetailPage extends StatelessWidget {
 
                   Text(
                     report.title,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
 
                   Row(
                     children: [
-                      const Icon(Icons.category_outlined, color: Colors.grey, size: 20),
+                      const Icon(
+                        Icons.category_outlined,
+                        color: Colors.grey,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
-                      Text("Loại: ${report.category}", style: const TextStyle(fontSize: 16)),
+                      Text(
+                        "Loại: ${report.category}",
+                        style: const TextStyle(fontSize: 16),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -111,8 +138,14 @@ class ReportDetailPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    report.description.isEmpty ? "Không có mô tả." : report.description,
-                    style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                    report.description.isEmpty
+                        ? "Không có mô tả."
+                        : report.description,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: Colors.black87,
+                    ),
                   ),
 
                   const SizedBox(height: 20),
@@ -120,8 +153,12 @@ class ReportDetailPage extends StatelessWidget {
 
                   if (report.aiVerified != null) ...[
                     const Text(
-                      "🤖 Kết quả phân tích AI",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple),
+                      "Kết quả phân tích AI",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Container(
@@ -129,13 +166,21 @@ class ReportDetailPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.purple.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.purple.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.purple.withOpacity(0.2),
+                        ),
                       ),
                       child: Column(
                         children: [
-                          _buildAIRow("Xác nhận rác thải:", report.aiVerified! ? "Đúng" : "Không phải rác"),
+                          _buildAIRow(
+                            "Xác nhận rác thải:",
+                            report.aiVerified! ? "Đúng" : "Không phải rác",
+                          ),
                           const SizedBox(height: 8),
-                          _buildAIRow("Độ tin cậy:", "${(report.aiConfidence! * 100).toStringAsFixed(1)}%"),
+                          _buildAIRow(
+                            "Độ tin cậy:",
+                            "${(report.aiConfidence! * 100).toStringAsFixed(1)}%",
+                          ),
                         ],
                       ),
                     ),
@@ -169,7 +214,13 @@ class ReportDetailPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.black54)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
       ],
     );
   }

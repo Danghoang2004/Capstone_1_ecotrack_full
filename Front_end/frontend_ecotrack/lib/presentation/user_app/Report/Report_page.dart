@@ -17,7 +17,7 @@ class Report_page extends StatefulWidget {
 class _Report_pageState extends State<Report_page> {
   // Logic và các hàm không đổi
   File? selectedImage;
-  String selectedTrashType = "";
+  String selectedTrashType = "rác thải"; // Gán mặc định tại đây
   final TextEditingController descriptionController = TextEditingController();
   final ImagePicker picker = ImagePicker();
   bool isSending = false;
@@ -25,60 +25,174 @@ class _Report_pageState extends State<Report_page> {
   final List<String> validTrashTypes = ["Vô cơ", "Hữu cơ", "tổng hợp"];
   final ReportService reportService = ReportService(); // Khởi tạo Service
 
-  void showSuccessDialog() {
+  void _showErrorDialog(String message) {
     showDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 10),
+            Text("Thông báo", style: TextStyle(color: Colors.red)),
+          ],
+        ),
+        content: Text(
+          message, // Đây sẽ là tin nhắn "Vui lòng chờ X phút" từ Backend
+          style: const TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("ĐÃ HIỂU", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  height: 100,
-                  child: Lottie.asset('assets/lotties/animations/success.json'),
+        ],
+      ),
+    );
+  }
+
+  // --- GIAO DIỆN TICKET BÁO CÁO THÀNH CÔNG ---
+  void _showReportSuccessTicket(Map<String, dynamic> data) {
+    // data lấy từ server: {success: true, status: "PENDING", points: 10, message: "...", time: "...", transactionCode: "..."}
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Animation Lottie Success
+              SizedBox(
+                height: 120,
+                child: Lottie.asset(
+                  'assets/lotties/animations/success.json',
+                  repeat: false,
                 ),
-                const SizedBox(height: 7),
-                const Text(
-                  "Gửi báo cáo thành công!",
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
+              ),
+
+              Text(
+                "Gửi báo cáo thành công!",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                data['message'] ?? "Cảm ơn bạn đã đóng góp vì môi trường!",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Widget hiển thị điểm (Nếu AI xác thực ngay và tặng điểm)
+              if (data['points'] > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: Colors.orangeAccent.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.stars, color: Colors.orange, size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        "+${data['points']} Điểm xanh",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Cảm ơn bạn đã đóng góp cho môi trường xanh sạch 💚",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11, color: Colors.black87),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
+
+              const SizedBox(height: 20),
+              const Divider(height: 1),
+              const SizedBox(height: 15),
+
+              // Chi tiết giao dịch
+              _buildTicketRow(
+                "Trạng thái",
+                data['status'] == "VERIFIED" ? "Đã xác thực" : "Đang chờ duyệt",
+              ),
+              _buildTicketRow("Mã báo cáo", data['transactionCode'] ?? "N/A"),
+              _buildTicketRow("Thời gian", _formatServerTime(data['time'])),
+
+              const SizedBox(height: 24),
+
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: const Color(0xFF2E7D32),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: const Text(
-                    "Đóng",
-                    style: TextStyle(color: Colors.white),
+                    "TIẾP TỤC SỐNG XANH",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
+  }
+
+  // Hàm hỗ trợ vẽ dòng thông tin
+  Widget _buildTicketRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Hàm format thời gian từ server
+  String _formatServerTime(String? timeStr) {
+    if (timeStr == null) return "Vừa xong";
+    try {
+      DateTime dt = DateTime.parse(timeStr);
+      return "${dt.hour}:${dt.minute} - ${dt.day}/${dt.month}/${dt.year}";
+    } catch (e) {
+      return timeStr;
+    }
   }
 
   Future<void> _pickImage() async {
@@ -177,86 +291,54 @@ class _Report_pageState extends State<Report_page> {
   Future<void> _submitReport() async {
     final descriptionText = descriptionController.text.trim();
 
-    if (selectedImage == null ||
-        !validTrashTypes.contains(selectedTrashType) ||
-        descriptionText.isEmpty) {
+    if (selectedImage == null || descriptionText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng điền đầy đủ thông tin hợp lệ")),
+        const SnackBar(content: Text("Vui lòng chụp ảnh và nhập mô tả")),
       );
       return;
     }
 
-    if (lastSubmitTime != null &&
-        DateTime.now().difference(lastSubmitTime!).inSeconds < 30) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Vui lòng chờ 30 giây trước khi gửi báo cáo tiếp theo"),
-        ),
-      );
-      return;
-    }
-
-    if (descriptionText.length > 500) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mô tả quá dài, tối đa 500 ký tự")),
-      );
-      return;
-    }
-
-    setState(() {
-      isSending = true;
-    });
+    setState(() => isSending = true);
 
     try {
-      // --- [MỚI] GỌI HÀM LẤY VỊ TRÍ ---
       Position? currentPosition = await _determinePosition();
-
-      // Nếu không lấy được vị trí (do user từ chối hoặc tắt GPS), dừng lại
       if (currentPosition == null) {
-        setState(() {
-          isSending = false;
-        });
+        setState(() => isSending = false);
         return;
       }
-      // --------------------------------
 
-      bool success = await reportService.uploadReport(
+      // GỌI SERVICE VÀ NHẬN DATA
+      final resultData = await reportService.uploadReport(
         title: "Báo cáo rác thải",
         description: descriptionText,
-        // --- [MỚI] TRUYỀN TỌA ĐỘ THỰC TẾ ---
         latitude: currentPosition.latitude.toString(),
         longitude: currentPosition.longitude.toString(),
-        // -----------------------------------
         status: "PENDING",
         trashCategory: selectedTrashType,
         imagePath: selectedImage!.path,
       );
-
-      if (success) {
-        lastSubmitTime = DateTime.now();
-        showSuccessDialog();
-        // Reset form
-        setState(() {
-          selectedImage = null;
-          descriptionController.clear();
-          selectedTrashType = "";
-        });
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Gửi thất bại")));
+        if (resultData != null) {
+          // KIỂM TRA SUCCESS TỪ BACKEND TRẢ VỀ
+          if (resultData['success'] == true || resultData['status'] == "PENDING") {
+            // 1. Trường hợp thành công hoặc đang chờ duyệt
+            _showReportSuccessTicket(resultData);
+            setState(() {
+              selectedImage = null;
+              descriptionController.clear();
+            });
+          } else {
+            // 2. [QUAN TRỌNG] Trường hợp lỗi Business (Cooldown, Limit, AI reject)
+            // Hiển thị message lỗi ở giữa màn hình
+            _showErrorDialog(resultData['message'] ?? "Gửi báo cáo thất bại");
+          }
+        } else {
+          _showErrorDialog("Lỗi hệ thống, vui lòng thử lại sau");
+        }
+      } catch (e) {
+        _showErrorDialog("Lỗi: $e");
+      } finally {
+        if (mounted) setState(() => isSending = false);
       }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Lỗi khi gửi: $e")));
-    } finally {
-      if (mounted) {
-        setState(() {
-          isSending = false;
-        });
-      }
-    }
   }
 
   // --- BUILD METHOD VÀ CÁC WIDGET CON ĐÃ TỐI ƯU ---
@@ -300,8 +382,7 @@ class _Report_pageState extends State<Report_page> {
             children: [
               _buildImagePickerSection(),
               const SizedBox(height: 20),
-              _buildTrashTypeSection(),
-              const SizedBox(height: 20),
+              // _buildTrashTypeSection() đã được lược bỏ theo yêu cầu
               _buildDescriptionSection(),
               const SizedBox(height: 15),
               _buildSubmitButton(),
@@ -392,6 +473,7 @@ class _Report_pageState extends State<Report_page> {
     );
   }
 
+  // Widget này vẫn giữ lại trong code nhưng không gọi trong build để tránh lỗi compile
   Widget _buildTrashTypeSection() {
     return Container(
       height: 120,

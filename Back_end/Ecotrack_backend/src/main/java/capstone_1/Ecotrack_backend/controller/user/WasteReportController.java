@@ -15,7 +15,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user/reports")
@@ -29,7 +31,7 @@ public class WasteReportController {
     }
 
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    public WasteReport submitReport(
+    public ResponseEntity<?> submitReport(
             HttpServletRequest request,
             @RequestParam("title") String title,
             @RequestParam("category") String category,
@@ -70,12 +72,35 @@ public class WasteReportController {
             report.setImageUrl(imageUrl);
             report.setCreatedAt(LocalDateTime.now());
 
-            // 3. Gọi Service (Truyền thêm file ảnh để Service gọi AI)
-            return reportService.saveReport(report, image);
+            WasteReport saved = reportService.saveReport(report, image);
 
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", saved.getStatus() == WasteReport.Status.VERIFIED);
+            response.put("status", saved.getStatus().name());
+            response.put("points", saved.getStatus() == WasteReport.Status.VERIFIED ? 10 : 0);
+            response.put("message",
+                    saved.getStatus() == WasteReport.Status.VERIFIED
+                            ? "Báo cáo của bạn đã được AI xác thực thành công."
+                            : saved.getStatus() == WasteReport.Status.REJECTED
+                            ? "AI không phát hiện rác hoặc ảnh không rõ."
+                            : "Báo cáo đang chờ kiểm duyệt.");
+
+            response.put("time", saved.getCreatedAt());
+            response.put("transactionCode", "TXN-" + saved.getReportId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException ex) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", ex.getMessage()); // Lấy "Vui lòng chờ thêm X phút..."
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new RuntimeException("Failed to create report: " + ex.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi hệ thống: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 

@@ -47,9 +47,6 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
     );
   }
 
-  // ===============================
-  // 📌 HEADER GIỐNG GIAO DIỆN
-  // ===============================
   Widget _buildSectionHeader(String title, String action) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -60,8 +57,6 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
             title,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
-
-          /// 👉 CLICK "Xem tất cả"
           InkWell(
             onTap: () {
               Navigator.pushNamed(context, '/campaigns');
@@ -69,8 +64,8 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
             child: Text(
               action,
               style: const TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.w600,
+                color: Color.fromARGB(255, 11, 11, 11),
+                fontWeight: FontWeight.normal,
               ),
             ),
           ),

@@ -4,10 +4,7 @@ import capstone_1.Ecotrack_backend.dto.response.ActivityResponse;
 import capstone_1.Ecotrack_backend.dto.response.BadgeResponse;
 import capstone_1.Ecotrack_backend.dto.response.ProfileResponse;
 import capstone_1.Ecotrack_backend.dto.response.RankingUserResponse;
-import capstone_1.Ecotrack_backend.model.Badge;
-import capstone_1.Ecotrack_backend.model.User;
-import capstone_1.Ecotrack_backend.model.UserPoints;
-import capstone_1.Ecotrack_backend.model.UserProfile;
+import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,42 +28,46 @@ public class ProfileService {
     private final UserBadgeRepository userBadgeRepository;
     private final PointTransactionRepository pointTransactionRepository;
 
+    // TIÊM THÊM REPOSITORY LEVEL
+    private final LevelRepository levelRepository;
+
     private final DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_DATE_TIME;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProfileResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
 
         UserProfile profile = user.getUserProfile();
 
-        // points
+        // 1. LẤY SỐ ĐIỂM HIỆN TẠI
         UserPoints points = userPointsRepository.findById(userId).orElse(null);
         Integer pts = points != null ? points.getPoints() : 0;
+
+        // 2. TÌM LEVEL TƯƠNG ỨNG VỚI SỐ ĐIỂM (Logic mới)
+        Level currentLevel = levelRepository.findLevelByPoints(pts)
+                .orElseGet(() -> levelRepository.findMaxLevel());
+
+        // --- GIỮ NGUYÊN CÁC LOGIC KHÔNG LIÊN QUAN ---
 
         // counts
         Long reportCount = wasteReportRepository.countByUserId(userId);
         Long groupCount = groupMemberRepository.countByUserId(userId);
 
-        // Tính rank từ user_points (giống RankingService)
+        // Tính rank từ user_points
         List<UserPoints> userPointsList = userPointsRepository.findAll()
                 .stream()
                 .sorted((a, b) -> Integer.compare(b.getPoints(), a.getPoints()))
                 .collect(Collectors.toList());
 
-        // Filter chỉ lấy users có role ROLE_USER (không lấy ROLE_ADMIN)
         List<UserPoints> filteredUserPoints = userPointsList.stream()
                 .filter(userPoints -> {
-                    User u = userRepository.findById(userPoints.getUserId())
-                            .orElse(null);
+                    User u = userRepository.findById(userPoints.getUserId()).orElse(null);
                     if (u == null) return false;
-                    // Chỉ lấy users có role ROLE_USER, bỏ qua ROLE_ADMIN
-                    return u.getRoles().stream()
-                            .anyMatch(role -> "ROLE_USER".equals(role.getName()));
+                    return u.getRoles().stream().anyMatch(role -> "ROLE_USER".equals(role.getName()));
                 })
                 .collect(Collectors.toList());
 
-        // Tính rank của user hiện tại (tính cho TẤT CẢ users có ROLE_USER, không chỉ top 5)
         Integer rank = null;
         for (int i = 0; i < filteredUserPoints.size(); i++) {
             if (filteredUserPoints.get(i).getUserId().equals(userId)) {
@@ -75,42 +76,32 @@ public class ProfileService {
             }
         }
 
-        // Lấy top 5 users cho ranking (chỉ ROLE_USER)
+        // Lấy top 5 users
         int limit = Math.min(5, filteredUserPoints.size());
         List<RankingUserResponse> topRankings = IntStream.range(0, limit)
                 .mapToObj(index -> {
                     UserPoints userPoints = filteredUserPoints.get(index);
                     User topUser = userRepository.findById(userPoints.getUserId())
-                            .orElseThrow(() -> new RuntimeException("Không tìm thấy user với id: " + userPoints.getUserId()));
+                            .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
                     UserProfile topProfile = topUser.getUserProfile();
-
                     Long topReportCount = wasteReportRepository.countByUserId(topUser.getId());
                     Long topBadgeCount = (long) userBadgeRepository.findByUserId(topUser.getId()).size();
 
                     int topRank = index + 1;
-                    List<String> titles;
-                    if (topRank == 1) {
-                        titles = List.of("Eco Warrior", "Clean Champion");
-                    } else {
-                        titles = List.of("Eco Warrior");
-                    }
+                    List<String> titles = (topRank == 1) ? List.of("Eco Warrior", "Clean Champion") : List.of("Eco Warrior");
 
                     RankingUserResponse rankingResponse = new RankingUserResponse();
                     rankingResponse.setId(topUser.getId().toString());
                     rankingResponse.setRank(topRank);
-                    rankingResponse.setUserName(topProfile != null && topProfile.getFullName() != null
-                            ? topProfile.getFullName()
-                            : topUser.getUsername());
+                    rankingResponse.setUserName(topProfile != null && topProfile.getFullName() != null ? topProfile.getFullName() : topUser.getUsername());
                     rankingResponse.setPoints(userPoints.getPoints());
                     rankingResponse.setAvatarUrl(topProfile != null ? topProfile.getAvatarUrl() : null);
                     rankingResponse.setLocation(topProfile != null ? topProfile.getLocation() : null);
                     rankingResponse.setTitles(titles);
                     rankingResponse.setActivities(topReportCount.intValue());
                     rankingResponse.setBadges(topBadgeCount.intValue());
-
                     return rankingResponse;
-                })
-                .collect(Collectors.toList());
+                }).collect(Collectors.toList());
 
         // badges
         List<BadgeResponse> badges = userBadgeRepository.findByUserId(userId)
@@ -127,7 +118,7 @@ public class ProfileService {
                     return br;
                 }).collect(Collectors.toList());
 
-        // recent activities (point transactions, newest first, limit 10)
+        // recent activities
         List<ActivityResponse> activities = pointTransactionRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(tx -> {
@@ -140,6 +131,7 @@ public class ProfileService {
                     return a;
                 }).collect(Collectors.toList());
 
+        // --- MAPPING DATA VÀO RESPONSE ---
         ProfileResponse resp = new ProfileResponse();
         resp.setUserId(user.getId());
         resp.setUsername(user.getUsername());
@@ -149,11 +141,19 @@ public class ProfileService {
             resp.setFullName(profile.getFullName());
             resp.setAvatarUrl(profile.getAvatarUrl());
             resp.setLocation(profile.getLocation());
-            if (profile.getLevel() != null) {
-                resp.setLevelName(profile.getLevel().getLevelName());
-                resp.setLevelIcon(profile.getLevel().getIconUrl());
-                resp.setMinPoints(profile.getLevel().getMinPoints());
-                resp.setMaxPoints(profile.getLevel().getMaxPoints());
+
+            // 3. CẬP NHẬT THÔNG TIN LEVEL VÀO RESPONSE
+            if (currentLevel != null) {
+                resp.setLevelName(currentLevel.getLevelName());
+                resp.setLevelIcon(currentLevel.getIconUrl());
+                resp.setMinPoints(currentLevel.getMinPoints());
+                resp.setMaxPoints(currentLevel.getMaxPoints());
+
+                // Đồng bộ lại Level vào bảng user_profile nếu có sự thay đổi
+                if (profile.getLevel() == null || !profile.getLevel().getLevelId().equals(currentLevel.getLevelId())) {
+                    profile.setLevel(currentLevel);
+                    userProfileRepository.save(profile);
+                }
             }
         }
 

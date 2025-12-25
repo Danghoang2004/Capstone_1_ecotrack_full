@@ -70,13 +70,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildSliverAppBar(view),
         SliverToBoxAdapter(
           child: Container(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              bottom: 16.0,
+              top: 0,
+            ),
             color: Colors.grey[200],
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProgressAndStats(view),
-                const SizedBox(height: 5),
                 _buildStatsGrid(view),
                 const SizedBox(height: 20),
                 _buildAchievementsSection(view.badges),
@@ -137,15 +140,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? view.fullName
         : (view.username.isNotEmpty ? view.username : 'Người dùng');
 
-    // Tính tiến độ (giữ nguyên logic cũ)
-    final min = (view.minPoints ?? 0).toDouble();
-    final max =
-        (view.maxPoints ?? (view.points > 0 ? view.points.toDouble() : 100))
-            .toDouble();
-    final cur = view.points.toDouble();
-    final percent = (max > min)
-        ? ((cur - min) / (max - min)).clamp(0.0, 1.0)
-        : 0.0;
+    // ================= LOGIC LEVEL (ĐÃ CẬP NHẬT) =================
+    final double min = (view.minPoints ?? 0).toDouble();
+    final double max = (view.maxPoints ?? 100).toDouble();
+    final double cur = view.points.toDouble();
+
+    // Tính phần trăm: (Điểm hiện tại - Điểm sàn) / (Điểm trần - Điểm sàn)
+    double percent = 0.0;
+    if (max > min) {
+      percent = ((cur - min) / (max - min)).clamp(0.0, 1.0);
+    } else {
+      percent = 1.0; // Đạt cấp tối đa
+    }
+    // =============================================================
 
     return SliverAppBar(
       expandedHeight: 250.0,
@@ -171,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            // Icon trên cùng
+            // Icon Settings (Trái)
             Positioned(
               top: 28,
               left: 12,
@@ -180,6 +187,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () {},
               ),
             ),
+
+            // Icon Group & Edit (Phải)
             Positioned(
               top: 28,
               right: 12,
@@ -192,28 +201,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     onPressed: () {},
                   ),
-                  // Tìm đến nút icon edit của bạn trong ProfileScreen
                   IconButton(
-                    icon: const Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                    ), // Thêm color: Colors.white cho nổi
+                    icon: const Icon(Icons.edit, color: Colors.white),
                     onPressed: () async {
-                      // 'view' chính là dữ liệu profile hiện tại được truyền vào hàm này
-                      // Không cần check null vì view đã là non-nullable trong hàm này
-
-                      // GỌI LỆNH CHUYỂN TRANG
                       final result = await Navigator.pushNamed(
                         context,
                         '/editprofile',
-                        arguments:
-                            view, // <--- SỬA LỖI: Thay _profileData bằng view
+                        arguments: view,
                       );
-
-                      // Xử lý khi quay lại (nếu người dùng đã bấm lưu thành công và trả về true)
                       if (result == true) {
-                        print("Đã cập nhật profile, đang tải lại dữ liệu...");
-                        // Reload lại dữ liệu bằng cách gọi lại API
                         setState(() {
                           _viewFuture = _userService.getProfileView();
                         });
@@ -224,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            // Avatar + tên + location
+            // Thông tin chính (Avatar, Name, Location, Level)
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -245,15 +241,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
+                    shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
                   ),
                 ),
+
+                // Hiển thị Tên Cấp độ từ Database
+                Text(
+                  "Cấp độ: ${view.levelName ?? 'Thành viên mới'}",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
                 Text(
                   view.location ?? 'Chưa cập nhật địa điểm',
                   style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 10),
 
-                // Thanh tiến độ giống file trên
+                // Thanh tiến độ XP
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
@@ -264,20 +272,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const Text(
                             'Tiến độ lên cấp',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: Colors.white70,
                             ),
                           ),
+                          // Hiển thị điểm hiện tại / điểm tối đa của cấp độ
                           Text(
-                            '${view.points}/${view.maxPoints} XP',
+                            '${view.points} / ${view.maxPoints} XP',
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
                         child: LinearProgressIndicator(
@@ -286,7 +296,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Colors.white,
                           ),
-                          minHeight: 8,
+                          minHeight: 7,
                         ),
                       ),
                     ],
@@ -301,16 +311,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // =================== STATS GRID (4 Ô) ===================
+  // =================== STATS GRID (4 Ô) - ĐÃ TỐI ƯU ===================
 
   Widget _buildStatsGrid(ProfileView view) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 1,
-      mainAxisSpacing: 1,
-      childAspectRatio: 1.1,
+      crossAxisSpacing: 12, // Tăng khoảng cách giữa các cột để thoáng hơn
+      mainAxisSpacing: 12, // Tăng khoảng cách giữa các hàng
+      childAspectRatio:
+          1.5, // Tăng tỷ lệ này để làm các ô thấp xuống (thu nhỏ lại)
       children: [
         _statCard(
           color: const Color(0xFF2E7D32),
@@ -349,26 +360,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 0,
+      elevation: 2, // Thêm một chút đổ bóng cho chuyên nghiệp
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // Căn giữa toàn bộ theo trục dọc và trục ngang
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(height: 5),
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ), // Giảm size icon một chút (từ 28 xuống 24)
+            const SizedBox(height: 4),
             Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 18, // Giảm size chữ một chút (từ 20 xuống 18)
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               subtitle,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              textAlign: TextAlign.center, // Căn giữa nội dung text
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11, // Giảm nhẹ size sub (từ 12 xuống 11)
+              ),
             ),
           ],
         ),

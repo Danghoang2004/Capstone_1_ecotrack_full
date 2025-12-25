@@ -7,7 +7,8 @@ import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/core/services/CampaignApi.dart';
 
 class CreateCampaignForm extends StatefulWidget {
-  const CreateCampaignForm({super.key});
+  final VoidCallback? onSuccess;
+  const CreateCampaignForm({super.key, this.onSuccess});
 
   @override
   State<CreateCampaignForm> createState() => _CreateCampaignFormState();
@@ -381,15 +382,80 @@ class _CreateCampaignFormState extends State<CreateCampaignForm> {
         await api.createMultipart(fields: fields, imageFile: _mobileImageFile!);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tạo chiến dịch thành công')),
-        );
-        Navigator.pop(context);
+        // 1. Hiển thị thông báo ở giữa màn hình
+        _showSuccessOverlay(context);
+
+        // 2. Đợi 1.5 - 2 giây để người dùng kịp nhìn thông báo trước khi đóng panel và load lại data
+        await Future.delayed(const Duration(milliseconds: 1800));
+
+        // 3. Gọi callback để đóng SidePanel và refresh danh sách
+        if (widget.onSuccess != null) {
+          widget.onSuccess!();
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
+  }
+
+  void _showSuccessOverlay(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Không cho bấm ra ngoài để tắt
+      builder: (BuildContext context) {
+        // Tự động đóng dialog sau 2 giây
+        Future.delayed(const Duration(seconds: 2), () {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        });
+
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.rectangle,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10.0,
+                  offset: Offset(0.0, 10.0),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Để dialog ôm sát nội dung
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF5EAC24),
+                  size: 64,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Thành công!",
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Chiến dịch của bạn đã được tạo thành công.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

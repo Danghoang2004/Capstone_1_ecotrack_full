@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'api_client.dart';
+import 'package:http/http.dart' as http;
 
 class ReportService {
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   late final ApiClient apiClient = ApiClient(storage: storage);
 
   //  Upload report với ảnh
-  Future<bool> uploadReport({
+  // Trong file report_service.dart
+
+  Future<Map<String, dynamic>?> uploadReport({
     required String title,
     required String description,
     required String latitude,
@@ -17,7 +20,7 @@ class ReportService {
     required String imagePath,
   }) async {
     try {
-      final response = await apiClient.postMultipart(
+      final streamedResponse = await apiClient.postMultipart(
         "/api/user/reports/upload",
         {
           "title": title,
@@ -30,11 +33,18 @@ class ReportService {
         {"image": imagePath},
       );
 
-      if (response.statusCode == 200) return true;
+      final response = await http.Response.fromStream(streamedResponse);
 
-      return false;
+      // Giải mã JSON bất kể statusCode là bao nhiêu
+      final Map<String, dynamic> responseData = apiClient.decodeUtf8Json(response);
+
+      // Thêm statusCode vào map để xử lý ở UI nếu cần
+      responseData['statusCode'] = response.statusCode;
+
+      return responseData;
     } catch (e) {
-      return false;
+      print("Error upload: $e");
+      return {"success": false, "message": "Không thể kết nối máy chủ: $e"};
     }
   }
 

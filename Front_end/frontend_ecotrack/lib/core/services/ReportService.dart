@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/data/models/report_model.dart';
 import 'api_client.dart';
 
-class ReportService {
+class ReportServiceAdmin {
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   late final ApiClient apiClient = ApiClient(storage: storage);
   Future<List<Report>> fetchMyReports() async {

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend_ecotrack/core/services/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../controllers/ranking_controller.dart';
 import '../widgets/top_three_section.dart';
@@ -17,11 +19,13 @@ class RankingScreen extends StatefulWidget {
 class _RankingScreenState extends State<RankingScreen> {
   late final RankingController controller;
   int _selectedTab = 0; // 0: Cá Nhân, 1: Nhóm
+  late final ApiClient _apiClient;
 
   @override
   void initState() {
     super.initState();
-    controller = RankingController();
+    _apiClient = ApiClient(storage: const FlutterSecureStorage());
+    controller = RankingController(_apiClient);
     _loadData();
   }
 
@@ -71,12 +75,10 @@ class _RankingScreenState extends State<RankingScreen> {
       // Mobile: Dùng Scaffold và SafeArea
       return Scaffold(
         backgroundColor: HomeColors.background,
+        appBar: const RankingHeader(),
         body: SafeArea(
           child: Column(
             children: [
-              // Header
-              const RankingHeader(),
-              // Tabs
               _buildTabs(),
               // Content
               Expanded(

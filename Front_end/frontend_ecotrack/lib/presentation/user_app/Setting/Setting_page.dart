@@ -5,6 +5,8 @@ import 'package:frontend_ecotrack/presentation/user_app/Home/controllers/profile
 import 'package:frontend_ecotrack/presentation/user_app/Home/widgets/header/header.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/ThemeService.dart';
 
+import '../introduction/introduction_page.dart';
+
 class SettingsScreen extends StatefulWidget {
   final bool hideAppBar;
 
@@ -300,6 +302,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   const SizedBox(height: 18),
 
+                  // --- PHẦN MỚI: THÔNG TIN & HỖ TRỢ ---
+                  const SizedBox(height: 18),
+                  Container(
+                    decoration: cardDecoration(context),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Thông Tin & Hỗ Trợ',
+                          style: _headerStyle.copyWith(fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        settingRow(
+                          leading: const Icon(
+                            Icons.info_outline_rounded,
+                            color: Color(0xFF2E7D32),
+                          ),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Về EcoTrack', style: _headerStyle),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Xem giới thiệu, sứ mệnh và đội ngũ phát triển',
+                                style: _subTextStyle,
+                              ),
+                            ],
+                          ),
+                          trailing: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.3),
+                          ),
+                          onTap: () {
+                            // Lệnh điều hướng sang trang Introduction
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => IntroductionPage()),
+                            );
+                          },
+                        ),
+                        // Bạn có thể thêm các dòng như "Hướng dẫn sử dụng" hoặc "Đánh giá ứng dụng" ở đây
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20,),
                   // --- PHẦN 3: TÀI KHOẢN ---
                   Container(
                     decoration: cardDecoration(context),

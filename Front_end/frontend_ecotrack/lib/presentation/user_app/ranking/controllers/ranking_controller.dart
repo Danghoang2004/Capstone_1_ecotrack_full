@@ -1,4 +1,5 @@
 // Ranking Controller - Quản lý bảng xếp hạng
+import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/core/services/ranking_service.dart';
 
 class RankingUserModel {
@@ -24,17 +25,15 @@ class RankingUserModel {
     required this.badges,
   });
 
-  factory RankingUserModel.fromJson(Map<String, dynamic> json) {
+  factory RankingUserModel.fromJson(Map<String, dynamic> json, ApiClient api) {
     return RankingUserModel(
       id: json['id']?.toString() ?? '',
       rank: json['rank'] ?? 0,
       userName: json['userName'] ?? '',
       points: json['points'] ?? 0,
-      avatarUrl: json['avatarUrl'],
+      avatarUrl: api.buildImageUrl(json['avatarUrl']),
       location: json['location'] ?? '',
-      titles: json['titles'] != null
-          ? List<String>.from(json['titles'])
-          : [],
+      titles: json['titles'] != null ? List<String>.from(json['titles']) : [],
       activities: json['activities'] ?? 0,
       badges: json['badges'] ?? 0,
     );
@@ -64,17 +63,15 @@ class RankingGroupModel {
     required this.activities,
   });
 
-  factory RankingGroupModel.fromJson(Map<String, dynamic> json) {
+  factory RankingGroupModel.fromJson(Map<String, dynamic> json, ApiClient api) {
     return RankingGroupModel(
       id: json['id']?.toString() ?? '',
       rank: json['rank'] ?? 0,
       groupName: json['groupName'] ?? '',
       points: json['points'] ?? 0,
-      logoUrl: json['logoUrl'],
+      logoUrl: api.buildImageUrl(json['logoUrl']),
       location: json['location'] ?? '',
-      titles: json['titles'] != null
-          ? List<String>.from(json['titles'])
-          : [],
+      titles: json['titles'] != null ? List<String>.from(json['titles']) : [],
       members: json['members'] ?? 0,
       activities: json['activities'] ?? 0,
     );
@@ -83,7 +80,8 @@ class RankingGroupModel {
 
 class RankingController {
   final RankingService _rankingService = RankingService();
-
+  final ApiClient _api;
+  RankingController(this._api);
   List<RankingUserModel> _individualRankings = [];
   List<RankingGroupModel> _groupRankings = [];
   bool _isLoadingIndividual = false;
@@ -107,8 +105,7 @@ class RankingController {
       _individualRankings.skip(3).toList();
 
   // Lấy top 3 nhóm
-  List<RankingGroupModel> get topThreeGroups =>
-      _groupRankings.take(3).toList();
+  List<RankingGroupModel> get topThreeGroups => _groupRankings.take(3).toList();
 
   // Lấy danh sách từ hạng 4 trở đi (nhóm)
   List<RankingGroupModel> get remainingGroups =>
@@ -120,13 +117,15 @@ class RankingController {
     try {
       final data = await _rankingService.getIndividualRankings();
       _individualRankings = data
-          .map((json) => RankingUserModel.fromJson(json))
+          .map((json) => RankingUserModel.fromJson(json, _api))
           .toList();
     } catch (e) {
       // Nếu có 401, ApiClient đã xử lý (hiển thị dialog session expired)
       // Không cần hiển thị error message nữa
-      if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
-        _errorIndividual = null; // Không set error để không hiển thị error message
+      if (e.toString().contains('401') ||
+          e.toString().contains('Unauthorized')) {
+        _errorIndividual =
+            null; // Không set error để không hiển thị error message
       } else {
         _errorIndividual = e.toString();
       }
@@ -142,12 +141,13 @@ class RankingController {
     try {
       final data = await _rankingService.getGroupRankings();
       _groupRankings = data
-          .map((json) => RankingGroupModel.fromJson(json))
+          .map((json) => RankingGroupModel.fromJson(json, _api))
           .toList();
     } catch (e) {
       // Nếu có 401, ApiClient đã xử lý (hiển thị dialog session expired)
       // Không cần hiển thị error message nữa
-      if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+      if (e.toString().contains('401') ||
+          e.toString().contains('Unauthorized')) {
         _errorGroup = null; // Không set error để không hiển thị error message
       } else {
         _errorGroup = e.toString();
@@ -158,4 +158,3 @@ class RankingController {
     }
   }
 }
-

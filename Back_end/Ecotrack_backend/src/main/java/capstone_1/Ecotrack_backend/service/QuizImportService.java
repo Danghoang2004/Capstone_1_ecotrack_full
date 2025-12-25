@@ -4,6 +4,7 @@ import capstone_1.Ecotrack_backend.model.Quiz;
 import capstone_1.Ecotrack_backend.model.QuizQuestion;
 import capstone_1.Ecotrack_backend.repository.QuizQuestionRepository;
 import capstone_1.Ecotrack_backend.repository.QuizRepository;
+import capstone_1.Ecotrack_backend.repository.UserQuizAttemptRepository;
 import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -23,6 +24,8 @@ public class QuizImportService {
 
     @Autowired
     private QuizRepository quizRepository;
+    @Autowired
+    private UserQuizAttemptRepository userQuizAttemptRepository;
 
     public void importQuestionsFromExcel(MultipartFile file, Long quizId) throws Exception {
         Quiz quiz = quizRepository.findById(quizId)
@@ -70,5 +73,21 @@ public class QuizImportService {
         importQuestionsFromExcel(file, newQuiz.getId());
 
         return newQuiz;
+    }
+
+    @Transactional
+    public void deleteQuizAndRelatedData(Long quizId) {
+        if (!quizRepository.existsById(quizId)) {
+            throw new RuntimeException("Không tìm thấy bộ đề thi để xóa");
+        }
+
+        // 1. Xóa lịch sử làm bài (Bảng con)
+        userQuizAttemptRepository.deleteByQuizId(quizId);
+
+        // 2. Xóa các câu hỏi (Bảng con)
+        questionRepository.deleteByQuiz_Id(quizId);
+
+        // 3. Cuối cùng, xóa chính bộ đề đó (Bảng cha) bằng hàm mặc định
+        quizRepository.deleteById(quizId);
     }
 }

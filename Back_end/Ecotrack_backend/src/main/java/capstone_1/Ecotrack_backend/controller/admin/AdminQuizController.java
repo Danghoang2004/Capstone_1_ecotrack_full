@@ -58,8 +58,13 @@ public class AdminQuizController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteQuiz(@PathVariable Long id) {
-        quizRepository.deleteById(id);
-        return ResponseEntity.ok(Map.of("message", "Đã xóa bộ đề"));
+        try {
+            // Gọi hàm xóa an toàn từ Service
+            importService.deleteQuizAndRelatedData(id);
+            return ResponseEntity.ok(Map.of("message", "Đã xóa bộ đề và toàn bộ dữ liệu liên quan thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi khi xóa bộ đề: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{quizId}/questions")

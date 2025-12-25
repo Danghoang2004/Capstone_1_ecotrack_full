@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend_ecotrack/core/services/ReportService.dart';
-
 import 'package:latlong2/latlong.dart';
 import 'package:frontend_ecotrack/data/models/report_model.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // [QUAN TRỌNG] Import để lấy IP
-import 'package:intl/intl.dart'; // Import để format ngày giờ
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:intl/intl.dart';
 
 class AdminMapPage extends StatefulWidget {
   const AdminMapPage({super.key});
@@ -16,8 +15,14 @@ class AdminMapPage extends StatefulWidget {
 
 class _AdminMapPageState extends State<AdminMapPage> {
   final MapController _mapController = MapController();
-  final ReportService _reportService = ReportService();
+  final ReportServiceAdmin _reportService = ReportServiceAdmin();
+
   List<Report> _reports = [];
+
+  // ================== [THÊM MỚI] ==================
+  final Distance _distance = const Distance();
+  List<List<Report>> _groupedReports = [];
+  // =================================================
 
   @override
   void initState() {
@@ -32,36 +37,71 @@ class _AdminMapPageState extends State<AdminMapPage> {
         setState(() {
           _reports = data;
         });
+
+        // ===== [THÊM] Gom nhóm GPS trong bán kính 40m =====
+        _groupReportsByDistance(data, radiusInMeters: 40);
       }
     } catch (e) {
       debugPrint("Lỗi tải báo cáo: $e");
     }
   }
 
-  // --- [LOGIC 1] Xử lý URL ảnh dựa trên .env ---
+  // ================== [THÊM MỚI] ==================
+  void _groupReportsByDistance(
+    List<Report> reports, {
+    double radiusInMeters = 40,
+  }) {
+    final List<List<Report>> groups = [];
+
+    for (final report in reports) {
+      bool added = false;
+
+      for (final group in groups) {
+        final center = group.first;
+
+        final double dist = _distance(
+          LatLng(center.latitude, center.longitude),
+          LatLng(report.latitude, report.longitude),
+        );
+
+        if (dist <= radiusInMeters) {
+          group.add(report);
+          added = true;
+          break;
+        }
+      }
+
+      if (!added) {
+        groups.add([report]);
+      }
+    }
+
+    setState(() {
+      _groupedReports = groups;
+    });
+  }
+  // =================================================
+
   String _buildImageUrl(String? path) {
     if (path == null || path.isEmpty) return "";
     if (path.startsWith("http")) return path;
 
-    // Lấy URL từ file .env, nếu không có thì dùng default
     final String baseUrl =
         dotenv.env['API_BASE_URL'] ?? "http://192.168.1.89:8080";
     return "$baseUrl$path";
   }
 
-  // --- [LOGIC 2] Hiển thị Popup chi tiết ---
   void _showReportDetail(BuildContext context, Report report) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: 400, // Chiều rộng popup
+          width: 400,
           padding: const EdgeInsets.all(0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 1. Ảnh Báo Cáo
               Stack(
                 children: [
                   ClipRRect(
@@ -69,29 +109,17 @@ class _AdminMapPageState extends State<AdminMapPage> {
                       top: Radius.circular(16),
                     ),
                     child: Image.network(
-                      _buildImageUrl(report.imageUrl), // Gọi hàm xử lý ảnh
+                      _buildImageUrl(report.imageUrl),
                       height: 200,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         height: 200,
-                        width: double.infinity,
                         color: Colors.grey[200],
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.broken_image,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
-                            Text("Không tải được ảnh"),
-                          ],
-                        ),
+                        child: const Icon(Icons.broken_image, size: 50),
                       ),
                     ),
                   ),
-                  // Nút đóng
                   Positioned(
                     right: 8,
                     top: 8,
@@ -109,8 +137,6 @@ class _AdminMapPageState extends State<AdminMapPage> {
                   ),
                 ],
               ),
-
-              // 2. Thông tin chi tiết
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -124,15 +150,11 @@ class _AdminMapPageState extends State<AdminMapPage> {
                           DateFormat(
                             'dd/MM/yyyy HH:mm',
                           ).format(report.createdAt),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: const TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-
                     Text(
                       report.title,
                       style: const TextStyle(
@@ -141,64 +163,9 @@ class _AdminMapPageState extends State<AdminMapPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.category_outlined,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Loại rác: ${report.category}",
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ],
-                    ),
+                    Text("Loại rác: ${report.category}"),
                     const SizedBox(height: 12),
-
-                    const Text(
-                      "Mô tả:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      report.description.isNotEmpty
-                          ? report.description
-                          : "Không có mô tả",
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Tọa độ GPS
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              "${report.latitude}, ${report.longitude}",
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Text(report.description),
                   ],
                 ),
               ),
@@ -209,6 +176,63 @@ class _AdminMapPageState extends State<AdminMapPage> {
     );
   }
 
+  // ================== [THÊM MỚI] ==================
+  void _showGroupedAdminReports(BuildContext context, List<Report> reports) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              height: 5,
+              width: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "Có ${reports.length} báo cáo gần nhau",
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: reports.length,
+                itemBuilder: (_, index) {
+                  final r = reports[index];
+                  return ListTile(
+                    leading: Icon(
+                      Icons.location_pin,
+                      color: _getStatusColor(r.status),
+                    ),
+                    title: Text(r.title),
+                    subtitle: Text(
+                      "${r.latitude}, ${r.longitude}",
+                      maxLines: 1,
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showReportDetail(context, r);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  // =================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -216,35 +240,56 @@ class _AdminMapPageState extends State<AdminMapPage> {
         children: [
           FlutterMap(
             mapController: _mapController,
-            options: MapOptions(
-              center: LatLng(16.0471, 108.2068), // Tọa độ mặc định
-              zoom: 12.0,
-            ),
+            options: MapOptions(center: LatLng(16.0471, 108.2068), zoom: 12.0),
             children: [
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
               ),
+
+              // ======= [THAY MARKER THEO NHÓM] =======
               MarkerLayer(
-                markers: _reports.map((r) {
+                markers: _groupedReports.map((group) {
+                  final first = group.first;
+
                   return Marker(
-                    point: LatLng(r.latitude, r.longitude),
-                    width: 45, // Tăng kích thước chút cho dễ bấm
-                    height: 45,
-                    builder: (ctx) => GestureDetector(
+                    point: LatLng(first.latitude, first.longitude),
+                    width: 50,
+                    height: 50,
+                    builder: (_) => GestureDetector(
                       onTap: () {
-                        // [GỌI HÀM HIỂN THỊ POPUP]
-                        _showReportDetail(context, r);
+                        if (group.length == 1) {
+                          _showReportDetail(context, first);
+                        } else {
+                          _showGroupedAdminReports(context, group);
+                        }
                       },
-                      child: Icon(
-                        Icons.location_pin,
-                        color: _getStatusColor(r.status),
-                        size: 45,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black38,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.location_pin,
+                            size: 45,
+                            color: _getStatusColor(first.status),
                           ),
+                          if (group.length > 1)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                padding: const EdgeInsets.all(5),
+                                decoration: const BoxDecoration(
+                                  color: Colors.black,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  "${group.length}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -253,67 +298,13 @@ class _AdminMapPageState extends State<AdminMapPage> {
               ),
             ],
           ),
-
-          // Chú thích bản đồ (Giữ nguyên)
-          Positioned(
-            top: 20,
-            right: 20,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: const [
-                  BoxShadow(blurRadius: 5, color: Colors.black26),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Chú thích",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 5),
-                  _legendItem(Colors.orange, "Chờ duyệt"),
-                  _legendItem(Colors.blue, "Đã xác thực"),
-                  _legendItem(Colors.green, "Đã dọn dẹp"),
-                  _legendItem(Colors.red, "Từ chối"),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  // --- Các Widget phụ trợ ---
-
   Widget _buildStatusBadge(String status) {
-    Color color;
-    String text;
-    switch (status) {
-      case 'PENDING':
-        color = Colors.orange;
-        text = "Chờ duyệt";
-        break;
-      case 'VERIFIED':
-        color = Colors.blue;
-        text = "Đã xác thực";
-        break;
-      case 'CLEANED':
-        color = Colors.green;
-        text = "Đã dọn";
-        break;
-      case 'REJECTED':
-        color = Colors.red;
-        text = "Từ chối";
-        break;
-      default:
-        color = Colors.grey;
-        text = status;
-    }
+    final color = _getStatusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -322,25 +313,12 @@ class _AdminMapPageState extends State<AdminMapPage> {
         border: Border.all(color: color),
       ),
       child: Text(
-        text,
+        status,
         style: TextStyle(
           color: color,
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
-      ),
-    );
-  }
-
-  Widget _legendItem(Color color, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Icon(Icons.location_pin, color: color, size: 16),
-          const SizedBox(width: 4),
-          Text(text, style: const TextStyle(fontSize: 12)),
-        ],
       ),
     );
   }

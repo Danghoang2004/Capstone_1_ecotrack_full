@@ -2,15 +2,8 @@ package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.response.*;
 import capstone_1.Ecotrack_backend.dto.request.*;
-import capstone_1.Ecotrack_backend.model.PointTransaction;
-import capstone_1.Ecotrack_backend.model.Quiz;
-import capstone_1.Ecotrack_backend.model.UserQuizAttempt;
-import capstone_1.Ecotrack_backend.repository.PointTransactionRepository;
-import capstone_1.Ecotrack_backend.repository.QuizQuestionRepository;
-import capstone_1.Ecotrack_backend.repository.QuizRepository;
-import capstone_1.Ecotrack_backend.repository.UserQuizAttemptRepository;
-import capstone_1.Ecotrack_backend.repository.UserRepository;
-import capstone_1.Ecotrack_backend.model.User;
+import capstone_1.Ecotrack_backend.model.*;
+import capstone_1.Ecotrack_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +20,7 @@ public class QuizService {
         private final UserQuizAttemptRepository attemptRepo;
         private final PointTransactionRepository pointTransactionRepo;
         private final UserRepository userRepo;
+        private final UserPointsRepository userPointsRepo;
 
         // =========================================================
         // ⭐ LẤY QUIZ – TRẢ VỀ NGẪU NHIÊN 2 CÂU + ĐÁP ÁN ĐÚNG (correctKey)
@@ -67,7 +61,8 @@ public class QuizService {
         public QuizSummaryDto getMyQuizSummary(Long userId) {
 
                 // 1. Tổng điểm của user
-                int totalPoints = pointTransactionRepo.sumPointsByUserId(userId);
+                UserPoints up = userPointsRepo.findById(userId).orElse(null);
+                int totalPoints = (up != null) ? up.getPoints() : 0;
 
                 // 2. Lấy tất cả quiz (PUBLISHED hay tất cả tùy bạn)
                 List<Quiz> quizzes = quizRepo.findAll();
@@ -178,6 +173,18 @@ public class QuizService {
                         pt.setCreatedAt(LocalDateTime.now());
 
                         pointTransactionRepo.save(pt);
+                        UserPoints up = userPointsRepo.findById(userId).orElseGet(() -> {
+                                // Nếu chưa có bản ghi UserPoints cho user này, tạo mới
+                                UserPoints newUp = new UserPoints();
+                                newUp.setUserId(userId);
+                                newUp.setUser(user);
+                                newUp.setPoints(0);
+                                return newUp;
+                        });
+
+                        // Cộng dồn điểm mới vào điểm hiện tại
+                        up.setPoints(up.getPoints() + reward);
+                        userPointsRepo.save(up);
                 }
 
                 return new SubmitResponse(correct, total, passed, correctnessList);

@@ -15,6 +15,7 @@ class AdminCampaignPage extends StatefulWidget {
 class _AdminCampaignPageState extends State<AdminCampaignPage> {
   CampaignPanel panel = CampaignPanel.none;
   int? selectedId;
+  int _refreshKey = 0;
 
   void openCreate() => setState(() {
     panel = CampaignPanel.create;
@@ -36,11 +37,17 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
     selectedId = null;
   });
 
+  void refreshData() {
+    setState(() {
+      _refreshKey++; // Thay đổi key sẽ khiến CampaignList tạo lại hoặc reload
+      panel = CampaignPanel.none; // Đóng panel chuyên nghiệp
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // MAIN CONTENT
         SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -48,6 +55,7 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
               const CampaignDashboard(),
               const SizedBox(height: 16),
               CampaignList(
+                key: ValueKey(_refreshKey), // Gán key ở đây
                 onCreate: openCreate,
                 onEdit: openEdit,
                 onView: openDetail,
@@ -56,12 +64,12 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
           ),
         ),
 
-        // SIDE PANEL
         if (panel != CampaignPanel.none)
           CampaignSidePanel(
             panel: panel,
             campaignId: selectedId,
             onClose: closePanel,
+            onSuccess: refreshData,
           ),
       ],
     );

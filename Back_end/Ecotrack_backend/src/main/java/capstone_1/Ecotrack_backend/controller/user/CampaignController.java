@@ -41,7 +41,7 @@ public class CampaignController {
         Long userId = null;
 
         if (authentication != null && authentication.isAuthenticated()) {
-            String email = authentication.getName(); // 👈 EMAIL
+            String email = authentication.getName();
             userId = userRepository.findByEmail(email)
                     .map(User::getId)
                     .orElse(null);
@@ -62,7 +62,7 @@ public class CampaignController {
         }
 
         try {
-            String email = authentication.getName(); // 👈 EMAIL
+            String email = authentication.getName();
 
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));

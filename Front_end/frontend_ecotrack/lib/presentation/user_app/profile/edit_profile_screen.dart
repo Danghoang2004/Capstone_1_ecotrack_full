@@ -163,7 +163,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryGreen = Color(0xFF4CAF50);
+    const Color primaryGreen = Color(0xFF2E7D32);
     const Color bgGrey = Color(0xFFF5F5F5);
 
     return Scaffold(
@@ -173,15 +173,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Chỉnh Sửa Hồ Sơ",
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 20,
           ),
         ),
       ),

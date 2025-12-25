@@ -48,9 +48,8 @@ public class WasteReportService {
 
     public WasteReport saveReport(WasteReport reportData, MultipartFile imageFile) {
 
-        // --- CẤU HÌNH CHIẾN THUẬT (Config) ---
-        final int MAX_REPORTS_PER_DAY = 10;   // Một ngày chỉ được báo cáo tối đa 10 lần
-        final int COOLDOWN_MINUTES = 5;       // Phải chờ 5 phút giữa các lần báo cáo
+        final int MAX_REPORTS_PER_DAY = 10;
+        final int COOLDOWN_MINUTES = 5;
         final double AI_CONFIDENCE_THRESHOLD = 0.6; // Độ tin cậy tối thiểu của AI (60%)
 
         Long userId = reportData.getUserId();
@@ -117,14 +116,11 @@ public class WasteReportService {
             reportData.setStatus(WasteReport.Status.PENDING);
             isEligibleForPoints = false;
         }
-
-        // Lưu báo cáo
         WasteReport saved = reportRepository.save(reportData);
 
         // =================================================================================
         // CỘNG ĐIỂM & THÔNG BÁO (DỰA TRÊN KẾT QUẢ TRÊN)
         // =================================================================================
-
         if (isEligibleForPoints) {
             // Nếu hợp lệ: Cộng điểm + Thông báo thành công
             processPointsAndNotification(saved, true);
@@ -132,7 +128,6 @@ public class WasteReportService {
             // Nếu không hợp lệ: Chỉ gửi thông báo giải thích (Không cộng điểm)
             processPointsAndNotification(saved, false);
         }
-
         return saved;
     }
 

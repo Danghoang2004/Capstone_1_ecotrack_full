@@ -9,6 +9,7 @@ class CampaignModel {
   final int participants;
   final String location;
   final int rewardPoints;
+  final int daysRemaining; // Thêm trường này
 
   CampaignModel({
     required this.id,
@@ -19,6 +20,7 @@ class CampaignModel {
     required this.participants,
     required this.location,
     required this.rewardPoints,
+    required this.daysRemaining,
   });
 
   factory CampaignModel.fromJson(Map<String, dynamic> json, ApiClient api) {
@@ -31,6 +33,7 @@ class CampaignModel {
       participants: json['participants'] ?? 0,
       location: json['location'] ?? "",
       rewardPoints: json['rewardPoints'] ?? 0,
+      daysRemaining: json['daysRemaining'] ?? 0, // Map từ JSON
     );
   }
 }

@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -31,6 +33,9 @@ public class CampaignServiceImpl implements CampaignService {
 
     @Autowired
     private QRCodeService qrCodeService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     @Transactional
@@ -116,33 +121,58 @@ public class CampaignServiceImpl implements CampaignService {
                 .build();
 
         participantRepo.save(participant);
+        sendJoinCampaignEmail(user, campaign);
     }
 
     public List<CampaignResponse> getActiveCampaigns() {
+        LocalDate today = LocalDate.now();
+
         return campaignRepository.findActiveCampaigns().stream()
-                .map(c -> new CampaignResponse(
-                        c.getCampaignId(),
-                        c.getTitle(),
-                        c.getDescription(),
-                        c.getImageUrl(),
-                        c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
-                        campaignRepository.countParticipants(c.getCampaignId()),
-                        c.getLocationAddress(),
-                        c.getRewardPoints()))
+                .map(c -> {
+                    // Tính toán số ngày còn lại
+                    long daysLeft = 0;
+                    if (c.getEndDate() != null) {
+                        daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
+                    }
+
+                    return new CampaignResponse(
+                            c.getCampaignId(),
+                            c.getTitle(),
+                            c.getDescription(),
+                            c.getImageUrl(),
+                            c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                            campaignRepository.countParticipants(c.getCampaignId()),
+                            c.getLocationAddress(),
+                            c.getRewardPoints(),
+                            (int) (daysLeft < 0 ? 0 : daysLeft) // Thêm trường này vào Response
+                    );
+                })
                 .toList();
     }
 
     public List<CampaignResponse> getUpcomingCampaigns() {
+        LocalDate today = LocalDate.now();
+
         return campaignRepository.findUpcomingCampaigns().stream()
-                .map(c -> new CampaignResponse(
-                        c.getCampaignId(),
-                        c.getTitle(),
-                        c.getDescription(),
-                        c.getImageUrl(),
-                        c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
-                        campaignRepository.countParticipants(c.getCampaignId()),
-                        c.getLocationAddress(),
-                        c.getRewardPoints()))
+                .map(c -> {
+                    // Tính toán số ngày còn lại (Days Remaining)
+                    long daysLeft = 0;
+                    if (c.getEndDate() != null) {
+                        daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
+                    }
+
+                    return new CampaignResponse(
+                            c.getCampaignId(),
+                            c.getTitle(),
+                            c.getDescription(),
+                            c.getImageUrl(),
+                            c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                            campaignRepository.countParticipants(c.getCampaignId()),
+                            c.getLocationAddress(),
+                            c.getRewardPoints(),
+                            (int) (daysLeft < 0 ? 0 : daysLeft) // Gán giá trị vào DTO
+                    );
+                })
                 .toList();
     }
 
@@ -173,4 +203,43 @@ public class CampaignServiceImpl implements CampaignService {
 
         return dto;
     }
+
+    private void sendJoinCampaignEmail(User user, Campaign campaign) {
+
+        String subject = "🎉 Cảm ơn bạn đã tham gia chiến dịch " + campaign.getTitle();
+
+        String content = """
+        <p>Xin chào <b>%s</b>,</p>
+
+        <p>Cảm ơn bạn đã đăng ký tham gia chiến dịch:</p>
+
+        <h3>%s</h3>
+
+        <p><b>📅 Thời gian:</b> %s %s - %s</p>
+        <p><b>📍 Địa điểm:</b> %s</p>
+
+        <p>Chúng tôi rất mong được gặp bạn đúng thời gian và địa điểm đã đăng ký.</p>
+
+        <p>Hãy đến đúng giờ để cùng chung tay vì môi trường 🌱</p>
+
+        <br>
+        <p>Trân trọng,</p>
+        <p><b>EcoTrack Team</b></p>
+        """.formatted(
+                user.getUsername(),
+                campaign.getTitle(),
+                campaign.getStartDate(),
+                campaign.getStartTime(),
+                campaign.getEndTime(),
+                campaign.getLocationAddress()
+        );
+
+        emailService.sendMessage(
+                "ecotrack.system@gmail.com",   // from
+                user.getEmail(),               // to
+                subject,
+                content
+        );
+    }
+
 }
