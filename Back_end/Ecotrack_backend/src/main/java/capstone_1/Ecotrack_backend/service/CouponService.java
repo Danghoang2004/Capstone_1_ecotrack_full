@@ -80,10 +80,12 @@ public class CouponService {
         if ("free".equalsIgnoreCase(request.getDiscountType())) {
             finalPrice = 0.0;
         }
+        Partner partner = partnerRepository.findById(partnerId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy partner"));
 
         // Tạo coupon mới
         Coupon coupon = new Coupon();
-        coupon.setPartnerId(partnerId);
+        coupon.setPartner(partner);
         coupon.setCode(request.getCode().toUpperCase());
         coupon.setTitle(request.getTitle());
         coupon.setShortDescription(request.getShortDescription());

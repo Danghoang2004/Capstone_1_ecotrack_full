@@ -60,7 +60,6 @@ public class PartnerServiceImpl implements PartnerService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
         UserProfile profile = userProfileRepository
                 .findByUser_Id(userId)
                 .orElseGet(() -> {

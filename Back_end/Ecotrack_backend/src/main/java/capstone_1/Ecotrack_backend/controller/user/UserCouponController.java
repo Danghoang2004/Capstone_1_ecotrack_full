@@ -3,7 +3,9 @@ package capstone_1.Ecotrack_backend.controller.user;
 import capstone_1.Ecotrack_backend.dto.request.ApplyCouponRequest;
 import capstone_1.Ecotrack_backend.dto.response.ApplyCouponResponse;
 import capstone_1.Ecotrack_backend.dto.response.CouponResponse;
+import capstone_1.Ecotrack_backend.dto.response.UserCouponResponse;
 import capstone_1.Ecotrack_backend.service.CouponService;
+import capstone_1.Ecotrack_backend.service.UserCouponService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class UserCouponController {
 
     private final CouponService couponService;
+    private final UserCouponService userCouponService;
 
     @GetMapping("/available")
     public ResponseEntity<List<CouponResponse>> getAvailableCoupons() {
@@ -77,6 +80,20 @@ public class UserCouponController {
             response.put("message", "Lỗi server: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    }
+    @GetMapping("/me")
+    public ResponseEntity<List<UserCouponResponse>> getMyCoupons(
+            HttpServletRequest request
+    ) {
+        Long userId = (Long) request.getAttribute("userId");
+
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(
+                userCouponService.getMyCoupons(userId)
+        );
     }
 }
 

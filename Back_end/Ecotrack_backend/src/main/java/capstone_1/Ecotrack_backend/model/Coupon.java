@@ -13,8 +13,13 @@ public class Coupon {
     @Column(name = "coupon_id")
     private Long couponId;
 
-    @Column(name = "partner_id", nullable = false)
+
+    @Column(name = "partner_id", nullable = false, insertable = false, updatable = false)
     private Long partnerId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_id")
+    private Partner partner;
 
     @Column(name = "code", nullable = false, unique = true, length = 50)
     private String code;
@@ -88,21 +93,33 @@ public class Coupon {
     public Coupon() {
     }
 
-    public Coupon(Long couponId, Long partnerId, String code, String description, DiscountType discountType, Double discountValue, Integer usageLimit, Integer usedCount, LocalDate expiryDate, Boolean isActive, LocalDateTime createdAt) {
+    public Coupon(Long couponId, Long partnerId, Partner partner, String code, String title, String shortDescription, String description, String thumbnailUrl, String badgeLabel, String category, DiscountType discountType, Double discountValue, Double originalPrice, Double finalPrice, Integer usageLimit, Integer usedCount, Integer requiredPoints, Integer maxRedeemPerUser, LocalDate startDate, LocalDate expiryDate, String locationScope, String locationText, Boolean isActive, LocalDateTime createdAt) {
         this.couponId = couponId;
         this.partnerId = partnerId;
+        this.partner = partner;
         this.code = code;
+        this.title = title;
+        this.shortDescription = shortDescription;
         this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+        this.badgeLabel = badgeLabel;
+        this.category = category;
         this.discountType = discountType;
         this.discountValue = discountValue;
+        this.originalPrice = originalPrice;
+        this.finalPrice = finalPrice;
         this.usageLimit = usageLimit;
         this.usedCount = usedCount;
+        this.requiredPoints = requiredPoints;
+        this.maxRedeemPerUser = maxRedeemPerUser;
+        this.startDate = startDate;
         this.expiryDate = expiryDate;
+        this.locationScope = locationScope;
+        this.locationText = locationText;
         this.isActive = isActive;
         this.createdAt = createdAt;
     }
 
-    // Getters and Setters
     public Long getCouponId() {
         return couponId;
     }
@@ -119,84 +136,20 @@ public class Coupon {
         this.partnerId = partnerId;
     }
 
+    public Partner getPartner() {
+        return partner;
+    }
+
+    public void setPartner(Partner partner) {
+        this.partner = partner;
+    }
+
     public String getCode() {
         return code;
     }
 
     public void setCode(String code) {
         this.code = code;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public DiscountType getDiscountType() {
-        return discountType;
-    }
-
-    public void setDiscountType(DiscountType discountType) {
-        this.discountType = discountType;
-    }
-
-    public Double getDiscountValue() {
-        return discountValue;
-    }
-
-    public void setDiscountValue(Double discountValue) {
-        this.discountValue = discountValue;
-    }
-
-    public Integer getUsageLimit() {
-        return usageLimit;
-    }
-
-    public void setUsageLimit(Integer usageLimit) {
-        this.usageLimit = usageLimit;
-    }
-
-    public Integer getUsedCount() {
-        return usedCount;
-    }
-
-    public void setUsedCount(Integer usedCount) {
-        this.usedCount = usedCount;
-    }
-
-    public LocalDate getExpiryDate() {
-        return expiryDate;
-    }
-
-    public void setExpiryDate(LocalDate expiryDate) {
-        this.expiryDate = expiryDate;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
-    }
-
-    public void setThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
     }
 
     public String getTitle() {
@@ -215,12 +168,20 @@ public class Coupon {
         this.shortDescription = shortDescription;
     }
 
-    public String getCategory() {
-        return category;
+    public String getDescription() {
+        return description;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public String getBadgeLabel() {
@@ -229,6 +190,30 @@ public class Coupon {
 
     public void setBadgeLabel(String badgeLabel) {
         this.badgeLabel = badgeLabel;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public DiscountType getDiscountType() {
+        return discountType;
+    }
+
+    public void setDiscountType(DiscountType discountType) {
+        this.discountType = discountType;
+    }
+
+    public Double getDiscountValue() {
+        return discountValue;
+    }
+
+    public void setDiscountValue(Double discountValue) {
+        this.discountValue = discountValue;
     }
 
     public Double getOriginalPrice() {
@@ -247,12 +232,52 @@ public class Coupon {
         this.finalPrice = finalPrice;
     }
 
+    public Integer getUsageLimit() {
+        return usageLimit;
+    }
+
+    public void setUsageLimit(Integer usageLimit) {
+        this.usageLimit = usageLimit;
+    }
+
+    public Integer getUsedCount() {
+        return usedCount;
+    }
+
+    public void setUsedCount(Integer usedCount) {
+        this.usedCount = usedCount;
+    }
+
+    public Integer getRequiredPoints() {
+        return requiredPoints;
+    }
+
+    public void setRequiredPoints(Integer requiredPoints) {
+        this.requiredPoints = requiredPoints;
+    }
+
+    public Integer getMaxRedeemPerUser() {
+        return maxRedeemPerUser;
+    }
+
+    public void setMaxRedeemPerUser(Integer maxRedeemPerUser) {
+        this.maxRedeemPerUser = maxRedeemPerUser;
+    }
+
     public LocalDate getStartDate() {
         return startDate;
     }
 
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
+    }
+
+    public LocalDate getExpiryDate() {
+        return expiryDate;
+    }
+
+    public void setExpiryDate(LocalDate expiryDate) {
+        this.expiryDate = expiryDate;
     }
 
     public String getLocationScope() {
@@ -271,20 +296,21 @@ public class Coupon {
         this.locationText = locationText;
     }
 
-    public Integer getRequiredPoints() {
-        return requiredPoints;
+    public Boolean getIsActive() {
+        return isActive;
     }
 
-    public void setRequiredPoints(Integer requiredPoints) {
-        this.requiredPoints = requiredPoints;
+    public void setIsActive(Boolean active) {
+        isActive = active;
     }
 
-    public Integer getMaxRedeemPerUser() {
-        return maxRedeemPerUser;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setMaxRedeemPerUser(Integer maxRedeemPerUser) {
-        this.maxRedeemPerUser = maxRedeemPerUser;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
+
 }
 

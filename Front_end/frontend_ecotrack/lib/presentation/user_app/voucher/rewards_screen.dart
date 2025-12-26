@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
+import 'package:frontend_ecotrack/presentation/user_app/voucher/MyCouponsScreen.dart';
 
 const Color primaryGreen = Color(0xFF06923E);
 
@@ -166,6 +167,22 @@ class _RewardsScreenState extends State<RewardsScreen> {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(width: 6),
+
+              // 👉 ICON MỚI – CHUYỂN SANG MY COUPONS
+              IconButton(
+                icon: const Icon(
+                  Icons.card_giftcard_outlined,
+                  color: Colors.white,
+                ),
+                tooltip: 'Voucher của tôi',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyCouponsScreen()),
+                  );
+                },
               ),
             ],
           ),
