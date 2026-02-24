@@ -1,5 +1,6 @@
 package capstone_1.Ecotrack_backend.controller.user;
 
+import capstone_1.Ecotrack_backend.dto.response.RedeemResult;
 import capstone_1.Ecotrack_backend.dto.response.VoucherPageResponseDto;
 import capstone_1.Ecotrack_backend.dto.response.VoucherViewDto;
 import capstone_1.Ecotrack_backend.service.UserPointsService;
@@ -31,10 +32,16 @@ public class VoucherController {
 
     // ========= API đổi voucher =========
     @PostMapping("/{voucherId}/redeem")
-    public void redeem(@PathVariable Long voucherId,
-                       @RequestParam Long userId) {
-        voucherService.redeemVoucher(userId, voucherId);
+    public ResponseEntity<?> redeem(@PathVariable Long voucherId) {
+        RedeemResult result = voucherService.redeemVoucher(voucherId);
+        if (!result.isSuccess()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(result.getMessage());
+        }
+        return ResponseEntity.ok(result.getMessage());
     }
+
 
     // ========= API mới: trả về cả điểm + list voucher =========
     // Ví dụ: GET /api/v1/vouchers/user/1/voucher-page

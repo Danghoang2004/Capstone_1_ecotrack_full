@@ -1,4 +1,3 @@
-
 -- Tạo database
 CREATE DATABASE IF NOT EXISTS ecotrack_demo1 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ecotrack_demo1;
@@ -60,6 +59,7 @@ CREATE TABLE user_profiles (
     full_name VARCHAR(100),
     avatar_url VARCHAR(255) NOT NULL DEFAULT 'default_avatar.png',
     gender ENUM('M','F','O'),
+   phone_number VARCHAR(20) NULL ,
     birth_date DATE,
     location VARCHAR(150),
     level_id BIGINT,
@@ -207,6 +207,10 @@ CREATE TABLE waste_reports (
     status ENUM('PENDING','VERIFIED','REJECTED','CLEANED') NOT NULL DEFAULT 'PENDING',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     category VARCHAR(50),
+   ai_verified TINYINT(1) NULL DEFAULT NULL,
+   ai_confidence DOUBLE NULL DEFAULT '0',
+   ai_analysis_json TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_analyzed_image_url  VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
@@ -239,58 +243,46 @@ CREATE TABLE partners (
 CREATE TABLE coupons (
     coupon_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    title VARCHAR(255),
-    short_description VARCHAR(500),
+    code VARCHAR(50) NOT NULL,
     description TEXT,
-    thumbnail_url VARCHAR(255),
-    category VARCHAR(50),
-    badge_label VARCHAR(50),
-    discount_type ENUM('PERCENT', 'FIXED') NOT NULL,
+    discount_type ENUM('PERCENT','FIXED') NOT NULL,
     discount_value DOUBLE NOT NULL,
-    original_price DOUBLE,
-    final_price DOUBLE,
     usage_limit INT NOT NULL,
     used_count INT NOT NULL DEFAULT 0,
-    required_points INT,
-    max_redeem_per_user INT,
-    start_date DATE,
     expiry_date DATE NOT NULL,
-    location_scope VARCHAR(50),
-    location_text VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    badge_label VARCHAR(50),
+    category VARCHAR(50),
+    final_price DOUBLE,
+    location_scope VARCHAR(50),
+    location_text VARCHAR(255),
+    max_redeem_per_user INT,
+    original_price DOUBLE,
+    required_points INT,
+    short_description VARCHAR(500),
+    start_date DATE,
+    thumbnail_url VARCHAR(255),
+    title VARCHAR(255),
+
     FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE,
+
     INDEX idx_partner_id (partner_id),
     INDEX idx_code (code),
-    INDEX idx_expiry_date (expiry_date)
+    INDEX idx_expiry_date (expiry_date),
+    UNIQUE INDEX uq_code (code)
 );
 
--- ================================================================
--- VOUCHERS
--- ================================================================
-CREATE TABLE vouchers (
-    voucher_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    partner_id BIGINT NOT NULL,
-    title VARCHAR(200) NOT NULL,
-    description TEXT,
-    value VARCHAR(100),
-    image_url VARCHAR(255),
-    quantity INT DEFAULT NULL,
-    points_required INT NOT NULL,
-    expiry_date DATE NOT NULL,
-    FOREIGN KEY (partner_id) REFERENCES partners(partner_id) ON DELETE CASCADE
-);
-
-CREATE TABLE user_vouchers (
-    user_voucher_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE user_coupons (
+    user_coupon_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    voucher_id BIGINT NOT NULL,
+    coupon_id BIGINT NOT NULL,
     status ENUM('UNUSED','USED','EXPIRED') NOT NULL DEFAULT 'UNUSED',
     used_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id) ON DELETE RESTRICT
+    FOREIGN KEY ( coupon_id) REFERENCES coupons ( coupon_id) ON DELETE RESTRICT
 );
 
 -- ================================================================

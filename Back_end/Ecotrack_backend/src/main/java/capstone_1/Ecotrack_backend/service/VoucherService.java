@@ -1,8 +1,10 @@
 package capstone_1.Ecotrack_backend.service;
 
+import capstone_1.Ecotrack_backend.dto.response.RedeemResult;
 import capstone_1.Ecotrack_backend.dto.response.VoucherViewDto;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,67 +87,64 @@ public class VoucherService {
 
     // ================== REDEEM VOUCHER ==================
     @Transactional
-    public void redeemVoucher(Long userId, Long voucherId) {
-        // 1. Lấy voucher
-        Voucher voucher = voucherRepo.findById(voucherId)
-                .orElseThrow(() -> new RuntimeException("Voucher not found"));
+    public RedeemResult redeemVoucher(Long voucherId) {
 
-        // 2. Kiểm tra còn lượt dùng (quantity > 0)
-        Integer quantity = voucher.getQuantity();
-        if (quantity == null || quantity <= 0) {
-            throw new RuntimeException("Voucher out of stock");
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+
+        User user = userRepo.findByEmail(email).orElse(null);
+        if (user == null) {
+            return RedeemResult.fail("Không tìm thấy người dùng");
         }
 
-        // 3. Kiểm tra hạn
+        Voucher voucher = voucherRepo.findById(voucherId).orElse(null);
+        if (voucher == null) {
+            return RedeemResult.fail("Voucher không tồn tại");
+        }
+
+        if (voucher.getQuantity() == null || voucher.getQuantity() <= 0) {
+            return RedeemResult.fail("Voucher đã hết lượt đổi");
+        }
+
         if (voucher.getExpiryDate().isBefore(LocalDate.now())) {
-            throw new RuntimeException("Voucher expired");
+            return RedeemResult.fail("Voucher đã hết hạn");
         }
 
-        // 4. Tính điểm cần để đổi
         int pointsRequired = calculatePointsRequired(voucher);
 
-        // 5. Lấy user points
-        UserPoints userPoints = userPointsRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User points not found"));
-
-        if (userPoints.getPoints() < pointsRequired) {
-            throw new RuntimeException("Not enough points");
+        UserPoints userPoints = userPointsRepo.findById(user.getId()).orElse(null);
+        if (userPoints == null) {
+            return RedeemResult.fail("Không tìm thấy điểm người dùng");
         }
 
-        // 6. Lấy User entity để log transaction
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (userPoints.getPoints() < pointsRequired) {
+            return RedeemResult.fail("Không đủ điểm để đổi voucher");
+        }
 
-        // 7. Trừ điểm
+        // ====== ĐỔI THÀNH CÔNG ======
         userPoints.setPoints(userPoints.getPoints() - pointsRequired);
         userPointsRepo.save(userPoints);
 
-        // 8. Tăng used_count để quantity giảm (usageLimit - usedCount)
-        int usedCount = voucher.getUsedCount() == null ? 0 : voucher.getUsedCount();
-        voucher.setUsedCount(usedCount + 1);
+        voucher.setUsedCount(
+                voucher.getUsedCount() == null ? 1 : voucher.getUsedCount() + 1
+        );
         voucherRepo.save(voucher);
 
-        // 9. Lưu user_vouchers (entity UserVoucher đang map tới bảng
-        // user_coupons/user_vouchers)
         UserVoucher uv = new UserVoucher();
-        uv.setUserId(userId);
+        uv.setUserId(user.getId());
         uv.setVoucherId(voucherId);
         userVoucherRepo.save(uv);
 
-        // 10. Log giao dịch điểm
         PointTransaction tx = new PointTransaction();
-        tx.setUser(user); // dùng entity User
+        tx.setUser(user);
         tx.setActionType(PointTransaction.ActionType.VOUCHER);
         tx.setPoints(-pointsRequired);
-
-        String title = voucher.getTitle();
-        if (title == null || title.isBlank()) {
-            tx.setDescription("Đổi voucher #" + voucherId);
-        } else {
-            tx.setDescription(title);
-        }
-
+        tx.setDescription("Đổi voucher: " + voucher.getTitle());
         tx.setCreatedAt(LocalDateTime.now());
         pointTxRepo.save(tx);
+
+        return RedeemResult.ok();
     }
+
 }

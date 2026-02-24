@@ -44,12 +44,9 @@ public class WasteReportController {
         try {
             Long userId = (Long) request.getAttribute("userId");
             if (userId == null) {
-                // Tạm thời comment để test nếu chưa có Auth Filter
-                // throw new RuntimeException("Unauthorized: Missing UserID");
                 userId = 1L; // Hardcode để test nếu cần
             }
 
-            // 1. Lưu ảnh gốc vào ổ cứng của Java Server (như cũ)
             String imageUrl = null;
             if (image != null && !image.isEmpty()) {
                 String uploadDir = "D:/project_Capstone_1_full/Back_end/Ecotrack_backend/uploads/reports/";
@@ -60,7 +57,6 @@ public class WasteReportController {
                 imageUrl = "/uploads/reports/" + fileName;
             }
 
-            // 2. Tạo đối tượng Report
             WasteReport report = new WasteReport();
             report.setUserId(userId);
             report.setTitle(title);
@@ -106,22 +102,13 @@ public class WasteReportController {
 
     @GetMapping("")
     public ResponseEntity<List<WasteReport>> getMyReports(HttpServletRequest request) {
-        // 1. Lấy userId từ attribute mà JwtAuthenticationFilter đã set
         Object userIdObj = request.getAttribute("userId");
-
-        // Kiểm tra an toàn: Nếu filter chưa chạy hoặc lỗi (hoặc endpoint này bị để public nhầm)
         if (userIdObj == null) {
-            // Trả về lỗi 401 Unauthorized thay vì ném RuntimeException chung chung
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Không tìm thấy thông tin người dùng. Vui lòng đăng nhập.");
         }
 
-        // Ép kiểu an toàn sang Long
         Long userId = Long.valueOf(userIdObj.toString());
-
-        // 2. Gọi service lấy dữ liệu
         List<WasteReport> reports = reportService.getReportsByUser(userId);
-
-        // 3. Trả về kết quả kèm HTTP Status 200 OK
         return ResponseEntity.ok(reports);
     }
 }

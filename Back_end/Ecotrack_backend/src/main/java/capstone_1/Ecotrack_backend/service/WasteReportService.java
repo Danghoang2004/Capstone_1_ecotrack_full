@@ -50,23 +50,17 @@ public class WasteReportService {
 
         final int MAX_REPORTS_PER_DAY = 10;
         final int COOLDOWN_MINUTES = 5;
-        final double AI_CONFIDENCE_THRESHOLD = 0.6; // Độ tin cậy tối thiểu của AI (60%)
+        final double AI_CONFIDENCE_THRESHOLD = 0.6;
 
         Long userId = reportData.getUserId();
 
-        // =================================================================================
-        // CHIẾN THUẬT 2: RATE LIMITING (CHẶN SPAM DỰA TRÊN THỜI GIAN & SỐ LƯỢNG)
-        // =================================================================================
-
-        // 1. Kiểm tra giới hạn số lượng trong ngày
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay(); // 00:00:00 hôm nay
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         long reportsToday = reportRepository.countByUserIdAndCreatedAtAfter(userId, startOfDay);
 
         if (reportsToday >= MAX_REPORTS_PER_DAY) {
             throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY + " lần). Hãy quay lại vào ngày mai nhé!");
         }
 
-        // 2. Kiểm tra thời gian chờ (Cooldown) giữa các lần báo cáo
         WasteReport lastReport = reportRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
 
         if (lastReport != null) {
@@ -76,24 +70,16 @@ public class WasteReportService {
             }
         }
 
-        // =================================================================================
-        // GỌI AI SERVICE (XỬ LÝ ẢNH)
-        // =================================================================================
         AiDetectionResponse aiResult = null;
         if (imageFile != null && !imageFile.isEmpty()) {
             aiResult = callAiDetectionService(imageFile);
         }
 
-        // =================================================================================
-        // CHIẾN THUẬT 3: LOGIC KIỂM DUYỆT BẰNG AI (CHỈ THƯỞNG KHI HỢP LỆ)
-        // =================================================================================
-
-        boolean isEligibleForPoints = false; // Mặc định là KHÔNG cộng điểm
+        boolean isEligibleForPoints = false;
 
         if (aiResult != null && aiResult.isSuccess()) {
             AiDetectionResponse.AiData data = aiResult.getData();
 
-            // Lưu kết quả phân tích vào DB
             reportData.setAiVerified(data.isWaste());
             reportData.setAiConfidence(data.getOverallConfidence());
             reportData.setAiAnalyzedImageUrl(data.getOutputImage());
@@ -101,31 +87,23 @@ public class WasteReportService {
                 reportData.setAiAnalysisJson(objectMapper.writeValueAsString(data.getTypePercentage()));
             } catch (Exception e) { reportData.setAiAnalysisJson("{}"); }
 
-            // LOGIC QUYẾT ĐỊNH:
-            // Chỉ chấp nhận nếu AI bảo là Rác (isWaste=true) VÀ Độ tin cậy >= 60%
             if (data.isWaste() && data.getOverallConfidence() >= AI_CONFIDENCE_THRESHOLD) {
                 isEligibleForPoints = true;
-                reportData.setStatus(WasteReport.Status.VERIFIED); // Tự động duyệt
+                reportData.setStatus(WasteReport.Status.VERIFIED);
             } else {
-                // AI bảo không phải rác, hoặc AI không chắc chắn lắm -> Từ chối
                 isEligibleForPoints = false;
                 reportData.setStatus(WasteReport.Status.REJECTED);
             }
         } else {
-            // Trường hợp gọi AI bị lỗi hoặc không có kết quả -> Để PENDING chờ người duyệt thủ công (không cộng điểm ngay)
             reportData.setStatus(WasteReport.Status.PENDING);
             isEligibleForPoints = false;
         }
         WasteReport saved = reportRepository.save(reportData);
 
-        // =================================================================================
-        // CỘNG ĐIỂM & THÔNG BÁO (DỰA TRÊN KẾT QUẢ TRÊN)
-        // =================================================================================
+
         if (isEligibleForPoints) {
-            // Nếu hợp lệ: Cộng điểm + Thông báo thành công
             processPointsAndNotification(saved, true);
         } else {
-            // Nếu không hợp lệ: Chỉ gửi thông báo giải thích (Không cộng điểm)
             processPointsAndNotification(saved, false);
         }
         return saved;
@@ -167,10 +145,8 @@ public class WasteReportService {
         }
     }
 
-    // --- HÀM XỬ LÝ CỘNG ĐIỂM VÀ THÔNG BÁO ---
     private void processPointsAndNotification(WasteReport report, boolean isSuccess) {
         if (isSuccess) {
-            // Logic cộng điểm CŨ (giữ nguyên)
             User user = userRepository.findById(report.getUserId()).orElseThrow();
 
             PointTransaction tx = new PointTransaction();
@@ -190,7 +166,6 @@ public class WasteReportService {
                     "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId()
             );
         } else {
-            // Logic khi thất bại (Chỉ thông báo)
             String message = "";
             if (report.getStatus() == WasteReport.Status.REJECTED) {
                 message = "AI không phát hiện thấy rác trong ảnh này hoặc độ rõ nét thấp.";

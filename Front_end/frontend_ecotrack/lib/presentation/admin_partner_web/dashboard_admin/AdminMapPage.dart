@@ -298,6 +298,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
               ),
             ],
           ),
+          Positioned(top: 50, right: 12, child: _buildMapLegend()),
         ],
       ),
     );
@@ -326,15 +327,61 @@ class _AdminMapPageState extends State<AdminMapPage> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'PENDING':
-        return Colors.orange;
+        return const Color.fromARGB(255, 196, 30, 30);
       case 'VERIFIED':
-        return Colors.blue;
+        return const Color.fromARGB(255, 224, 149, 10);
       case 'CLEANED':
         return Colors.green;
       case 'REJECTED':
-        return Colors.red;
+        return const Color.fromARGB(255, 155, 154, 154);
       default:
         return Colors.grey;
     }
+  }
+
+  Widget _buildMapLegend() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            "Chú thích",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          _legendItem("Chờ duyệt", _getStatusColor("PENDING")),
+          _legendItem("Đã xác Thực", _getStatusColor("VERIFIED")),
+          _legendItem("Đã dọn dẹp", _getStatusColor("CLEANED")),
+          _legendItem("Bị Từ Chối", _getStatusColor("REJECTED")),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendItem(String label, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 14,
+            height: 14,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
   }
 }
