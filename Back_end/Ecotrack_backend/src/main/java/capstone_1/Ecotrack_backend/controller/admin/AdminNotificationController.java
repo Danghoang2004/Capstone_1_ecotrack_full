@@ -1,9 +1,7 @@
 package capstone_1.Ecotrack_backend.controller.admin;
 
 import capstone_1.Ecotrack_backend.model.Notification;
-import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.repository.NotificationRepository;
-import capstone_1.Ecotrack_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +20,11 @@ public class AdminNotificationController {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    @Autowired
-    private UserRepository userRepository;
-
     @GetMapping
     public ResponseEntity<?> getAdminNotifications() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         var notifications = notificationRepository.findAllByOrderByCreatedAtDesc();
-
         return ResponseEntity.ok(notifications);
     }
 

@@ -1,7 +1,6 @@
 package capstone_1.Ecotrack_backend.security;
 
 import capstone_1.Ecotrack_backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;

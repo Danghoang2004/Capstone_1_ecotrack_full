@@ -1,6 +1,5 @@
 package capstone_1.Ecotrack_backend.service;
 
-import capstone_1.Ecotrack_backend.dto.request.ApplyCouponRequest;
 import capstone_1.Ecotrack_backend.dto.request.CreateCouponRequest;
 import capstone_1.Ecotrack_backend.dto.request.UpdateCouponRequest;
 import capstone_1.Ecotrack_backend.dto.response.ApplyCouponResponse;
@@ -206,7 +205,8 @@ public class CouponService {
         coupon.setLocationScope(request.getLocationScope());
         coupon.setLocationText(request.getLocationText());
 
-        // Cập nhật isActive: nếu request có isActive thì dùng giá trị đó, nếu không thì check ngày hết hạn
+        // Cập nhật isActive: nếu request có isActive thì dùng giá trị đó, nếu không thì
+        // check ngày hết hạn
         if (request.getIsActive() != null) {
             coupon.setIsActive(request.getIsActive());
         } else {
@@ -307,7 +307,7 @@ public class CouponService {
                     boolean isActive = coupon.getIsActive();
                     boolean notExpired = !coupon.getExpiryDate().isBefore(today);
                     boolean notStarted = coupon.getStartDate() == null ||
-                                        !coupon.getStartDate().isAfter(today);
+                            !coupon.getStartDate().isAfter(today);
                     boolean hasQuantity = coupon.getUsedCount() < coupon.getUsageLimit();
                     return isActive && notExpired && notStarted && hasQuantity;
                 })
@@ -411,14 +411,14 @@ public class CouponService {
             // Đếm số lần user đã redeem coupon này
             // Query sẽ tìm pattern trong description với CONCAT để tránh SQL injection
             long userRedemptionCount = pointTransactionRepository
-                .countVoucherRedemptionsByUserAndCoupon(userId, couponIdPattern);
+                    .countVoucherRedemptionsByUserAndCoupon(userId, couponIdPattern);
 
             // Kiểm tra nếu đã đạt giới hạn (so sánh >= để chặn ngay khi đạt giới hạn)
             if (userRedemptionCount >= coupon.getMaxRedeemPerUser()) {
                 throw new RuntimeException(
-                    String.format("Bạn đã đạt giới hạn số lần đổi voucher này! Mỗi người chỉ được đổi %d lần. Bạn đã đổi %d lần.",
-                        coupon.getMaxRedeemPerUser(), userRedemptionCount)
-                );
+                        String.format(
+                                "Bạn đã đạt giới hạn số lần đổi voucher này! Mỗi người chỉ được đổi %d lần. Bạn đã đổi %d lần.",
+                                coupon.getMaxRedeemPerUser(), userRedemptionCount));
             }
         }
 
@@ -431,9 +431,8 @@ public class CouponService {
 
             if (userPoints.getPoints() < requiredPoints) {
                 throw new RuntimeException(
-                    String.format("Không đủ điểm! Cần %d điểm, hiện có %d điểm",
-                        requiredPoints, userPoints.getPoints())
-                );
+                        String.format("Không đủ điểm! Cần %d điểm, hiện có %d điểm",
+                                requiredPoints, userPoints.getPoints()));
             }
 
             // 7. Trừ điểm user
@@ -451,8 +450,10 @@ public class CouponService {
 
         couponRepository.save(coupon);
 
-        // 9. Tạo point transaction để track số lần redeem (luôn tạo, dù miễn phí hay không)
-        // Với voucher miễn phí: points = 0, với voucher có phí: points = -requiredPoints
+        // 9. Tạo point transaction để track số lần redeem (luôn tạo, dù miễn phí hay
+        // không)
+        // Với voucher miễn phí: points = 0, với voucher có phí: points =
+        // -requiredPoints
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
 
@@ -513,4 +514,3 @@ public class CouponService {
                 .build();
     }
 }
-

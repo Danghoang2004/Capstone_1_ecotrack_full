@@ -4,14 +4,11 @@ import capstone_1.Ecotrack_backend.dto.request.LoginRequest;
 import capstone_1.Ecotrack_backend.dto.request.RegisterRequest;
 import capstone_1.Ecotrack_backend.dto.response.AuthResponse;
 import capstone_1.Ecotrack_backend.model.PointTransaction;
-import capstone_1.Ecotrack_backend.model.Role;
+
 import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.model.UserPoints;
-import capstone_1.Ecotrack_backend.model.UserProfile;
 import capstone_1.Ecotrack_backend.repository.PointTransactionRepository;
-import capstone_1.Ecotrack_backend.repository.RoleRepository;
 import capstone_1.Ecotrack_backend.repository.UserPointsRepository;
-import capstone_1.Ecotrack_backend.repository.UserProfileRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.security.JwtUtil;
 import capstone_1.Ecotrack_backend.service.UserService;

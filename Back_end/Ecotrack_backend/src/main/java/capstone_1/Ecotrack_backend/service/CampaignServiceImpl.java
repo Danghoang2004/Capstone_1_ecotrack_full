@@ -5,7 +5,7 @@ import capstone_1.Ecotrack_backend.dto.response.CampaignDetailDTO;
 import capstone_1.Ecotrack_backend.dto.response.CampaignResponse;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
-import capstone_1.Ecotrack_backend.service.CampaignService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -209,37 +209,35 @@ public class CampaignServiceImpl implements CampaignService {
         String subject = "🎉 Cảm ơn bạn đã tham gia chiến dịch " + campaign.getTitle();
 
         String content = """
-        <p>Xin chào <b>%s</b>,</p>
+                <p>Xin chào <b>%s</b>,</p>
 
-        <p>Cảm ơn bạn đã đăng ký tham gia chiến dịch:</p>
+                <p>Cảm ơn bạn đã đăng ký tham gia chiến dịch:</p>
 
-        <h3>%s</h3>
+                <h3>%s</h3>
 
-        <p><b>📅 Thời gian:</b> %s %s - %s</p>
-        <p><b>📍 Địa điểm:</b> %s</p>
+                <p><b>📅 Thời gian:</b> %s %s - %s</p>
+                <p><b>📍 Địa điểm:</b> %s</p>
 
-        <p>Chúng tôi rất mong được gặp bạn đúng thời gian và địa điểm đã đăng ký.</p>
+                <p>Chúng tôi rất mong được gặp bạn đúng thời gian và địa điểm đã đăng ký.</p>
 
-        <p>Hãy đến đúng giờ để cùng chung tay vì môi trường 🌱</p>
+                <p>Hãy đến đúng giờ để cùng chung tay vì môi trường 🌱</p>
 
-        <br>
-        <p>Trân trọng,</p>
-        <p><b>EcoTrack Team</b></p>
-        """.formatted(
+                <br>
+                <p>Trân trọng,</p>
+                <p><b>EcoTrack Team</b></p>
+                """.formatted(
                 user.getUsername(),
                 campaign.getTitle(),
                 campaign.getStartDate(),
                 campaign.getStartTime(),
                 campaign.getEndTime(),
-                campaign.getLocationAddress()
-        );
+                campaign.getLocationAddress());
 
         emailService.sendMessage(
-                "ecotrack.system@gmail.com",   // from
-                user.getEmail(),               // to
+                "ecotrack.system@gmail.com", // from
+                user.getEmail(), // to
                 subject,
-                content
-        );
+                content);
     }
 
 }

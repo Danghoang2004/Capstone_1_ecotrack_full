@@ -24,7 +24,6 @@ public class ProfileService {
     private final UserPointsRepository userPointsRepository;
     private final WasteReportRepository wasteReportRepository;
     private final GroupMemberRepository groupMemberRepository;
-    private final LeaderboardRepository leaderboardRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final PointTransactionRepository pointTransactionRepository;
 
@@ -63,7 +62,8 @@ public class ProfileService {
         List<UserPoints> filteredUserPoints = userPointsList.stream()
                 .filter(userPoints -> {
                     User u = userRepository.findById(userPoints.getUserId()).orElse(null);
-                    if (u == null) return false;
+                    if (u == null)
+                        return false;
                     return u.getRoles().stream().anyMatch(role -> "ROLE_USER".equals(role.getName()));
                 })
                 .collect(Collectors.toList());
@@ -88,12 +88,15 @@ public class ProfileService {
                     Long topBadgeCount = (long) userBadgeRepository.findByUserId(topUser.getId()).size();
 
                     int topRank = index + 1;
-                    List<String> titles = (topRank == 1) ? List.of("Eco Warrior", "Clean Champion") : List.of("Eco Warrior");
+                    List<String> titles = (topRank == 1) ? List.of("Eco Warrior", "Clean Champion")
+                            : List.of("Eco Warrior");
 
                     RankingUserResponse rankingResponse = new RankingUserResponse();
                     rankingResponse.setId(topUser.getId().toString());
                     rankingResponse.setRank(topRank);
-                    rankingResponse.setUserName(topProfile != null && topProfile.getFullName() != null ? topProfile.getFullName() : topUser.getUsername());
+                    rankingResponse.setUserName(
+                            topProfile != null && topProfile.getFullName() != null ? topProfile.getFullName()
+                                    : topUser.getUsername());
                     rankingResponse.setPoints(userPoints.getPoints());
                     rankingResponse.setAvatarUrl(topProfile != null ? topProfile.getAvatarUrl() : null);
                     rankingResponse.setLocation(topProfile != null ? topProfile.getLocation() : null);

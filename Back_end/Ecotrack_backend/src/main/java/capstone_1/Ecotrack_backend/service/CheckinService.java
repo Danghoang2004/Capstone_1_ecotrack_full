@@ -5,7 +5,7 @@ import capstone_1.Ecotrack_backend.model.Checkin;
 import capstone_1.Ecotrack_backend.model.PointTransaction;
 import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.model.UserPoints;
-import capstone_1.Ecotrack_backend.model.PointTransaction;
+
 import capstone_1.Ecotrack_backend.repository.CheckinRepository;
 import capstone_1.Ecotrack_backend.repository.CampaignRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Optional;
 
 @Service
 public class CheckinService {

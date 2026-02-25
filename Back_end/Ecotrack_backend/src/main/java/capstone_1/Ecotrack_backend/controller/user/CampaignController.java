@@ -12,7 +12,6 @@ import org.springframework.security.core.Authentication; // Import Authenticatio
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/campaigns")
@@ -36,8 +35,7 @@ public class CampaignController {
     @GetMapping("/{id}/detail")
     public ResponseEntity<?> getDetail(
             @PathVariable Long id,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         Long userId = null;
 
         if (authentication != null && authentication.isAuthenticated()) {
@@ -50,12 +48,10 @@ public class CampaignController {
         return ResponseEntity.ok(service.getDetail(id, userId));
     }
 
-
     @PostMapping("/{id}/join")
     public ResponseEntity<?> joinCampaign(
             @PathVariable Long id,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Vui lòng đăng nhập để tham gia!");

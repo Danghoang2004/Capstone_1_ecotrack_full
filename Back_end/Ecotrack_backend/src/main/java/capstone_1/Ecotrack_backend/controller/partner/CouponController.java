@@ -1,5 +1,6 @@
 package capstone_1.Ecotrack_backend.controller.partner;
 
+import capstone_1.Ecotrack_backend.cloudinaryconfig.CloudinaryService;
 import capstone_1.Ecotrack_backend.dto.request.CreateCouponRequest;
 import capstone_1.Ecotrack_backend.dto.request.UpdateCouponRequest;
 import capstone_1.Ecotrack_backend.dto.response.CouponResponse;
@@ -15,10 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +28,7 @@ public class CouponController {
 
     private final CouponService couponService;
     private final PartnerRepository partnerRepository;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping
     public ResponseEntity<List<CouponResponse>> getAllCoupons(HttpServletRequest request) {
@@ -147,19 +145,7 @@ public class CouponController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             }
 
-            // Tạo thư mục upload nếu chưa có
-            String uploadDir = "D:/project_Capstone_1_full/Back_end/Ecotrack_backend/uploads/coupons/";
-            Files.createDirectories(Paths.get(uploadDir));
-
-            // Tạo tên file unique
-            String fileName = System.currentTimeMillis() + "_" + image.getOriginalFilename();
-            Path filePath = Paths.get(uploadDir + fileName);
-
-            // Lưu file
-            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-            // Trả về URL
-            String imageUrl = "/uploads/coupons/" + fileName;
+            String imageUrl = cloudinaryService.uploadImage(image, "ecotrack/coupons");
             Map<String, String> response = new HashMap<>();
             response.put("imageUrl", imageUrl);
             response.put("message", "Upload ảnh thành công");
@@ -170,4 +156,3 @@ public class CouponController {
         }
     }
 }
-

@@ -2,17 +2,13 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.request.RegisterRequest;
-import capstone_1.Ecotrack_backend.dto.request.UpdateProfileRequest;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
