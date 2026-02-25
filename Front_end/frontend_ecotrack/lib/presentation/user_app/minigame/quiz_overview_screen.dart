@@ -15,7 +15,6 @@ class QuizOverviewScreen extends StatefulWidget {
 }
 
 class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
-  // 👉 Dùng trực tiếp ApiClient, không qua QuizRepository
   final ApiClient _api = ApiClient(storage: const FlutterSecureStorage());
 
   late Future<QuizSummary> _future;
@@ -69,118 +68,96 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
           return true;
         }).toList();
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF5F6FA),
-          // ================= SỬ DỤNG APPBAR TIÊU CHUẨN =================
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF2E7D32),
-            elevation: 0,
-            toolbarHeight: 70, // Tăng nhẹ chiều cao để cân đối với subtitle
-            automaticallyImplyLeading:
-                false, // Tắt nút back mặc định để tự tùy chỉnh
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-              onPressed: () {
-                // Giữ nguyên logic điều hướng ban đầu
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/user_app',
-                  (route) => false,
-                );
-              },
-            ),
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'EcoTrack',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
+        return Container(
+          color: Colors.white,
+          child: Scaffold(
+            backgroundColor: const Color(0xFFA0F87D).withOpacity(0.17),
+            // ================= SỬ DỤNG APPBAR TIÊU CHUẨN =================
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF2E7D32).withOpacity(0.3),
+              elevation: 0,
+              toolbarHeight: 55, // Tăng nhẹ chiều cao để cân đối với subtitle
+              automaticallyImplyLeading:
+                  false, // Tắt nút back mặc định để tự tùy chỉnh
+              leading: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Color.fromARGB(255, 0, 0, 0),
+                  size: 20,
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Bảo vệ môi trường cùng nhau',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.normal,
+                onPressed: () {
+                  // Giữ nguyên logic điều hướng ban đầu
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/user_app',
+                    (route) => false,
+                  );
+                },
+              ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Text(
+                    'EcoTrack',
+                    style: TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Bảo vệ môi trường cùng nhau',
+                    style: TextStyle(
+                      color: Color.fromARGB(179, 0, 0, 0),
+                      fontSize: 10,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              centerTitle: false,
+            ),
+            body: Column(
+              children: [
+                _buildFilterRow(completed, total - completed),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(10, 1, 10, 1),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final q = filtered[index];
+                      return _buildQuizCard(context, q);
+                    },
                   ),
                 ),
               ],
             ),
-            centerTitle: false,
-          ),
-          body: Column(
-            children: [
-              // Đã loại bỏ _buildHeader cũ ở đây
-              _buildStatsRow(completed, total, totalPoint),
-              _buildFilterRow(completed, total - completed),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final q = filtered[index];
-                    return _buildQuizCard(context, q);
-                  },
-                ),
-              ),
-            ],
           ),
         );
       },
     );
   }
 
-  // ================ STATS 3 Ô TRÊN (Giữ nguyên) =================
-  Widget _buildStatsRow(int done, int total, int points) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 1),
-      child: Row(
-        children: [
-          Expanded(
-            child: _StatCard(label: 'Đã hoàn thành', value: '$done'),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: _StatCard(label: 'Tổng quiz', value: '$total'),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _StatCard(label: 'Điểm tích luỹ', value: '$points'),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ================ FILTER (Giữ nguyên) ================
   Widget _buildFilterRow(int done, int notDone) {
     return Container(
-      color: const Color(0xFFF5F6FA),
-      padding: const EdgeInsets.fromLTRB(9, 4, 6, 3),
+      padding: const EdgeInsets.fromLTRB(2, 3, 1, 3),
       child: Row(
         children: [
           _FilterChip(
-            label: 'Tất cả',
+            label: 'Tất cả (${done + notDone})',
             selected: _filterIndex == 0,
             onTap: () => setState(() => _filterIndex = 0),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           _FilterChip(
             label: 'Hoàn thành ($done)',
             selected: _filterIndex == 1,
             onTap: () => setState(() => _filterIndex = 1),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           _FilterChip(
             label: 'Chưa làm ($notDone)',
             selected: _filterIndex == 2,
@@ -239,13 +216,13 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.12),
+                  color: const Color(0xFFF9A825).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   q.difficulty,
                   style: const TextStyle(
-                    color: Colors.orange,
+                    color: const Color(0xFFF9A825),
                     fontSize: 8,
                     fontWeight: FontWeight.w700,
                   ),
@@ -254,7 +231,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
               const SizedBox(width: 6),
               Icon(
                 q.completed ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: q.completed ? Colors.green : Colors.grey,
+                color: q.completed ? const Color(0xFF2E7D32) : Colors.grey,
                 size: 16,
               ),
             ],
@@ -279,7 +256,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
                   '${q.correctPercent}%',
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
-                    color: Colors.green,
+                    color: const Color(0xFF2E7D32),
                   ),
                 ),
             ],
@@ -291,7 +268,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
                 child: LinearProgressIndicator(
                   value: (q.correctPercent) / 100.0,
                   backgroundColor: Colors.grey.shade200,
-                  color: Colors.green,
+                  color: const Color(0xFF2E7D32),
                   minHeight: 2,
                 ),
               ),
@@ -313,7 +290,7 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00C853),
+                    color: const Color(0xFF2E7D32),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
@@ -354,7 +331,7 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF00994D),
+              color: const Color(0xFF2E7D32),
             ),
           ),
           const SizedBox(height: 2),
@@ -386,7 +363,7 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF00C853) : Colors.white,
+          color: selected ? const Color(0xFF2E7D32) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: selected ? Colors.transparent : Colors.grey.shade300,

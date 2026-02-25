@@ -28,16 +28,11 @@ class _QuizScreenState extends State<QuizScreen> {
   int remain = perQSec;
   Timer? _timer;
 
-  bool _isTimeUp = false;
-  bool _showTimeUpMessage = false;
-
   @override
   void initState() {
     super.initState();
 
-    // BẮT BUỘC bật lại status bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -55,11 +50,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _startTimer() {
     _timer?.cancel();
-
     setState(() {
       remain = perQSec;
-      _isTimeUp = false;
-      _showTimeUpMessage = false;
+      selectedKey = null; // Reset lựa chọn khi qua câu mới
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -67,18 +60,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
       if (remain <= 1) {
         t.cancel();
-        setState(() {
-          remain = 0;
-          _isTimeUp = true;
-          _showTimeUpMessage = true;
-        });
-
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() => _showTimeUpMessage = false);
-          }
-        });
-
+        // Hết giờ thì ép buộc sang câu tiếp theo hoặc nộp bài
+        _nextOrSubmit();
         return;
       }
 
@@ -87,14 +70,16 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _choose(String key) {
-    if (selectedKey != null) return;
+    if (selectedKey != null) return; // Đã chọn rồi thì không cho chọn lại
 
     setState(() {
       selectedKey = key;
     });
+
+    _timer?.cancel(); // Dừng đồng hồ để người dùng xem đáp án đúng sai
   }
 
-  void _nextOrSubmit() async {
+  Future<void> _nextOrSubmit() async {
     _timer?.cancel();
 
     final q = _quiz!.questions[idx];
@@ -102,7 +87,6 @@ class _QuizScreenState extends State<QuizScreen> {
       answers[q.id] = selectedKey!;
     }
 
-    await Future.delayed(const Duration(milliseconds: 150));
     if (!mounted) return;
 
     final isLast = idx == _quiz!.questions.length - 1;
@@ -110,9 +94,6 @@ class _QuizScreenState extends State<QuizScreen> {
     if (!isLast) {
       setState(() {
         idx++;
-        selectedKey = null;
-        _isTimeUp = false;
-        _showTimeUpMessage = false;
       });
       _startTimer();
     } else {
@@ -161,143 +142,6 @@ class _QuizScreenState extends State<QuizScreen> {
     super.dispose();
   }
 
-  Widget _progressBar(int total) {
-    final v = (idx + (selectedKey != null ? 1 : 0)) / total;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: LinearProgressIndicator(
-          value: v.clamp(0.0, 1.0),
-          minHeight: 6,
-          backgroundColor: Colors.white.withOpacity(0.3),
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  // ================================================
-  // MÀU LỰA CHỌN (Giữ nguyên)
-  // ================================================
-  Color _tileColor(QQuestion q, String key) {
-    if (selectedKey == null) return Colors.grey.shade200;
-
-    final correct = q.correctKey;
-
-    if (key == correct) return Colors.green;
-    if (key == selectedKey && key != correct) return Colors.red;
-
-    return Colors.grey.shade200;
-  }
-
-  Widget _questionCard(QQuestion q) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(10, 8, 10, 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            q.text,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 12),
-          for (final op in q.options)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: InkWell(
-                onTap: () => _choose(op.key),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: _tileColor(q, op.key),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.black12),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${op.key}. ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: (selectedKey == op.key)
-                              ? Colors.white
-                              : Colors.black87,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          op.text,
-                          style: TextStyle(
-                            color: (selectedKey == op.key)
-                                ? Colors.white
-                                : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ================================
-  // NÚT NEXT / NỘP BÀI (ĐÃ ĐỒNG BỘ)
-  // ================================
-  Widget _nextButton(bool isLast) {
-    final bool canGoNext = selectedKey != null || _isTimeUp;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 22),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52, // 👈 BẰNG chiều cao option tile
-        child: ElevatedButton(
-          onPressed: () {
-            if (!canGoNext) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Hãy chọn đáp án trước khi chuyển câu.'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
-              return;
-            }
-            _nextOrSubmit();
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: canGoNext ? const Color(0xFF4CAF50) : Colors.grey,
-            foregroundColor: Colors.white,
-            elevation: 1,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12), // 👈 giống option
-            ),
-          ),
-          child: Text(
-            isLast ? 'Hoàn thành' : 'Câu tiếp theo',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<QuizDetail>(
@@ -311,119 +155,239 @@ class _QuizScreenState extends State<QuizScreen> {
 
         if (snap.hasError) {
           return Scaffold(
-            body: Center(
-              child: Text(
-                'Lỗi tải quiz: ${snap.error}',
-                textAlign: TextAlign.center,
-              ),
-            ),
+            body: Center(child: Text('Lỗi tải quiz: ${snap.error}')),
           );
         }
 
         final total = _quiz!.questions.length;
-
-        if (total == 0) {
-          return const Scaffold(
-            body: Center(
-              child: Text(
-                'Quiz hiện chưa có câu hỏi.\nVui lòng thử lại sau.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-
         final q = _quiz!.questions[idx];
         final isLast = idx == total - 1;
+        final bool isAnswered = selectedKey != null;
 
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF2E7D32),
-              elevation: 0,
-              automaticallyImplyLeading: false,
-              leading: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios,
-                  size: 20,
-                  color: Colors.white,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-              title: Text(
-                'Câu ${idx + 1} / $total',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '$remain s',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
+            backgroundColor: const Color(0xFFEAF3EC),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+
+                  /// HEADER
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Câu ${idx + 1}/$total',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: Color(0xFF2E7D32),
+                          ),
                         ),
-                      ),
-                      const Text(
-                        'Timer',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(20),
-                child: _progressBar(total),
-              ),
-            ),
-            body: Stack(
-              children: [
-                Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
+                        Row(
                           children: [
-                            const SizedBox(height: 10),
-                            _questionCard(q),
-                            const SizedBox(height: 6),
-                            _nextButton(isLast),
+                            const Icon(
+                              Icons.access_time,
+                              size: 18,
+                              color: Color(0xFF2E7D32),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${remain}s',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF2E7D32),
+                              ),
+                            ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
 
-                if (_showTimeUpMessage)
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      margin: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Hết thời gian!\n'
-                        'Bạn có thể chọn đáp án hoặc bấm "Câu tiếp theo".',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                  /// PROGRESS BAR
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: (idx + 1) / total,
+                        minHeight: 6,
+                        backgroundColor: Colors.grey.shade300,
+                        color: const Color(0xFF2E7D32),
                       ),
                     ),
                   ),
-              ],
+                  const SizedBox(height: 13),
+
+                  /// CARD CHÍNH
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 10),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.help_outline,
+                            color: Color(0xFF2E7D32),
+                            size: 30,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            q.text,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          /// OPTIONS
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: q.options.length,
+                              itemBuilder: (context, i) {
+                                final op = q.options[i];
+
+                                // LOGIC HIỂN THỊ ĐÚNG SAI
+                                bool isSelected = selectedKey == op.key;
+                                bool isCorrectOption = op.key == q.correctKey;
+
+                                Color bgColor = const Color(
+                                  0xFFF1F5F2,
+                                ); // Mặc định xám nhạt
+                                Color textColor = Colors.black87;
+                                Color borderColor = Colors.transparent;
+                                IconData iconData =
+                                    Icons.radio_button_unchecked;
+                                Color iconColor = Colors.grey;
+
+                                if (isAnswered) {
+                                  if (isCorrectOption) {
+                                    bgColor = const Color(
+                                      0xFF2E7D32,
+                                    ); // Xanh lá
+                                    textColor = Colors.white;
+                                    iconData = Icons.check_circle;
+                                    iconColor = Colors.white;
+                                  } else if (isSelected) {
+                                    bgColor = Colors.red.shade400; // Đỏ
+                                    textColor = Colors.white;
+                                    iconData = Icons.cancel;
+                                    iconColor = Colors.white;
+                                  } else {
+                                    // Những đáp án không chọn và không đúng sẽ bị làm mờ đi
+                                    bgColor = const Color(
+                                      0xFFF1F5F2,
+                                    ).withOpacity(0.5);
+                                    textColor = Colors.black38;
+                                    iconColor = Colors.grey.shade300;
+                                  }
+                                } else if (isSelected) {
+                                  // Trường hợp hover/click (thường rất nhanh trước khi isAnswered có tác dụng)
+                                  bgColor = const Color(0xFF2E7D32);
+                                  textColor = Colors.white;
+                                }
+
+                                return Padding(
+                                  key: ValueKey('${q.id}_${op.key}'),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                  ),
+                                  child: InkWell(
+                                    onTap: () => _choose(op.key),
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 13,
+                                        horizontal: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: bgColor,
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: borderColor),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            iconData,
+                                            color: iconColor,
+                                            size: 22,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              op.text,
+                                              style: TextStyle(
+                                                color: textColor,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          /// BUTTON XÁC NHẬN / NEXT
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: isAnswered
+                                  ? _nextOrSubmit
+                                  : null, // Chỉ được bấm khi đã trả lời
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isAnswered
+                                    ? const Color(0xFF2E7D32)
+                                    : Colors.grey.shade300,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                elevation: isAnswered ? 2 : 0,
+                              ),
+                              child: Text(
+                                isLast ? "Hoàn thành" : "Câu tiếp theo",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: isAnswered
+                                      ? Colors.white
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
