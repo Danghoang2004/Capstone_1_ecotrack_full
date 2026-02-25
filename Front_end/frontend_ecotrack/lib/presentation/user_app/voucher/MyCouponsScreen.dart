@@ -89,10 +89,7 @@ class _MyCouponsScreenState extends State<MyCouponsScreen> {
 
     // Chuyển đổi Map trở lại thành List<GroupedCoupon>
     return uniqueItems.entries.map((entry) {
-      return GroupedCoupon(
-        item: entry.value,
-        quantity: counts[entry.key]!,
-      );
+      return GroupedCoupon(item: entry.value, quantity: counts[entry.key]!);
     }).toList();
   }
 
@@ -133,8 +130,11 @@ class _MyCouponsScreenState extends State<MyCouponsScreen> {
           children: [
             Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
             const SizedBox(height: 10),
-            Text('Có lỗi xảy ra: $_error', style: const TextStyle(color: Colors.grey)),
-            TextButton(onPressed: _loadCoupons, child: const Text("Thử lại"))
+            Text(
+              'Có lỗi xảy ra: $_error',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            TextButton(onPressed: _loadCoupons, child: const Text("Thử lại")),
           ],
         ),
       );
@@ -147,7 +147,10 @@ class _MyCouponsScreenState extends State<MyCouponsScreen> {
           children: [
             Icon(Icons.eco_outlined, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
-            Text('Bạn chưa có voucher nào', style: TextStyle(color: Colors.grey[600], fontSize: 16)),
+            Text(
+              'Bạn chưa có voucher nào',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
           ],
         ),
       );
@@ -215,12 +218,15 @@ class _EcoCouponCard extends StatelessWidget {
               color: statusColor.withOpacity(0.1),
               child: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
                   ? Image.network(
-                item.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.confirmation_number_outlined, color: statusColor);
-                },
-              )
+                      item.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Icon(
+                          Icons.confirmation_number_outlined,
+                          color: statusColor,
+                        );
+                      },
+                    )
                   : Icon(Icons.local_activity, size: 30, color: statusColor),
             ),
           ),
@@ -275,7 +281,11 @@ class _EcoCouponCard extends StatelessWidget {
                   item.partnerName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
 
                 const SizedBox(height: 4),
@@ -291,7 +301,10 @@ class _EcoCouponCard extends StatelessWidget {
                     const SizedBox(width: 2),
                     Text(
                       'HSD: ${item.expiryDate}',
-                      style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
@@ -319,16 +332,16 @@ class _EcoCouponCard extends StatelessWidget {
                       height: 24, // Chiều cao nhỏ gọn
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: primaryGreen, width: 1),
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 2,
-                              offset: const Offset(0, 1),
-                              color: primaryGreen.withOpacity(0.2),
-                            ),
-                          ]
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: primaryGreen, width: 1),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                            color: primaryGreen.withOpacity(0.2),
+                          ),
+                        ],
                       ),
                       alignment: Alignment.center,
                       child: Row(
@@ -355,7 +368,6 @@ class _EcoCouponCard extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildStatusBadge(UserCouponItem item) {
     String text;
@@ -385,7 +397,11 @@ class _EcoCouponCard extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
