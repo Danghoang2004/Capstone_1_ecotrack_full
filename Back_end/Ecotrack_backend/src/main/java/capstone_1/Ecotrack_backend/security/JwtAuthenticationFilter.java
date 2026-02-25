@@ -1,6 +1,5 @@
 package capstone_1.Ecotrack_backend.security;
 
-import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -12,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 
@@ -28,8 +26,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
@@ -74,7 +72,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // Kiểm tra xem credentials (email/password) có bị thay đổi sau khi token được tạo không
+            // Kiểm tra xem credentials (email/password) có bị thay đổi sau khi token được
+            // tạo không
             if (user.getLastCredentialsUpdate() != null) {
                 Date tokenIssuedAt = jwtUtil.getIssuedAtFromToken(jwtToken);
                 if (tokenIssuedAt != null) {
@@ -99,12 +98,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .map(role -> new SimpleGrantedAuthority(role.getName()))
                     .toList();
 
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                            user.getEmail(),
-                            null,
-                            authorities
-                    );
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                    user.getEmail(),
+                    null,
+                    authorities);
 
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -114,6 +111,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 
 }

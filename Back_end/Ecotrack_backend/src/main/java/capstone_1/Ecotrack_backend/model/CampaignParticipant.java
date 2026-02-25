@@ -1,11 +1,7 @@
 package capstone_1.Ecotrack_backend.model;
 
-import capstone_1.Ecotrack_backend.model.Campaign;
-import capstone_1.Ecotrack_backend.model.CampaignParticipantId;
-import capstone_1.Ecotrack_backend.model.User;
 import jakarta.persistence.*;
 import lombok.*;
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity

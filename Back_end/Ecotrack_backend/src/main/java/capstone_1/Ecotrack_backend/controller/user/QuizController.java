@@ -6,7 +6,6 @@ import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.service.QuizService;
 import capstone_1.Ecotrack_backend.model.User;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +27,7 @@ public class QuizController {
     public SubmitResponse submit(
             @PathVariable Long quizId,
             @RequestBody SubmitRequest request,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         String email = authentication.getName();
 
         User user = userRepo.findByEmail(email)
@@ -37,7 +35,6 @@ public class QuizController {
 
         return service.submit(quizId, user.getId(), request);
     }
-
 
     @GetMapping("/summary")
     public QuizSummaryDto getSummary(Authentication authentication) {

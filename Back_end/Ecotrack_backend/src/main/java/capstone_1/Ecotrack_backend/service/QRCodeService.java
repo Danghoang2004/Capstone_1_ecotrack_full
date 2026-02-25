@@ -1,44 +1,52 @@
 package capstone_1.Ecotrack_backend.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import org.springframework.stereotype.Service;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 
 @Service
 public class QRCodeService {
 
+    private final Cloudinary cloudinary;
 
-    private static final String UPLOAD_DIR = "D:/project_Capstone_1_full/Back_end/Ecotrack_backend/uploads/";
-    private static final String QR_SUB_DIR = "campaign_qrs/"; // Thư mục con cho gọn
+    public QRCodeService(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+    }
 
     public String generateAndSaveQRCode(Long campaignId, String content, int width, int height) throws Exception {
-        // 1. Tạo thư mục nếu chưa tồn tại
-        Path uploadPath = Paths.get(UPLOAD_DIR + QR_SUB_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
+        byte[] qrImageBytes = generateQrImageBytes(content, width, height);
 
-        // 2. Tạo tên file duy nhất
-        String fileName = "campaign_qr_" + campaignId + ".png";
-        Path filePath = uploadPath.resolve(fileName);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                qrImageBytes,
+                ObjectUtils.asMap(
+                        "folder", "ecotrack/campaign_qrs",
+                        "public_id", "campaign_qr_" + campaignId,
+                        "overwrite", true,
+                        "resource_type", "image",
+                        "format", "png"));
 
-        // 3. Tạo QR Code BitMatrix
+        return uploadResult.get("secure_url").toString();
+    }
+
+    private byte[] generateQrImageBytes(String content, int width, int height) throws WriterException, IOException {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, width, height);
+        BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
 
-        // 4. Ghi file ra ổ cứng
-        MatrixToImageWriter.writeToPath(bitMatrix, "PNG", filePath);
-
-        // 5. Trả về đường dẫn Web (tương ứng với cấu hình addResourceHandlers)
-        // Kết quả sẽ là: /uploads/campaign_qrs/campaign_qr_1.png
-        return "/uploads/" + QR_SUB_DIR + fileName;
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            javax.imageio.ImageIO.write(bufferedImage, "PNG", outputStream);
+            return outputStream.toByteArray();
+        }
     }
 }

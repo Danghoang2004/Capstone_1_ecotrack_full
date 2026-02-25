@@ -18,7 +18,6 @@ import java.util.stream.IntStream;
 public class RankingService {
 
     private final UserPointsRepository userPointsRepository;
-    private final UserProfileRepository userProfileRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final WasteReportRepository wasteReportRepository;
     private final GroupMemberRepository groupMemberRepository;
@@ -38,7 +37,8 @@ public class RankingService {
                 .filter(userPoints -> {
                     User user = userRepository.findById(userPoints.getUserId())
                             .orElse(null);
-                    if (user == null) return false;
+                    if (user == null)
+                        return false;
                     // Chỉ lấy users có role ROLE_USER, bỏ qua ROLE_ADMIN
                     return user.getRoles().stream()
                             .anyMatch(role -> "ROLE_USER".equals(role.getName()));
@@ -53,7 +53,8 @@ public class RankingService {
                     UserPoints userPoints = filteredUserPoints.get(index);
                     // Fetch User và UserProfile một cách rõ ràng
                     User user = userRepository.findById(userPoints.getUserId())
-                            .orElseThrow(() -> new RuntimeException("Không tìm thấy user với id: " + userPoints.getUserId()));
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Không tìm thấy user với id: " + userPoints.getUserId()));
                     UserProfile profile = user.getUserProfile();
 
                     // Lấy số reports (activities)
@@ -99,12 +100,11 @@ public class RankingService {
         // Group by groupId và tính tổng điểm
         Map<Long, Integer> groupScores = allGroupMembers.stream()
                 .collect(Collectors.groupingBy(
-                    GroupMember::getGroupId,
-                    Collectors.summingInt(gm -> {
-                        UserPoints userPoints = userPointsRepository.findById(gm.getUserId()).orElse(null);
-                        return userPoints != null ? userPoints.getPoints() : 0;
-                    })
-                ));
+                        GroupMember::getGroupId,
+                        Collectors.summingInt(gm -> {
+                            UserPoints userPoints = userPointsRepository.findById(gm.getUserId()).orElse(null);
+                            return userPoints != null ? userPoints.getPoints() : 0;
+                        })));
 
         // Sắp xếp theo điểm giảm dần
         List<Map.Entry<Long, Integer>> sortedGroups = groupScores.entrySet().stream()
@@ -162,4 +162,3 @@ public class RankingService {
                 .collect(Collectors.toList());
     }
 }
-
