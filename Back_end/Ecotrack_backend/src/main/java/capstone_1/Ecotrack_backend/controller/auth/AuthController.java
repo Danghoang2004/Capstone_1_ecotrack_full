@@ -1,5 +1,6 @@
 package capstone_1.Ecotrack_backend.controller.auth;
 
+import capstone_1.Ecotrack_backend.dto.request.GoogleLoginRequest;
 import capstone_1.Ecotrack_backend.dto.request.LoginRequest;
 import capstone_1.Ecotrack_backend.dto.request.RegisterRequest;
 import capstone_1.Ecotrack_backend.dto.response.AuthResponse;
@@ -11,6 +12,7 @@ import capstone_1.Ecotrack_backend.repository.PointTransactionRepository;
 import capstone_1.Ecotrack_backend.repository.UserPointsRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.security.JwtUtil;
+import capstone_1.Ecotrack_backend.service.GoogleAuthService;
 import capstone_1.Ecotrack_backend.service.UserService;
 import capstone_1.Ecotrack_backend.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +52,9 @@ public class AuthController {
 
     @Autowired
     private PointTransactionRepository pointTransactionRepository;
+
+    @Autowired
+    private GoogleAuthService googleAuthService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -173,6 +178,18 @@ public class AuthController {
         }
 
         return ResponseEntity.badRequest().body(Map.of("error", "Mã xác thực không hợp lệ"));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(
+            @RequestBody GoogleLoginRequest request) {
+        try {
+            String token = googleAuthService.login(request.idToken());
+            return ResponseEntity.ok(Map.of("accessToken", token));
+        } catch (Exception e) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
 }

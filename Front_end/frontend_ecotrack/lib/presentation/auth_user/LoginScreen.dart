@@ -271,7 +271,36 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () async {
+                        setState(() {
+                          _loading = true;
+                          _error = null;
+                        });
+
+                        final result = await _authService.loginWithGoogle();
+
+                        if (!mounted) return;
+                        setState(() => _loading = false);
+
+                        if (result['success'] == true) {
+                          final roles = await _authService.getRoles();
+
+                          if (roles.contains("ROLE_ADMIN") ||
+                              roles.contains("ROLE_PARTNER")) {
+                            await _authService.logout();
+                            setState(() {
+                              _error = 'Tài khoản không hợp lệ';
+                            });
+                            return;
+                          }
+
+                          _showSuccessDialog();
+                        } else {
+                          setState(() {
+                            _error = result['message'];
+                          });
+                        }
+                      },
                       icon: Image.asset(
                         'assets/icons/google.png',
                         height: 16,
@@ -322,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
 
                 const Text(
-                  "2025 EcoTrack. Cùng nhau bảo vệ hành tinh xanh.",
+                  "2026 EcoTrack. Cùng nhau bảo vệ hành tinh xanh.",
                   style: TextStyle(fontSize: 14),
                   textAlign: TextAlign.center,
                 ),

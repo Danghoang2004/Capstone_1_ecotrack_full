@@ -337,13 +337,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           trailing: Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.3),
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color?.withOpacity(0.3),
                           ),
                           onTap: () {
                             // Lệnh điều hướng sang trang Introduction
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => IntroductionPage()),
+                              MaterialPageRoute(
+                                builder: (context) => IntroductionPage(),
+                              ),
                             );
                           },
                         ),
@@ -351,7 +355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 20,),
+                  SizedBox(height: 20),
                   // --- PHẦN 3: TÀI KHOẢN ---
                   Container(
                     decoration: cardDecoration(context),
@@ -373,7 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             onPressed: () async {
-                              await AuthService().logout();
+                              await AuthService().logoutGoogle();
                               if (!mounted) return;
                               Navigator.pushNamedAndRemoveUntil(
                                 context,
