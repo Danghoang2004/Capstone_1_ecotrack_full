@@ -35,6 +35,12 @@ public class UserServiceImpl implements UserService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
+        user.setProviderId("LOCAL");
+        if ("LOCAL".equals(user.getProviderId())) {
+            // login email + password
+        } else {
+            // login OAuth (Google)
+        }
         user.setPassword(passwordEncoderWrapper.encode(request.getPassword()));
 
         // ROLE_USER mặc định

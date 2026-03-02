@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -44,6 +45,63 @@ class AuthService {
     } catch (e) {
       return {'success': false, 'message': 'Lỗi kết nối: $e'};
     }
+  }
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId:
+        '798523892228-hihng8k1s63khd4pcsp54fpgpqrdd60m.apps.googleusercontent.com',
+    scopes: ['email', 'profile'],
+  );
+  Future<Map<String, dynamic>> loginWithGoogle() async {
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        return {'success': false, 'message': 'Huỷ đăng nhập Google'};
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+
+      if (idToken == null) {
+        return {'success': false, 'message': 'Không lấy được Google token'};
+      }
+
+      final url = Uri.parse('$baseUrl/api/auth/google');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+      if (response.statusCode == 200 && data['accessToken'] != null) {
+        // Lưu JWT
+        await _storage.write(key: 'jwt_token', value: data['accessToken']);
+
+        return {'success': true};
+      } else {
+        return {
+          'success': false,
+          'message': data['error'] ?? 'Đăng nhập Google thất bại',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Lỗi Google Login: $e'};
+    }
+  }
+
+  Future<void> logoutGoogle() async {
+    try {
+      await _googleSignIn.signOut();
+
+      await _googleSignIn.disconnect();
+    } catch (e) {
+      print('Lỗi khi ngắt kết nối Google: $e');
+    }
+
+    await logout();
   }
 
   // --- 2. Xác thực OTP ---
