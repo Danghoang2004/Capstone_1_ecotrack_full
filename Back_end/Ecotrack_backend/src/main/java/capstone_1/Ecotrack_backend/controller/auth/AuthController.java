@@ -5,6 +5,7 @@ import capstone_1.Ecotrack_backend.dto.request.LoginRequest;
 import capstone_1.Ecotrack_backend.dto.request.RegisterRequest;
 import capstone_1.Ecotrack_backend.dto.request.ResetPasswordRequestWithOtp;
 import capstone_1.Ecotrack_backend.dto.request.VerifyOtpRequest;
+import capstone_1.Ecotrack_backend.dto.response.ApiResponse;
 import capstone_1.Ecotrack_backend.dto.response.AuthResponse;
 import capstone_1.Ecotrack_backend.model.PointTransaction;
 
@@ -186,13 +187,11 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password/confirm")
-    public ResponseEntity<?> confirmResetPassword(
+    public ResponseEntity<ApiResponse<?>> confirmResetPassword(
             @RequestBody VerifyOtpRequest request) {
 
-        passwordResetOtpService.verifyOtpAndResetPassword(request);
+        ApiResponse<?> response = passwordResetOtpService.verifyOtpAndResetPassword(request);
 
-        return ResponseEntity.ok(
-                Map.of("message", "Đặt lại mật khẩu thành công"));
+        return ResponseEntity.ok(response);
     }
-
 }

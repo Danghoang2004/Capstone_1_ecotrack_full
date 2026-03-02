@@ -2,10 +2,11 @@ package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.request.ResetPasswordRequestWithOtp;
 import capstone_1.Ecotrack_backend.dto.request.VerifyOtpRequest;
+import capstone_1.Ecotrack_backend.dto.response.ApiResponse;
 
 public interface PasswordResetOtpService {
 
-    void requestResetPassword(ResetPasswordRequestWithOtp request);
+    ApiResponse<?> requestResetPassword(ResetPasswordRequestWithOtp request);
 
-    void verifyOtpAndResetPassword(VerifyOtpRequest request);
+    ApiResponse<?> verifyOtpAndResetPassword(VerifyOtpRequest request);
 }
