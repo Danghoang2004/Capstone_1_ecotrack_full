@@ -11,6 +11,7 @@ import capstone_1.Ecotrack_backend.repository.PointTransactionRepository;
 import capstone_1.Ecotrack_backend.repository.UserPointsRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.security.JwtUtil;
+import capstone_1.Ecotrack_backend.service.AuthService;
 import capstone_1.Ecotrack_backend.service.UserService;
 import capstone_1.Ecotrack_backend.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,9 @@ public class AuthController {
 
     @Autowired
     private PointTransactionRepository pointTransactionRepository;
+
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -153,7 +157,15 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error", "Lỗi đăng nhập: " + e.getMessage()));
         }
     }
-
+    @PostMapping("/facebook")
+        public ResponseEntity<?> authenticateFacebookUser(@RequestBody capstone_1.Ecotrack_backend.dto.request.FacebookAuthRequest request) {
+            try {
+                AuthResponse response = authService.loginWithFacebook(request.getToken());
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Lỗi xác thực Facebook: " + e.getMessage()));
+            }
+        }
     @PostMapping("/verify")
     public ResponseEntity<?> verifyAccount(@RequestBody Map<String, String> request) {
         String email = request.get("email");

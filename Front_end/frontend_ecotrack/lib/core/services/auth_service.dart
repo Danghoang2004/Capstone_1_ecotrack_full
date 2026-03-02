@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 class AuthService {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -106,7 +107,32 @@ class AuthService {
       return {'success': false, 'message': 'Không thể kết nối máy chủ ($e)'};
     }
   }
+  // --- 4. Đăng nhập bằng Facebook ---
+  Future<Map<String, dynamic>> loginWithFacebook() async {
+    try {
+      // Gọi SDK mở popup xin quyền của Facebook
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['public_profile', 'email'],
+      );
 
+      if (result.status == LoginStatus.success) {
+        // Lấy token từ Facebook trả về
+        final AccessToken accessToken = result.accessToken!;
+        // Tạm thời trả về success để bạn làm mượt UI trước
+        return {
+          'success': true, 
+          'message': 'Đăng nhập Facebook thành công',
+          'token': accessToken.token 
+        };
+      } else if (result.status == LoginStatus.cancelled) {
+        return {'success': false, 'message': 'Bạn đã huỷ đăng nhập Facebook'};
+      } else {
+        return {'success': false, 'message': 'Lỗi từ Facebook: ${result.message}'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Đã xảy ra lỗi: $e'};
+    }
+  }
   // --- Hàm phụ: Lưu dữ liệu User vào máy ---
   Future<void> _saveUserData(Map<String, dynamic> data) async {
     final token = data['token'];

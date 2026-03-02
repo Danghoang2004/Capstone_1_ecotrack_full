@@ -63,7 +63,28 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     }
   }
+  Future<void> _loginFacebook() async {
+      print("--- Bắt đầu gọi đăng nhập Facebook ---");
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
 
+      final result = await _authService.loginWithFacebook();
+      print("--- Kết quả trả về: $result ---");
+
+      if (!mounted) return;
+
+      setState(() => _loading = false);
+
+      if (result['success'] == true) {
+        _showSuccessDialog();
+      } else {
+        setState(() {
+          _error = result['message'];
+        });
+      }
+    }
   void _showSuccessDialog() {
     showGeneralDialog(
       context: context,
@@ -297,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(width: 20),
 
                     OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: _loading ? null : _loginFacebook,
                       icon: const Icon(
                         Icons.facebook,
                         color: Color(0xFF1877F2),

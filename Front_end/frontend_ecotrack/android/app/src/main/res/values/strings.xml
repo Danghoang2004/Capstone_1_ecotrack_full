@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">EcoTrack</string>
+    <string name="facebook_app_id">926342830324803</string>
+    <string name="fb_login_protocol_scheme">fb926342830324803</string>
+    <string name="facebook_client_token">5dfa208d19f7c18a48820d6dd4b95af8</string>
 </resources>
+
