@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/data/models/CampaignModel.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/controllers/campaign_takes_place_controller.dart';
+import '../../../../../core/theme/app_colors.dart';
 
 class CampaignTakesPlaceSection extends StatefulWidget {
   final CampaignTakesPlaceController controller;
@@ -53,9 +54,9 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          const Text(
+            'Chiến dịch đang diễn ra',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           InkWell(
             onTap: () {
@@ -84,6 +85,7 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor, width: 1),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
         ],

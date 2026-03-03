@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
-import 'package:frontend_ecotrack/presentation/user_app/voucher/MyCouponsScreen.dart';
 
-const Color primaryGreen = Color.fromARGB(255, 62, 186, 112);
+const Color primaryGreen = Color(0xFF06923E);
 
 class RewardsScreen extends StatefulWidget {
   const RewardsScreen({super.key});
@@ -116,94 +115,72 @@ class _RewardsScreenState extends State<RewardsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFA0F87D).withOpacity(0.17),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF2E7D32).withOpacity(0.3),
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          toolbarHeight: 50,
-          titleSpacing: 0,
-          title: Padding(
-            padding: const EdgeInsets.fromLTRB(1, 4, 1, 8),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Color.fromARGB(255, 0, 0, 0),
-                  ),
-                  onPressed: () => Navigator.pop(context),
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2E7D32),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        toolbarHeight: 70,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 0.1, right: 5),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                'Đổi thưởng',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(width: 0.0000000000000001),
-                const Text(
-                  'Đổi thưởng',
-                  style: TextStyle(
-                    color: Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
                 ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.redeem_outlined,
-                        size: 16,
-                        color: Color.fromARGB(255, 255, 255, 255),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.redeem_outlined,
+                      size: 16,
+                      color: Colors.black,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_userPoints điểm',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$_userPoints điểm',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Color.fromARGB(255, 255, 255, 255),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 6),
-
-                IconButton(
-                  icon: const Icon(
-                    Icons.menu,
-                    color: Color.fromARGB(255, 0, 0, 0),
-                  ),
-                  tooltip: 'Voucher của tôi',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MyCouponsScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        body: Column(
-          children: [
-            const SizedBox(height: 1),
-            _CategoryFilterRow(
-              selectedCategory: _selectedCategory,
-              onChanged: _onCategoryChanged,
-            ),
-
-            Expanded(child: _buildBody()),
-          ],
-        ),
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 2),
+          _CategoryFilterRow(
+            selectedCategory: _selectedCategory,
+            onChanged: _onCategoryChanged,
+          ),
+          Divider(height: 1, color: Colors.grey.shade300),
+          Expanded(child: _buildBody()),
+        ],
       ),
     );
   }
@@ -289,11 +266,12 @@ class _CategoryFilterRow extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(5, 3, 5, 1),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: primaryGreen, width: 1.4),
         ),
         child: Row(
           children: items.map((item) {
@@ -333,26 +311,24 @@ class _CategoryFixedItem extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: selected ? primaryGreen.withOpacity(0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(999),
         ),
-        child: Column(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: textColor),
-            const SizedBox(height: 4),
+            Icon(icon, size: 16, color: textColor),
+            const SizedBox(width: 4),
             Flexible(
               child: Text(
                 name,
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   color: textColor,
                 ),
@@ -434,7 +410,7 @@ class RewardItem {
 class RewardCard extends StatelessWidget {
   final String tagText;
   final Color tagColor;
-  final String? imageUrl;
+  final String? imageUrl; // Nhận URL ảnh
   final String title;
   final String subtitle;
   final String partnerName;
@@ -451,7 +427,7 @@ class RewardCard extends StatelessWidget {
     super.key,
     required this.tagText,
     required this.tagColor,
-    this.imageUrl,
+    this.imageUrl, // Nullable
     required this.title,
     required this.subtitle,
     required this.partnerName,
@@ -468,190 +444,199 @@ class RewardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(7),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15), // Bo góc to hơn giống thiết kế
+        borderRadius: BorderRadius.circular(6),
         boxShadow: [
           BoxShadow(
-            blurRadius: 8,
+            blurRadius: 3,
             offset: const Offset(0, 2),
-            color: Colors.black.withOpacity(0.06), // Đổ bóng nhẹ nhàng hơn
+            color: Colors.black.withOpacity(0.08),
           ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Khung ảnh Logo bên trái (có viền bo tròn)
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.grey.shade200, width: 1),
-            ),
-            padding: const EdgeInsets.all(1),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+          // Khung ảnh vuông bên trái
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 60,
+              height: 60,
+              color: tagColor.withOpacity(0.1),
               child: (imageUrl != null && imageUrl!.isNotEmpty)
                   ? Image.network(
                       imageUrl!,
-                      fit: BoxFit.contain,
+                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.storefront,
-                          color: Colors.green.shade300,
-                          size: 10,
-                        );
+                        return Icon(Icons.broken_image, color: tagColor);
                       },
                     )
-                  : Icon(
-                      Icons.storefront,
-                      color: Colors.green.shade300,
-                      size: 30,
-                    ),
+                  : Icon(Icons.card_giftcard, size: 30, color: tagColor),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
 
-          // 2. Nội dung bên phải
+          // Nội dung bên phải
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Tiêu đề Voucher
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 1),
-
-                // Mô tả (Subtitle)
-                Text(
-                  subtitle,
-                  maxLines: 2, // Để 1 dòng cho gọn giống thiết kế
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 5),
-
-                // Hàng thông tin 1: Partner & Rating
+                // Tag + Title
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 14,
-                      color: const Color(0xFF2E7D32),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tagColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        tagText,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        partnerName,
+                        title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.black87,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 2),
-                    Text(
-                      rating.toString(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 81),
                   ],
                 ),
+
+                // Description
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                ),
+
                 const SizedBox(height: 4),
 
-                // Hàng thông tin 2: Địa điểm & Thời gian (Icon màu cam)
+                // Partner + Rating
+                Row(
+                  children: [
+                    Text(
+                      partnerName,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (showRating) ...[
+                      const SizedBox(width: 3),
+                      const Icon(Icons.star, color: Colors.amber, size: 11),
+                      const SizedBox(width: 2),
+                      Text(
+                        rating.toString(),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+
+                const SizedBox(height: 3),
+
+                // Distance + Date
                 Row(
                   children: [
                     Icon(
                       Icons.location_on_outlined,
-                      size: 14,
-                      color: Colors.orange.shade400,
+                      size: 11,
+                      color: Colors.grey.shade600,
                     ),
-                    const SizedBox(width: 1),
-                    Text(
-                      distance,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.access_time,
-                      size: 14,
-                      color: Colors.orange.shade400,
-                    ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 2),
                     Expanded(
                       child: Text(
-                        'Đến $expiry',
+                        distance,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: Colors.black87,
-                        ),
+                        style: const TextStyle(fontSize: 8),
                       ),
                     ),
+                    Icon(
+                      Icons.calendar_today_outlined,
+                      size: 11,
+                      color: Colors.grey.shade600,
+                    ),
+                    const SizedBox(width: 2),
+                    Text('Đến $expiry', style: const TextStyle(fontSize: 10)),
                   ],
                 ),
-                const SizedBox(height: 3),
 
-                // Hàng cuối: Điểm số & Nút Đổi ngay
+                const SizedBox(height: 4),
+
+                // Footer: Price + Points + Button
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    // Cụm điểm số (Icon mầm cây)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          priceText,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                          ),
+                        ),
+                        if (originalPriceText != null)
+                          Text(
+                            originalPriceText!,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.eco_outlined, // Icon hình cái lá/mầm cây
-                          size: 20,
-                          color: Color(0xFF2E7D32),
+                          Icons.redeem_outlined,
+                          size: 12,
+                          color: primaryGreen,
                         ),
-                        const SizedBox(width: 2),
+                        const SizedBox(width: 3),
                         Text(
                           pointsText,
                           style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E7D32),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-
-                    // Nút bấm Đổi ngay
+                    const Spacer(),
                     SizedBox(
-                      height: 29,
+                      height: 28,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
+                          backgroundColor: primaryGreen,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              10,
-                            ), // Bo góc vừa phải giống hình
+                            borderRadius: BorderRadius.circular(999),
                           ),
                           elevation: 0,
                         ),

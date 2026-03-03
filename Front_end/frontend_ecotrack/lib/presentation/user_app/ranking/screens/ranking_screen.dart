@@ -126,6 +126,10 @@ class _RankingScreenState extends State<RankingScreen> {
 
   Widget _buildTab(String label, int index) {
     final isSelected = _selectedTab == index;
+    final icon = index == 0
+        ? Icons.emoji_events_outlined
+        : Icons.group_outlined;
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -133,20 +137,29 @@ class _RankingScreenState extends State<RankingScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF3C9541) : Colors.grey[300],
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(24),
         ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
               color: isSelected ? AppColors.white : Colors.grey[700],
-              fontSize: 14,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
-          ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppColors.white : Colors.grey[700],
+                fontSize: 15,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );

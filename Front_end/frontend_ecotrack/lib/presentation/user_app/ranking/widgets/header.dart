@@ -7,7 +7,7 @@ class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
   const RankingHeader({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(72);
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +15,7 @@ class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: HomeColors.bgHeader,
       elevation: 0,
       automaticallyImplyLeading: false,
+      toolbarHeight: 72,
 
       systemOverlayStyle: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -35,14 +36,18 @@ class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
             'Bảng xếp hạng',
             style: TextStyle(
               color: AppColors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             'Thành tích môi trường',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -50,25 +55,35 @@ class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         Row(
           children: [
-            SvgPicture.asset(
-              'assets/images/Logo.svg',
-              width: 22,
-              height: 22,
-              colorFilter: const ColorFilter.mode(
-                Color(0xFF3C9541),
-                BlendMode.srcIn,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: HomeColors.logoBorderColor,
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  'assets/images/Logo.svg',
+                  width: 20,
+                  height: 20,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             const Text(
               'Eco Track',
               style: TextStyle(
-                color: Color(0xFF3C9541),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+                color: AppColors.textLogo,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
           ],
         ),
       ],

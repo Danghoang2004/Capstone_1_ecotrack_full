@@ -103,8 +103,8 @@ class RankingListCard extends StatelessWidget {
                 Text(
                   name,
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
                     color: Colors.black,
                   ),
                 ),
@@ -112,48 +112,53 @@ class RankingListCard extends StatelessWidget {
                 if (location.isNotEmpty)
                   Text(
                     location,
-                    style: const TextStyle(fontSize: 12, color: Colors.black),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF6B7280),
+                    ),
                   ),
                 if (titles.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: titles.map((title) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFC0E1AE),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF3C9541),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                  const SizedBox(height: 2),
+                  ...titles.map(
+                    (title) => Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF374151),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                    ),
                   ),
                 ],
               ],
             ),
           ),
           // Điểm
-          Text(
-            '${FormatNumber.formatPoints(points)} Điểm',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF3C9541),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                FormatNumber.formatPoints(points),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF3C9541),
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Điểm',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
           ),
         ],
       ),

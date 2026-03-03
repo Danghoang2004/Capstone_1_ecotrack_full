@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
 
-          initialRoute: '/login',
+          initialRoute: '/ranking',
           onGenerateRoute: AppRouter.generateRoute,
         );
       },

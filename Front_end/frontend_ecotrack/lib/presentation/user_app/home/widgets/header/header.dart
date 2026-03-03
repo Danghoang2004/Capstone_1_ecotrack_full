@@ -70,40 +70,49 @@ class _HeaderWidgetState extends State<HeaderWidget> {
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: HomeColors.logoBorderColor,
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/images/Logo.svg',
-                    width: 30,
-                    height: 30,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.white,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: [
-                  Text(
-                    'EcoTrack',
-                    style: TextStyle(
-                      color: AppColors.textLogo,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: HomeColors.logoBorderColor,
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/images/Logo.svg',
+                        width: 26,
+                        height: 26,
+                        colorFilter: const ColorFilter.mode(
+                          AppColors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
                     ),
                   ),
-                  Text(
-                    'Bảo vệ môi trường',
-                    style: TextStyle(color: AppColors.black, fontSize: 12),
+                  const SizedBox(width: 8),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'EcoTrack',
+                        style: TextStyle(
+                          color: AppColors.textLogo,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 20,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Bảo vệ môi trường',
+                        style: TextStyle(
+                          color: Color(0xFF6B7280),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
