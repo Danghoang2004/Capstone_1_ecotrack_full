@@ -14,6 +14,7 @@ import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
+import 'package:frontend_ecotrack/presentation/auth_user/forgot_password_screen.dart';
 import '../data/models/ProfileView.dart';
 import 'auth_user/register_screen.dart';
 
@@ -26,6 +27,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case '/register':
         return MaterialPageRoute(builder: (_) => RegisterScreen());
+      case '/forgot_password':
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       case '/home':
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case '/report':

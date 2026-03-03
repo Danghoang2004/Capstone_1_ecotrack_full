@@ -6,6 +6,10 @@ class AppColors {
   static const Color white = Colors.white;
   static const Color textLogo = Color(0xFF4D7817);
   static const Color borderColor = Color(0xFF3C9541);
+  static const Color primaryGreen = Color(0xFF2E7D32); 
+  static const Color backgroundLight = Color.fromARGB(255, 238, 239, 238); 
+  static const Color textPrimary = Color(0xFF1B1B1B);
+  static const Color textSecondary = Color(0xFF757575);
 }
 
 class HomeColors {
