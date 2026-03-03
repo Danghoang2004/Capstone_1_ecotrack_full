@@ -20,7 +20,7 @@ class RecentActivitySection extends StatelessWidget {
             'Hoạt Động Gần Đây',
             style: TextStyle(
               color: AppColors.black,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),

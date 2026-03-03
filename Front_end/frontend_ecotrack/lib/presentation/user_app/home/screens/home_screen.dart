@@ -105,9 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // -------------------------------------------------------------------------------------
 
     return Scaffold(
-      backgroundColor: isDesktop
-          ? Colors.white
-          : const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: isDesktop ? Colors.white : HomeColors.background,
 
       // --- FIX: Loại bỏ SafeArea bao quanh Column để Header tràn lên mép trên ---
       body: Column(
@@ -160,21 +158,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green.shade100),
+                      border: Border.all(color: AppColors.borderColor),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.camera_alt_outlined,
-                          color: Colors.green,
-                          size: 32,
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green.withOpacity(0.08),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.camera_alt_outlined,
+                              color: Color(0xFF3C9541),
+                              size: 26,
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 7),
-                        Text(
+                        const SizedBox(height: 10),
+                        const Text(
                           'Báo cáo rác\nChụp ảnh & GPS',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 11),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -192,21 +203,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.green.shade100),
+                      border: Border.all(color: AppColors.borderColor),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.qr_code_scanner,
-                          color: Colors.green,
-                          size: 32,
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.green.withOpacity(0.08),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.qr_code_scanner,
+                              color: Color(0xFF3C9541),
+                              size: 26,
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 7),
-                        Text(
+                        const SizedBox(height: 10),
+                        const Text(
                           'Check-in\nQuét QR chiến dịch',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 11),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -236,10 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Text(
                 'Đố Vui Và Đổi Thưởng',
-                style: TextStyle(
-                  fontSize: 20, // giống Bảng Xếp Hạng Tuần
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ],
           ),

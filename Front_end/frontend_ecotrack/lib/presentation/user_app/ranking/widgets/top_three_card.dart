@@ -169,11 +169,12 @@ class TopThreeCard extends StatelessWidget {
         Text(
           name,
           textAlign: TextAlign.center,
-          maxLines: 1,
+          maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontSize: 12,
+            height: 1.15,
+            fontWeight: FontWeight.w700,
             color: Colors.black,
           ),
         ),
@@ -181,7 +182,11 @@ class TopThreeCard extends StatelessWidget {
         // Điểm
         Text(
           '${FormatNumber.formatPoints(points)} điểm',
-          style: TextStyle(fontSize: 10, color: Colors.grey[700]),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF6B7280),
+          ),
         ),
         const SizedBox(height: 8),
         // Cột đế (Podium) - ĐÚNG MÀU VÀ CHIỀU CAO
