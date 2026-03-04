@@ -166,7 +166,7 @@ class AuthService {
   }
   // --- 4. Quên mật khẩu ---
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-  final url = Uri.parse('$baseUrl/api/auth/forgot-password');
+  final url = Uri.parse('$baseUrl/api/auth/reset-password/request');
 
   try {
     final response = await http.post(
@@ -178,11 +178,11 @@ class AuthService {
     final data = jsonDecode(utf8.decode(response.bodyBytes));
 
     if (response.statusCode == 200) {
-      return {'success': true};
+      return {'success': true, 'data': data['data'], 'message': data['message']};
     } else {
       return {
         'success': false,
-        'message': data['error'] ?? 'Gửi email thất bại',
+        'message': data['message'] ?? data['error'] ?? 'Gửi email thất bại',
       };
     }
   } catch (e) {
@@ -192,6 +192,38 @@ class AuthService {
     };
   }
 }
+
+  Future<Map<String, dynamic>> confirmResetPassword(String email, String otp, String newPassword) async {
+    final url = Uri.parse('$baseUrl/api/auth/reset-password/confirm');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({
+          'email': email,
+          'otp': otp,
+          'newPassword': newPassword
+        }),
+      );
+
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? data['error'] ?? 'Xác nhận OTP thất bại',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Không thể kết nối server',
+      };
+    }
+  }
     
   // --- Hàm phụ: Lưu dữ liệu User vào máy ---
   Future<void> _saveUserData(Map<String, dynamic> data) async {

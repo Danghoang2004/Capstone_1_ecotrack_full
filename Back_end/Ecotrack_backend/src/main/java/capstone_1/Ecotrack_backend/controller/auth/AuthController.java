@@ -177,13 +177,12 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password/request")
-    public ResponseEntity<?> requestResetPassword(
+    public ResponseEntity<ApiResponse<?>> requestResetPassword(
             @RequestBody ResetPasswordRequestWithOtp request) {
 
-        passwordResetOtpService.requestResetPassword(request);
+        ApiResponse<?> response = passwordResetOtpService.requestResetPassword(request);
 
-        return ResponseEntity.ok(
-                Map.of("message", "OTP đã được gửi tới email"));
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/reset-password/confirm")
