@@ -578,6 +578,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================== HOẠT ĐỘNG GẦN ĐÂY ===================
 
   Widget _buildRecentActivitySection(List<ActivityModel> activities) {
+    activities.sort(
+    (a, b) => DateTime.parse(b.createdAt)
+        .compareTo(DateTime.parse(a.createdAt)),
+    );
+    final previewActivities = activities.length > 2
+      ? activities.sublist(0, 2)
+      : activities;
     if (activities.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
@@ -653,7 +660,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          ...activities.map((a) {
+          ...previewActivities.map((a) {
             final isGain = a.points >= 0;
             final pointsText = "${isGain ? '+' : ''}${a.points} điểm";
 
