@@ -3,6 +3,9 @@ package capstone_1.Ecotrack_backend.controller.auth;
 import capstone_1.Ecotrack_backend.dto.request.GoogleLoginRequest;
 import capstone_1.Ecotrack_backend.dto.request.LoginRequest;
 import capstone_1.Ecotrack_backend.dto.request.RegisterRequest;
+import capstone_1.Ecotrack_backend.dto.request.ResetPasswordRequestWithOtp;
+import capstone_1.Ecotrack_backend.dto.request.VerifyOtpRequest;
+import capstone_1.Ecotrack_backend.dto.response.ApiResponse;
 import capstone_1.Ecotrack_backend.dto.response.AuthResponse;
 import capstone_1.Ecotrack_backend.model.PointTransaction;
 
@@ -13,6 +16,7 @@ import capstone_1.Ecotrack_backend.repository.UserPointsRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.security.JwtUtil;
 import capstone_1.Ecotrack_backend.service.GoogleAuthService;
+import capstone_1.Ecotrack_backend.service.PasswordResetOtpService;
 import capstone_1.Ecotrack_backend.service.UserService;
 import capstone_1.Ecotrack_backend.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +33,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*") // adjust for production to specific origins
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -56,18 +60,17 @@ public class AuthController {
     @Autowired
     private GoogleAuthService googleAuthService;
 
+    @Autowired
+    private PasswordResetOtpService passwordResetOtpService;
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User user = userService.registerUser(request);
-
-            // Tặng điểm random khi đăng ký lần đầu (0-100 điểm)
             try {
-                // Random điểm từ 0 đến 100
                 Random random = new Random();
-                int bonusPoints = random.nextInt(101); // 0-100
+                int bonusPoints = random.nextInt(101);
 
-                // Tạo PointTransaction
                 PointTransaction tx = new PointTransaction();
                 tx.setUser(user);
                 tx.setActionType(PointTransaction.ActionType.OTHER);
@@ -76,7 +79,6 @@ public class AuthController {
                 tx.setCreatedAt(LocalDateTime.now());
                 pointTransactionRepository.save(tx);
 
-                // Cộng điểm cho user (user_points đã được tạo trong registerUser với điểm = 0)
                 Optional<UserPoints> userPointsOpt = userPointsRepository.findById(user.getId());
                 if (userPointsOpt.isPresent()) {
                     UserPoints userPoints = userPointsOpt.get();
@@ -84,25 +86,18 @@ public class AuthController {
                     userPointsRepository.save(userPoints);
                 }
             } catch (Exception e) {
-                // Log lỗi nhưng không làm gián đoạn quá trình đăng ký
                 System.err.println("Lỗi khi tặng điểm đăng ký: " + e.getMessage());
                 e.printStackTrace();
             }
-
             String token = jwtUtil.generateToken(user);
-
-            // --- CẬP NHẬT: Trả về đầy đủ thông tin giống Login ---
-            // Mặc định khi đăng ký mới thường là ROLE_USER (hoặc tùy logic service của bạn)
             List<String> roles = user.getRoles().stream()
                     .map(role -> role.getName())
                     .collect(Collectors.toList());
-
             return ResponseEntity.ok(new AuthResponse(
                     token,
                     user.getUsername(),
                     user.getEmail(),
                     roles));
-            // -----------------------------------------------------
 
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(
@@ -119,33 +114,26 @@ public class AuthController {
             }
             User user = optional.get();
 
-            // Kiểm tra password
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                 return ResponseEntity.status(401).body(Map.of("error", "Sai mật khẩu, vui lòng thử lại"));
             }
 
-            if (!user.isVerified()) { // Lưu ý: Code cũ của bạn dùng isVerified, đảm bảo field này đúng tên trong
-                                      // Entity
+            if (!user.isVerified()) {
+
                 return ResponseEntity.status(401).body(Map.of("error", "Tài khoản chưa được xác thực email"));
             }
 
-            // Kiểm tra tài khoản có bị khóa không (enabled = false)
             if (user.getEnabled() != null && !user.getEnabled()) {
                 return ResponseEntity.status(403)
                         .body(Map.of("error", "Bạn đã bị tạm dừng tài khoản, xin vui lòng liên hệ Admin để mở khóa"));
             }
 
-            // Sinh JWT
             String token = jwtUtil.generateToken(user);
 
-            // --- ĐOẠN CODE QUAN TRỌNG ĐƯỢC THÊM VÀO ---
-            // Lấy danh sách tên Role từ User Entity
             List<String> roles = user.getRoles().stream()
-                    .map(role -> role.getName()) // Giả sử trong model Role bạn có hàm getName() trả về "ROLE_ADMIN",
-                                                 // "ROLE_USER"
+                    .map(role -> role.getName())
                     .collect(Collectors.toList());
 
-            // Trả về Token + Roles + Info
             return ResponseEntity.ok(new AuthResponse(
                     token,
                     user.getUsername(),
@@ -154,7 +142,7 @@ public class AuthController {
             // ------------------------------------------
 
         } catch (Exception e) {
-            e.printStackTrace(); // In lỗi ra console để debug nếu cần
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Lỗi đăng nhập: " + e.getMessage()));
         }
     }
@@ -163,12 +151,8 @@ public class AuthController {
     public ResponseEntity<?> verifyAccount(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String code = request.get("code");
-
         boolean success = userServiceiml.verifyAccount(email, code);
-
         if (success) {
-
-            // Lấy user để tạo token
             User user = userRepository.findByEmail(email).get();
             String token = jwtUtil.generateToken(user);
 
@@ -192,4 +176,22 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/reset-password/request")
+    public ResponseEntity<?> requestResetPassword(
+            @RequestBody ResetPasswordRequestWithOtp request) {
+
+        passwordResetOtpService.requestResetPassword(request);
+
+        return ResponseEntity.ok(
+                Map.of("message", "OTP đã được gửi tới email"));
+    }
+
+    @PostMapping("/reset-password/confirm")
+    public ResponseEntity<ApiResponse<?>> confirmResetPassword(
+            @RequestBody VerifyOtpRequest request) {
+
+        ApiResponse<?> response = passwordResetOtpService.verifyOtpAndResetPassword(request);
+
+        return ResponseEntity.ok(response);
+    }
 }

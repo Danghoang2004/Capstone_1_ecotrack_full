@@ -48,13 +48,8 @@ public class User {
     private LocalDateTime lastCredentialsUpdate; // Thời gian email/password bị thay đổi
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
-
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile userProfile;
@@ -62,11 +57,13 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<CampaignParticipant> campaignParticipants;
 
-    // constructors, getters, setters
     public User() {
     }
 
-    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled, Boolean accountNonLocked, Boolean credentialsNonExpired, String verificationCode, boolean isVerified, String providerId, LocalDateTime lastCredentialsUpdate, Set<Role> roles, UserProfile userProfile, Set<CampaignParticipant> campaignParticipants) {
+    public User(Long id, String username, String password, String email, Boolean accountNonExpired, Boolean enabled,
+            Boolean accountNonLocked, Boolean credentialsNonExpired, String verificationCode, boolean isVerified,
+            String providerId, LocalDateTime lastCredentialsUpdate, Set<Role> roles, UserProfile userProfile,
+            Set<CampaignParticipant> campaignParticipants) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -181,7 +178,10 @@ public class User {
         this.roles = roles;
     }
 
-    public UserProfile getUserProfile() { return userProfile; }
+    public UserProfile getUserProfile() {
+        return userProfile;
+    }
+
     public void setUserProfile(UserProfile userProfile) {
         this.userProfile = userProfile;
         if (userProfile != null) {
@@ -204,4 +204,5 @@ public class User {
     public void setCampaignParticipants(Set<CampaignParticipant> campaignParticipants) {
         this.campaignParticipants = campaignParticipants;
     }
+
 }
