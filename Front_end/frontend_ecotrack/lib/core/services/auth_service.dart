@@ -164,7 +164,35 @@ class AuthService {
       return {'success': false, 'message': 'Không thể kết nối máy chủ ($e)'};
     }
   }
+  // --- 4. Quên mật khẩu ---
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+  final url = Uri.parse('$baseUrl/api/auth/forgot-password');
 
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json; charset=UTF-8'},
+      body: jsonEncode({'email': email}),
+    );
+
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+
+    if (response.statusCode == 200) {
+      return {'success': true};
+    } else {
+      return {
+        'success': false,
+        'message': data['error'] ?? 'Gửi email thất bại',
+      };
+    }
+  } catch (e) {
+    return {
+      'success': false,
+      'message': 'Không thể kết nối server',
+    };
+  }
+}
+    
   // --- Hàm phụ: Lưu dữ liệu User vào máy ---
   Future<void> _saveUserData(Map<String, dynamic> data) async {
     final token = data['token'];
