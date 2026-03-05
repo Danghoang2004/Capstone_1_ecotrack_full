@@ -4,6 +4,7 @@ import '../common/custom_text_field.dart';
 import '../common/primary_button.dart';
 import 'widgets/auth_tab_switcher.dart';
 import 'package:lottie/lottie.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -231,12 +232,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
 
                 Align(
-                  alignment: Alignment.centerRight,
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/forgot_password');
+                  },
                   child: Text(
                     "Quên mật khẩu?",
-                    style: TextStyle(color: Colors.green[700]),
+                    style: TextStyle(
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
+              ),
                 const SizedBox(height: 20),
 
                 if (_error != null)
