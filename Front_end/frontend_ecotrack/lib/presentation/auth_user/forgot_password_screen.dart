@@ -42,7 +42,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ForgotSuccessScreen(email: _emailCtrl.text.trim()),
+          builder: (context) => ForgotSuccessScreen(email: _emailCtrl.text.trim(), newPassword: _passwordCtrl.text.trim()),
         ),
       );
     } else {

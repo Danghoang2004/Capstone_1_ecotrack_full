@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import 'otp_screen.dart';
 
 class ForgotSuccessScreen extends StatelessWidget {
   final String email;
+  final String newPassword;
 
-  const ForgotSuccessScreen({super.key, required this.email});
+  const ForgotSuccessScreen({super.key, required this.email, required this.newPassword});
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +92,11 @@ class ForgotSuccessScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               // Gọi đến Class OtpScreenSingle và truyền email sang
-                              builder: (context) => OtpScreenSingle(email: email), 
+                              builder: (context) => OtpScreenSingle(
+                                email: email,
+                                newPassword: newPassword,
+                                purpose: OtpPurpose.resetPassword,
+                              ), 
                             ),
                           );
                         },

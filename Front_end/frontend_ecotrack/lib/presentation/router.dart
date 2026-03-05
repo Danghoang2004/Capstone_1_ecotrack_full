@@ -44,7 +44,12 @@ class AppRouter {
         );
       case '/otp':
         final email = settings.arguments as String;
-        return MaterialPageRoute(builder: (_) => OtpScreenSingle(email: email));
+        return MaterialPageRoute(
+          builder: (_) => OtpScreenSingle(
+            email: email,
+            purpose: OtpPurpose.register,
+          ),
+        );
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screenreal());
       case '/ranking':

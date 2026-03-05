@@ -3,9 +3,22 @@ import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:lottie/lottie.dart';
 import 'package:pinput/pinput.dart';
 
+enum OtpPurpose {
+  register,
+  resetPassword,
+}
+
 class OtpScreenSingle extends StatefulWidget {
   final String email;
-  const OtpScreenSingle({super.key, required this.email});
+  final String? newPassword;
+  final OtpPurpose purpose;
+  
+  const OtpScreenSingle({
+    super.key,
+    required this.email,
+    this.newPassword,
+    this.purpose = OtpPurpose.register,
+  });
 
   @override
   State<OtpScreenSingle> createState() => _OtpScreenSingleState();
@@ -30,8 +43,21 @@ class _OtpScreenSingleState extends State<OtpScreenSingle> {
       _errorText = null;
     });
 
-    // Bỏ comment dòng dưới khi có API thật nhé
-    final result = await _authService.verifyOtp(widget.email, otp);
+    late final Map<String, dynamic> result;
+    if (widget.purpose == OtpPurpose.resetPassword) {
+      final newPassword = widget.newPassword;
+      if (newPassword == null || newPassword.isEmpty) {
+        setState(() {
+          _loading = false;
+          _errorText = "Thiếu mật khẩu mới, vui lòng thử lại";
+        });
+        return;
+      }
+
+      result = await _authService.confirmResetPassword(widget.email, otp, newPassword);
+    } else {
+      result = await _authService.verifyOtp(widget.email, otp);
+    }
     
     if (!mounted) return;
     setState(() => _loading = false);
@@ -94,10 +120,12 @@ class _OtpScreenSingleState extends State<OtpScreenSingle> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      "Xác thực OTP thành công",
+                    Text(
+                      widget.purpose == OtpPurpose.resetPassword
+                          ? "Đặt lại mật khẩu thành công"
+                          : "Xác thực OTP thành công",
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Color.fromARGB(255, 34, 34, 34),
@@ -113,13 +141,21 @@ class _OtpScreenSingleState extends State<OtpScreenSingle> {
       },
     ).then((_) {
       if (!mounted) return;
-      // Truyền argument để biết đây là lần đầu đăng ký
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        "/user_app",
-        (route) => false,
-        arguments: true, // showWelcomeDialog = true
-      );
+      if (widget.purpose == OtpPurpose.resetPassword) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/login",
+          (route) => false,
+        );
+      } else {
+        // Truyền argument để biết đây là lần đầu đăng ký
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/user_app",
+          (route) => false,
+          arguments: true, // showWelcomeDialog = true
+        );
+      }
     });
 
     Future.delayed(const Duration(seconds: 2), () { // Giảm thời gian chờ xuống 2s cho mượt
