@@ -86,7 +86,7 @@ class _AuthCombinedScreenState extends State<AuthCombinedScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 22,
+                          fontSize: 20,
                           color: _kTextDark,
                         ),
                       ),
@@ -94,7 +94,7 @@ class _AuthCombinedScreenState extends State<AuthCombinedScreen> {
                       const Text(
                         'Cùng nhau bảo vệ môi trường và xây dựng lối sống xanh',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           color: _kTextGray,
                         ),
                         textAlign: TextAlign.center,
@@ -120,7 +120,7 @@ class _AuthCombinedScreenState extends State<AuthCombinedScreen> {
                       ),
                       const SizedBox(height: 24),
                       SizedBox(
-                        height: 440,
+                        height: 520,
                         child: const TabBarView(
                           children: [
                             _LoginForm(),
@@ -492,11 +492,20 @@ class _RegisterFormState extends State<_RegisterForm> {
   String? _errorMessage;
   bool _showPassword = false;
   bool _showConfirm = false;
+  bool _agreedToTerms = false;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (!_agreedToTerms) {
+      setState(() => _errorMessage = "Vui lòng đồng ý với Điều khoản & Chính sách");
+      return;
+    }
 
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
 
     final email = _emailCtrl.text.trim();
     final password = _passwordCtrl.text.trim();
@@ -642,8 +651,13 @@ class _RegisterFormState extends State<_RegisterForm> {
             Row(
               children: [
                 Checkbox(
-                  value: true,
-                  onChanged: (_) {},
+                  value: _agreedToTerms,
+                  activeColor: _kPrimaryGreen,
+                  onChanged: (value) {
+                    setState(() {
+                      _agreedToTerms = value ?? false;
+                    });
+                  },
                 ),
                 const Expanded(
                   child: Text(
