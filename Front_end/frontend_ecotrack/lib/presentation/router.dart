@@ -15,8 +15,11 @@ import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
+import 'package:frontend_ecotrack/presentation/auth_user/forgot_password_screen.dart';
 import '../data/models/ProfileView.dart';
 import 'auth_user/register_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/ActivityHistoryScreen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/BadgeListScreen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -27,6 +30,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case '/register':
         return MaterialPageRoute(builder: (_) => RegisterScreen());
+      case '/forgot_password':
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       case '/home':
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case '/report':
@@ -42,7 +47,12 @@ class AppRouter {
         );
       case '/otp':
         final email = settings.arguments as String;
-        return MaterialPageRoute(builder: (_) => OtpScreenSingle(email: email));
+        return MaterialPageRoute(
+          builder: (_) => OtpScreenSingle(
+            email: email,
+            purpose: OtpPurpose.register,
+          ),
+        );
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screenreal());
       case '/ranking':

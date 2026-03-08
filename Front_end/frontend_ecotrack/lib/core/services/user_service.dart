@@ -165,7 +165,33 @@ class UserService {
       throw Exception(errorMsg);
     }
   }
+  Future<List<BadgeModel>> getAllBadges() async {
+    // 1. Gọi API bằng apiClient
+    final response = await apiClient.get("/api/user/badges/all");
+
+    // 2. Xử lý lỗi Token hết hạn
+    if (response.statusCode == 401) {
+      throw UnauthorizedException("Token expired");
+    }
+
+    // 3. Xử lý lỗi Server
+    if (response.statusCode != 200) {
+      throw Exception("Lỗi server: ${response.statusCode}");
+    }
+
+    // 4. Parse dữ liệu thành JSON
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+
+    // 5. Trỏ đúng vào key 'data' giống y hệt cấu trúc JSON từ Postman bạn vừa gửi
+    if (body['success'] == true && body['data'] != null) {
+      final List<dynamic> dataList = body['data'];
+      return dataList.map((json) => BadgeModel.fromJson(json)).toList();
+    } else {
+      return [];
+    }
+  }
 }
+
 
 class UnauthorizedException implements Exception {
   final String message;

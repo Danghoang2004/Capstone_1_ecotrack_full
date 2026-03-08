@@ -13,12 +13,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileView> _viewFuture;
+  late Future<List<BadgeModel>> _badgesFuture; // 👉 GỌI API HUY HIỆU THẬT
   final UserService _userService = UserService();
 
   @override
   void initState() {
     super.initState();
     _viewFuture = _userService.getProfileView();
+    _badgesFuture = _userService.getAllBadges(); // 👉 Khởi tạo gọi dữ liệu huy hiệu
   }
 
   @override
@@ -29,28 +31,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: FutureBuilder<ProfileView>(
         future: _viewFuture,
         builder: (context, snap) {
-          // Loading
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
           }
 
-          // Error handling (including expired token)
           if (snap.hasError) {
             final error = snap.error;
             if (error is UnauthorizedException) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 Navigator.pushReplacementNamed(context, '/login');
               });
-              return const Center(
-                child: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.'),
-              );
+              return const Center(child: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.'));
             }
-
-            // Hiển thị skeleton để layout vẫn đẹp khi lỗi
             return _buildProfileSkeleton();
           }
 
-          // Success
           final view = snap.data;
           if (view == null) {
             return _buildProfileSkeleton();
@@ -82,7 +77,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _buildStatsGrid(view),
                 const SizedBox(height: 20),
-                _buildAchievementsSection(view.badges),
+                
+                // 👉 Khu vực Huy hiệu sẽ tự render bằng dữ liệu thật
+                _buildAchievementsSection(context),
+                
                 const SizedBox(height: 24),
                 _buildRecentActivitySection(view.recentActivities),
                 const SizedBox(height: 24),
@@ -119,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Skeleton khi lỗi / không có data nhưng vẫn muốn giữ layout
+  /// Skeleton
   Widget _buildProfileSkeleton() {
     final placeholder = ProfileView(
       userId: 0,
@@ -149,7 +147,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       recentActivities: <ActivityModel>[],
     );
-
     return _buildProfileContent(placeholder);
   }
 
@@ -169,15 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final double min = (view.minPoints ?? 0).toDouble();
     final double max = (view.maxPoints ?? 100).toDouble();
     final double cur = view.points.toDouble();
-
-    // Tính phần trăm: (Điểm hiện tại - Điểm sàn) / (Điểm trần - Điểm sàn)
-    double percent = 0.0;
-    if (max > min) {
-      percent = ((cur - min) / (max - min)).clamp(0.0, 1.0);
-    } else {
-      percent = 1.0; // Đạt cấp tối đa
-    }
-    // =============================================================
+    double percent = max > min ? ((cur - min) / (max - min)).clamp(0.0, 1.0) : 1.0;
 
     return SliverAppBar(
       expandedHeight: 280.0, 
@@ -196,9 +185,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               errorBuilder: (context, _, __) => Container(
                 alignment: Alignment.center,
                 color: const Color(0xFF4CAF50),
-                child: const Text(
-                  'Ảnh không tìm thấy',
-                  style: TextStyle(color: Colors.white),
+                child: const Text('Ảnh không tìm thấy', style: TextStyle(color: Colors.white)),
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                 ),
               ),
             ),
@@ -216,18 +210,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Icon Settings (Trái)
             Positioned(
-              top: 28,
-              left: 12,
-              child: IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white),
-                onPressed: () {},
-              ),
+              top: 28, left: 12,
+              child: IconButton(icon: const Icon(Icons.settings, color: Colors.white), onPressed: () {}),
             ),
-
-            // Icon Group & Edit (Phải)
             Positioned(
-              top: 28,
-              right: 12,
+              top: 28, right: 12,
               child: Row(
                 children: [
                   IconButton(
@@ -240,14 +227,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.white),
                     onPressed: () async {
-                      final result = await Navigator.pushNamed(
-                        context,
-                        '/editprofile',
-                        arguments: view,
-                      );
+                      final result = await Navigator.pushNamed(context, '/editprofile', arguments: view);
                       if (result == true) {
                         setState(() {
                           _viewFuture = _userService.getProfileView();
+                          _badgesFuture = _userService.getAllBadges(); // Refresh cả huy hiệu
                         });
                       }
                     },
@@ -255,30 +239,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-
-            // Thông tin chính (Avatar, Name, Location, Level)
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white,
-                  backgroundImage: avatarNetworkUrl != null
-                      ? NetworkImage(avatarNetworkUrl)
-                      : null,
-                  child: avatarNetworkUrl == null
-                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
-                      : null,
+                  backgroundImage: avatarNetworkUrl != null ? NetworkImage(avatarNetworkUrl) : null,
+                  child: avatarNetworkUrl == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4, color: Colors.black45)]),
                 ),
 
                 // Hiển thị Tên Cấp độ từ Database
@@ -320,22 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Tiến độ lên cấp',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white70,
-                            ),
-                          ),
-                          // Hiển thị điểm hiện tại / điểm tối đa của cấp độ
-                          Text(
-                            '${view.points} / ${view.maxPoints} XP',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          const Text('Tiến độ lên cấp', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                          Text('${view.points} / ${view.maxPoints} XP', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -402,12 +361,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _statCard({
-    required Color color,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
+  Widget _statCard({required Color color, required IconData icon, required String title, required String subtitle}) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -576,7 +530,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =================== HOẠT ĐỘNG GẦN ĐÂY ===================
-
   Widget _buildRecentActivitySection(List<ActivityModel> activities) {
     activities.sort(
     (a, b) => DateTime.parse(b.createdAt)
@@ -735,9 +688,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final dateTime = DateTime.parse(dateString);
       return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
-    } catch (_) {
-      return dateString;
-    }
+    } catch (_) { return dateString; }
   }
 
   String _timeAgo(String dateString) {
@@ -745,7 +696,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final dateTime = DateTime.parse(dateString);
       final diff = DateTime.now().difference(dateTime);
-
       if (diff.inMinutes < 1) return 'Vừa xong';
       if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
       if (diff.inHours < 24) return '${diff.inHours} giờ trước';
