@@ -17,6 +17,8 @@ import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.d
 import 'package:frontend_ecotrack/presentation/auth_user/forgot_password_screen.dart';
 import '../data/models/ProfileView.dart';
 import 'auth_user/register_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/ActivityHistoryScreen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/BadgeListScreen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -84,6 +86,14 @@ class AppRouter {
         // 2. Bỏ từ khóa 'const' vì profile là biến động
         return MaterialPageRoute(
           builder: (_) => EditProfileScreen(currentProfile: profile),
+        );
+        case '/activity_history':
+        return MaterialPageRoute(builder: (_) => const ActivityHistoryScreen());
+
+      case '/badge_list':
+        // ĐÃ XÓA BIẾN BADGES DƯ THỪA ĐI
+        return MaterialPageRoute(
+          builder: (_) => const BadgeListScreen(),
         );
       default:
         return MaterialPageRoute(
