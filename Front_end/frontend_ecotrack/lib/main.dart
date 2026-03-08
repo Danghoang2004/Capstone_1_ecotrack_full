@@ -37,10 +37,10 @@ class MyApp extends StatelessWidget {
                 color: Colors.black87,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-              ),
+              ),  
             ),
           ),
-          darkTheme: ThemeData(
+          darkTheme: ThemeData( 
             fontFamily: 'Arial',
             brightness: Brightness.dark,
             scaffoldBackgroundColor: const Color(0xFF121212),
