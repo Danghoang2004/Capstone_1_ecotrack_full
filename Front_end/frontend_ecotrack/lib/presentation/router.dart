@@ -9,6 +9,7 @@ import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart'
 import 'package:frontend_ecotrack/presentation/user_app/minigame/quiz_overview_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/edit_profile_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/ActivityHistoryScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
 import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
@@ -87,14 +88,8 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => EditProfileScreen(currentProfile: profile),
         );
-        case '/activity_history':
+      case '/activity_history':
         return MaterialPageRoute(builder: (_) => const ActivityHistoryScreen());
-
-      case '/badge_list':
-        // ĐÃ XÓA BIẾN BADGES DƯ THỪA ĐI
-        return MaterialPageRoute(
-          builder: (_) => const BadgeListScreen(),
-        );
       default:
         return MaterialPageRoute(
           builder: (_) =>

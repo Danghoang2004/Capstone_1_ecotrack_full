@@ -11,7 +11,7 @@ class ActivityHistoryScreen extends StatefulWidget {
 }
 
 class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
-  // Dùng Future để gọi API
+  // Thay thế mockData bằng Future để gọi API
   late Future<ProfileView> _viewFuture;
   final UserService _userService = UserService();
 
@@ -22,7 +22,7 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
     _viewFuture = _userService.getProfileView();
   }
 
-  // format thời gian
+  // format thời gian (tái sử dụng logic từ ProfileScreen)
   String _formatDate(String dateString) {
     if (dateString.isEmpty) return '';
     try {
@@ -71,17 +71,18 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
           ),
         ),
       ),
+      // Sử dụng FutureBuilder để xử lý trạng thái API
       body: FutureBuilder<ProfileView>(
         future: _viewFuture,
         builder: (context, snap) {
-          // Đang tải
+          // Trạng thái: Đang tải
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
             );
           }
 
-          // Có lỗi
+          // Trạng thái: Lỗi hoặc hết hạn Token
           if (snap.hasError) {
             final error = snap.error;
             if (error is UnauthorizedException) {
@@ -97,17 +98,18 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
             );
           }
 
-          // Thành công nhưng không có data
+          // Trạng thái: Thành công nhưng không có dữ liệu
           final view = snap.data;
           if (view == null || view.recentActivities.isEmpty) {
             return _buildEmptyState();
           }
 
-          // Render danh sách
+          // Trạng thái: Thành công và có dữ liệu hoạt động
           final activities = view.recentActivities;
 
           return Column(
             children: [
+              // Thống kê tổng quan nhỏ ở trên cùng
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
                 child: Row(
@@ -125,13 +127,16 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
                   ],
                 ),
               ),
+
+              // Danh sách hoạt động cuộn được
               Expanded(
                 child: ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   itemCount: activities.length,
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    return _buildActivityItem(activities[index]);
+                    final activity = activities[index];
+                    return _buildActivityItem(activity);
                   },
                 ),
               ),
@@ -142,6 +147,7 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
     );
   }
 
+  // Hàm build giao diện khi chưa có hoạt động nào
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -158,12 +164,16 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
     );
   }
 
+  // Hàm build từng item trong danh sách dựa trên ActivityModel
   Widget _buildActivityItem(ActivityModel activity) {
+    // Phân tích điểm để xác định màu và chữ
     final isGain = activity.points >= 0;
     final pointsText = "${isGain ? '+' : ''}${activity.points} điểm";
     
+    // Mặc định icon cho mọi loại hoạt động (Vì backend hiện tại có thể chưa trả về type cụ thể)
+    // Nếu BE của bạn có trường type (VD: activity.type), bạn có thể dùng lại lệnh switch-case giống mockData
     IconData iconData = Icons.history;
-    Color iconColor = const Color(0xFF5EAC24); 
+    Color iconColor = const Color(0xFF5EAC24); // Màu xanh chuẩn
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -171,18 +181,28 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // Icon tròn bên trái
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(iconData, color: iconColor, size: 22),
           ),
           const SizedBox(width: 16),
+
+          // Nội dung chính giữa (Title & Date)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,7 +211,12 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
                   activity.description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w600, height: 1.3),
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -202,6 +227,8 @@ class _ActivityHistoryScreenState extends State<ActivityHistoryScreen> {
             ),
           ),
           const SizedBox(width: 12),
+
+          // Điểm thưởng bên phải
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
