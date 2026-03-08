@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
               ),  
             ),
           ),
-          darkTheme: ThemeData(
+          darkTheme: ThemeData( 
             fontFamily: 'Arial',
             brightness: Brightness.dark,
             scaffoldBackgroundColor: const Color(0xFF121212),
