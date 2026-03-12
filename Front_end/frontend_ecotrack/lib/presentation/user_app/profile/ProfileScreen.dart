@@ -13,26 +13,29 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileView> _viewFuture;
-  late Future<List<BadgeModel>> _badgesFuture; // 👉 GỌI API HUY HIỆU THẬT
+  late Future<List<BadgeModel>> _badgesFuture;
   final UserService _userService = UserService();
 
   @override
   void initState() {
     super.initState();
     _viewFuture = _userService.getProfileView();
-    _badgesFuture = _userService.getAllBadges(); // 👉 Khởi tạo gọi dữ liệu huy hiệu
+    _badgesFuture = _userService
+        .getAllBadges(); // 👉 Khởi tạo gọi dữ liệu huy hiệu
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // Nền xanh pastel chuẩn Figma
-      backgroundColor: const Color(0xFFF4F9F4), 
+      backgroundColor: const Color(0xFFF4F9F4),
       body: FutureBuilder<ProfileView>(
         future: _viewFuture,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+            );
           }
 
           if (snap.hasError) {
@@ -41,7 +44,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 Navigator.pushReplacementNamed(context, '/login');
               });
-              return const Center(child: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.'));
+              return const Center(
+                child: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.'),
+              );
             }
             return _buildProfileSkeleton();
           }
@@ -77,14 +82,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 _buildStatsGrid(view),
                 const SizedBox(height: 20),
-                
+
                 // 👉 Khu vực Huy hiệu sẽ tự render bằng dữ liệu thật
-                _buildAchievementsSection(context),
-                
+                FutureBuilder<List<BadgeModel>>(
+                  future: _badgesFuture,
+                  builder: (context, badgeSnap) {
+                    if (badgeSnap.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (badgeSnap.hasError || !badgeSnap.hasData) {
+                      return _buildAchievementsSection([]);
+                    }
+
+                    return _buildAchievementsSection(badgeSnap.data!);
+                  },
+                ),
+
                 const SizedBox(height: 24),
                 _buildRecentActivitySection(view.recentActivities),
                 const SizedBox(height: 24),
-                
+
                 // Nút "Xem bảng xếp hạng"
                 SizedBox(
                   width: double.infinity,
@@ -94,10 +112,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       // TODO: Điều hướng sang trang Bảng Xếp Hạng
                       Navigator.pushNamed(context, '/leaderboard');
                     },
-                    icon: const Icon(Icons.emoji_events_outlined, color: Colors.black),
+                    icon: const Icon(
+                      Icons.emoji_events_outlined,
+                      color: Colors.black,
+                    ),
                     label: const Text(
                       "Xem bảng xếp hạng",
-                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -166,13 +191,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final double min = (view.minPoints ?? 0).toDouble();
     final double max = (view.maxPoints ?? 100).toDouble();
     final double cur = view.points.toDouble();
-    double percent = max > min ? ((cur - min) / (max - min)).clamp(0.0, 1.0) : 1.0;
+    double percent = max > min
+        ? ((cur - min) / (max - min)).clamp(0.0, 1.0)
+        : 1.0;
 
     return SliverAppBar(
-      expandedHeight: 280.0, 
+      expandedHeight: 280.0,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF2E7D32), 
+      backgroundColor: const Color(0xFF2E7D32),
       elevation: 0,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
@@ -185,13 +212,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               errorBuilder: (context, _, __) => Container(
                 alignment: Alignment.center,
                 color: const Color(0xFF4CAF50),
-                child: const Text('Ảnh không tìm thấy', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Ảnh không tìm thấy',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                 ),
               ),
@@ -210,11 +241,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Icon Settings (Trái)
             Positioned(
-              top: 28, left: 12,
-              child: IconButton(icon: const Icon(Icons.settings, color: Colors.white), onPressed: () {}),
+              top: 28,
+              left: 12,
+              child: IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {},
+              ),
             ),
             Positioned(
-              top: 28, right: 12,
+              top: 28,
+              right: 12,
               child: Row(
                 children: [
                   IconButton(
@@ -227,11 +263,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.white),
                     onPressed: () async {
-                      final result = await Navigator.pushNamed(context, '/editprofile', arguments: view);
+                      final result = await Navigator.pushNamed(
+                        context,
+                        '/editprofile',
+                        arguments: view,
+                      );
                       if (result == true) {
                         setState(() {
                           _viewFuture = _userService.getProfileView();
-                          _badgesFuture = _userService.getAllBadges(); // Refresh cả huy hiệu
+                          _badgesFuture = _userService
+                              .getAllBadges(); // Refresh cả huy hiệu
                         });
                       }
                     },
@@ -245,22 +286,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white,
-                  backgroundImage: avatarNetworkUrl != null ? NetworkImage(avatarNetworkUrl) : null,
-                  child: avatarNetworkUrl == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
+                  backgroundImage: avatarNetworkUrl != null
+                      ? NetworkImage(avatarNetworkUrl)
+                      : null,
+                  child: avatarNetworkUrl == null
+                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                      : null,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   displayName,
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4, color: Colors.black45)]),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
+                  ),
                 ),
 
                 // Hiển thị Tên Cấp độ từ Database
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.shade600,
-                    borderRadius: BorderRadius.circular(12)
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     "Cấp độ: ${view.levelName ?? 'Thành viên mới'}",
@@ -275,7 +328,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.location_on, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.location_on,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       view.location ?? 'Chưa cập nhật địa điểm',
@@ -293,8 +350,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Tiến độ lên cấp', style: TextStyle(fontSize: 11, color: Colors.white70)),
-                          Text('${view.points} / ${view.maxPoints} XP', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Tiến độ lên cấp',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${view.points} / ${view.maxPoints} XP',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -305,7 +375,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           backgroundColor: Colors.white.withOpacity(0.3),
                           // Màu xanh lá chuối cho thanh nạp
                           valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.greenAccent, 
+                            Colors.greenAccent,
                           ),
                           minHeight: 7,
                         ),
@@ -329,9 +399,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12, 
-      mainAxisSpacing: 12, 
-      childAspectRatio: 1.5, 
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.5,
       children: [
         _statCard(
           color: const Color(0xFF2E7D32),
@@ -361,38 +431,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _statCard({required Color color, required IconData icon, required String title, required String subtitle}) {
+  Widget _statCard({
+    required Color color,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2, 
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ), 
+            Icon(icon, color: Colors.white, size: 24),
             const SizedBox(height: 4),
             Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20, 
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12, 
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ],
         ),
@@ -401,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // =================== HUY HIỆU ===================
-  
+
   Widget _buildAchievementsSection(List<BadgeModel> badges) {
     final effective = badges.take(6).toList();
 
@@ -411,7 +479,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       return Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -426,7 +497,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: row1
                   .asMap()
                   .entries
-                  .map((e) => Expanded(child: _buildAchievementFromBadge(e.value, e.key)))
+                  .map(
+                    (e) => Expanded(
+                      child: _buildAchievementFromBadge(e.value, e.key),
+                    ),
+                  )
                   .toList(),
             ),
             const SizedBox(height: 16),
@@ -436,7 +511,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: row2
                   .asMap()
                   .entries
-                  .map((e) => Expanded(child: _buildAchievementFromBadge(e.value, e.key + 3)))
+                  .map(
+                    (e) => Expanded(
+                      child: _buildAchievementFromBadge(e.value, e.key + 3),
+                    ),
+                  )
                   .toList(),
             ),
           ],
@@ -446,7 +525,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
@@ -458,18 +540,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(child: _StaticBadge(icon: Icons.recycling, label: 'Người tái chế', subLabel: '0 báo cáo')),
-              Expanded(child: _StaticBadge(icon: Icons.energy_savings_leaf, label: 'Mục tiêu xanh', subLabel: '0 chiến dịch')),
-              Expanded(child: _StaticBadge(icon: Icons.star, label: 'Ngôi sao', subLabel: 'Top 0')),
+              Expanded(
+                child: _StaticBadge(
+                  icon: Icons.recycling,
+                  label: 'Người tái chế',
+                  subLabel: '0 báo cáo',
+                ),
+              ),
+              Expanded(
+                child: _StaticBadge(
+                  icon: Icons.energy_savings_leaf,
+                  label: 'Mục tiêu xanh',
+                  subLabel: '0 chiến dịch',
+                ),
+              ),
+              Expanded(
+                child: _StaticBadge(
+                  icon: Icons.star,
+                  label: 'Ngôi sao',
+                  subLabel: 'Top 0',
+                ),
+              ),
             ],
           ),
           SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Expanded(child: _StaticBadge(icon: Icons.shield, label: 'Thủ lĩnh', subLabel: '0 bạn bè')),
-              Expanded(child: _StaticBadge(icon: Icons.card_giftcard, label: 'Chia sẻ', subLabel: '0 lượt mời')),
-              Expanded(child: _StaticBadge(icon: Icons.workspace_premium, label: 'Eco Master', subLabel: 'Top 0')),
+              Expanded(
+                child: _StaticBadge(
+                  icon: Icons.shield,
+                  label: 'Thủ lĩnh',
+                  subLabel: '0 bạn bè',
+                ),
+              ),
+              Expanded(
+                child: _StaticBadge(
+                  icon: Icons.card_giftcard,
+                  label: 'Chia sẻ',
+                  subLabel: '0 lượt mời',
+                ),
+              ),
+              Expanded(
+                child: _StaticBadge(
+                  icon: Icons.workspace_premium,
+                  label: 'Eco Master',
+                  subLabel: 'Top 0',
+                ),
+              ),
             ],
           ),
         ],
@@ -532,16 +650,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================== HOẠT ĐỘNG GẦN ĐÂY ===================
   Widget _buildRecentActivitySection(List<ActivityModel> activities) {
     activities.sort(
-    (a, b) => DateTime.parse(b.createdAt)
-        .compareTo(DateTime.parse(a.createdAt)),
+      (a, b) =>
+          DateTime.parse(b.createdAt).compareTo(DateTime.parse(a.createdAt)),
     );
     final previewActivities = activities.length > 2
-      ? activities.sublist(0, 2)
-      : activities;
+        ? activities.sublist(0, 2)
+        : activities;
     if (activities.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -583,7 +704,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -601,10 +725,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
                   child: Text(
-                    "Xem tất cả >", 
+                    "Xem tất cả >",
                     style: TextStyle(
-                      color: Color(0xFF388E3C), 
-                      fontSize: 13, 
+                      color: Color(0xFF388E3C),
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -650,7 +774,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 4),
                         Text(
                           "${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}",
-                          style: TextStyle(color: Colors.grey[700], fontSize: 10),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
@@ -688,7 +815,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final dateTime = DateTime.parse(dateString);
       return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
-    } catch (_) { return dateString; }
+    } catch (_) {
+      return dateString;
+    }
   }
 
   String _timeAgo(String dateString) {
