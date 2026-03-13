@@ -492,15 +492,9 @@ class _RegisterFormState extends State<_RegisterForm> {
   String? _errorMessage;
   bool _showPassword = false;
   bool _showConfirm = false;
-  bool _agreedToTerms = false;
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    if (!_agreedToTerms) {
-      setState(() => _errorMessage = "Vui lòng đồng ý với Điều khoản & Chính sách");
-      return;
-    }
 
     setState(() {
       _loading = true;
@@ -581,9 +575,10 @@ class _RegisterFormState extends State<_RegisterForm> {
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return "Vui lòng nhập email";
+                // Sử dụng regex chuẩn cho email (chú ý: dùng raw string nên KHÔNG double escape)
                 final regex =
-                    RegExp(r'^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}\$');
-                if (!regex.hasMatch(v)) return "Email không hợp lệ";
+                    RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!regex.hasMatch(v.trim())) return "Email không hợp lệ";
                 return null;
               },
             ),
@@ -648,25 +643,7 @@ class _RegisterFormState extends State<_RegisterForm> {
               },
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Checkbox(
-                  value: _agreedToTerms,
-                  activeColor: _kPrimaryGreen,
-                  onChanged: (value) {
-                    setState(() {
-                      _agreedToTerms = value ?? false;
-                    });
-                  },
-                ),
-                const Expanded(
-                  child: Text(
-                    'Tôi đồng ý với Điều khoản & Chính sách',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
+
             const SizedBox(height: 8),
             if (_errorMessage != null)
               Padding(
