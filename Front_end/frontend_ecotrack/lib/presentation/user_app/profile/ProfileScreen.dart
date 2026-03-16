@@ -13,14 +13,15 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileView> _viewFuture;
-  late Future<List<BadgeModel>> _badgesFuture; // 👉 GỌI API HUY HIỆU THẬT
+  late Future<List<BadgeModel>> _badgesFuture;
   final UserService _userService = UserService();
 
   @override
   void initState() {
     super.initState();
     _viewFuture = _userService.getProfileView();
-    _badgesFuture = _userService.getAllBadges(); // 👉 Khởi tạo gọi dữ liệu huy hiệu
+    _badgesFuture = _userService
+        .getAllBadges(); // 👉 Khởi tạo gọi dữ liệu huy hiệu
   }
 
   @override
@@ -31,7 +32,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         future: _viewFuture,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+            );
           }
 
           if (snap.hasError) {
@@ -40,7 +43,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 Navigator.pushReplacementNamed(context, '/login');
               });
-              return const Center(child: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.'));
+              return const Center(
+                child: Text('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại.'),
+              );
             }
             return _buildProfileSkeleton();
           }
@@ -87,10 +92,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onPressed: () {
                       Navigator.pushNamed(context, '/leaderboard');
                     },
-                    icon: const Icon(Icons.emoji_events_outlined, color: Colors.black),
+                    icon: const Icon(
+                      Icons.emoji_events_outlined,
+                      color: Colors.black,
+                    ),
                     label: const Text(
                       "Xem bảng xếp hạng",
-                      style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -128,7 +140,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final double min = (view.minPoints ?? 0).toDouble();
     final double max = (view.maxPoints ?? 100).toDouble();
     final double cur = view.points.toDouble();
-    double percent = max > min ? ((cur - min) / (max - min)).clamp(0.0, 1.0) : 1.0;
+    double percent = max > min
+        ? ((cur - min) / (max - min)).clamp(0.0, 1.0)
+        : 1.0;
 
     return SliverAppBar(
       expandedHeight: 280.0,
@@ -147,23 +161,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
               errorBuilder: (context, _, __) => Container(
                 alignment: Alignment.center,
                 color: const Color(0xFF4CAF50),
-                child: const Text('Ảnh không tìm thấy', style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Ảnh không tìm thấy',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                 ),
               ),
             ),
             Positioned(
-              top: 28, left: 12,
-              child: IconButton(icon: const Icon(Icons.settings, color: Colors.white), onPressed: () {}),
+              top: 28,
+              left: 12,
+              child: IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {},
+              ),
             ),
             Positioned(
-              top: 28, right: 12,
+              top: 28,
+              right: 12,
               child: Row(
                 children: [
                   IconButton(
@@ -173,11 +196,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.white),
                     onPressed: () async {
-                      final result = await Navigator.pushNamed(context, '/editprofile', arguments: view);
+                      final result = await Navigator.pushNamed(
+                        context,
+                        '/editprofile',
+                        arguments: view,
+                      );
                       if (result == true) {
                         setState(() {
                           _viewFuture = _userService.getProfileView();
-                          _badgesFuture = _userService.getAllBadges(); // Refresh cả huy hiệu
+                          _badgesFuture = _userService
+                              .getAllBadges(); // Refresh cả huy hiệu
                         });
                       }
                     },
@@ -191,13 +219,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.white,
-                  backgroundImage: avatarNetworkUrl != null ? NetworkImage(avatarNetworkUrl) : null,
-                  child: avatarNetworkUrl == null ? const Icon(Icons.person, size: 50, color: Colors.grey) : null,
+                  backgroundImage: avatarNetworkUrl != null
+                      ? NetworkImage(avatarNetworkUrl)
+                      : null,
+                  child: avatarNetworkUrl == null
+                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                      : null,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   displayName,
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, shadows: [Shadow(blurRadius: 4, color: Colors.black45)]),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
+                  ),
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 6),
@@ -208,7 +245,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.location_on, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.location_on,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(view.location ?? 'Chưa cập nhật địa điểm', style: const TextStyle(color: Colors.white, fontSize: 12)),
                   ],
@@ -221,8 +262,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Tiến độ lên cấp', style: TextStyle(fontSize: 11, color: Colors.white70)),
-                          Text('${view.points} / ${view.maxPoints} XP', style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                          const Text(
+                            'Tiến độ lên cấp',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          Text(
+                            '${view.points} / ${view.maxPoints} XP',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -263,7 +317,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _statCard({required Color color, required IconData icon, required String title, required String subtitle}) {
+  Widget _statCard({
+    required Color color,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     return Card(
       color: color,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -393,7 +452,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (activities.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -417,7 +479,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -480,7 +545,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final dateTime = DateTime.parse(dateString);
       return "${dateTime.day}/${dateTime.month}/${dateTime.year}";
-    } catch (_) { return dateString; }
+    } catch (_) {
+      return dateString;
+    }
   }
 
   String _timeAgo(String dateString) {
