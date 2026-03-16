@@ -11,25 +11,18 @@ import 'package:frontend_ecotrack/presentation/user_app/home/controllers/home_co
 
 class Userlayout extends StatefulWidget {
   final bool showWelcomeDialog;
-
   const Userlayout({super.key, this.showWelcomeDialog = false});
 
   @override
   State<Userlayout> createState() => _UserlayoutState();
 
-  // Static method để switch sang ranking screen từ bên ngoài
   static void switchToRanking(BuildContext? context) {
     if (context != null) {
-      // Tìm Userlayout trong widget tree (tìm cả StatefulWidget và State)
-      final userLayout = context.findAncestorWidgetOfExactType<Userlayout>();
-      if (userLayout != null) {
-        final state = context.findAncestorStateOfType<_UserlayoutState>();
-        if (state != null) {
-          state.switchToRanking();
-          return;
-        }
+      final state = context.findAncestorStateOfType<_UserlayoutState>();
+      if (state != null) {
+        state.switchToRanking();
+        return;
       }
-      // Fallback: push route mới (chỉ cho mobile)
       final screenWidth = MediaQuery.of(context).size.width;
       if (screenWidth <= 800) {
         Navigator.pushNamed(context, '/ranking');
@@ -38,6 +31,74 @@ class Userlayout extends StatefulWidget {
   }
 }
 
+// --- PHẦN VẼ THANH NAVBAR (CUSTOM PAINTER) ---
+class BottomNotchPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    Path path = Path();
+    double holeRadius = 30;
+    double curveRadius = 1;
+
+    // --- CHỈNH ĐỘ BO GÓC TẠI ĐÂY (Số càng nhỏ thì góc càng ít bo) ---
+    double radius = 20.0;
+
+    // Bắt đầu tại điểm sau khi bo góc trái trên
+    path.moveTo(radius, 0);
+    path.lineTo(size.width / 2 - holeRadius - curveRadius, 0);
+
+    // Vẽ lỗ khoét ở giữa (Giữ nguyên logic của bạn)
+    path.quadraticBezierTo(
+      size.width / 2 - holeRadius,
+      0,
+      size.width / 2 - holeRadius,
+      curveRadius,
+    );
+    path.arcToPoint(
+      Offset(size.width / 2 + holeRadius, curveRadius),
+      radius: Radius.circular(holeRadius),
+      clockwise: false,
+    );
+    path.quadraticBezierTo(
+      size.width / 2 + holeRadius,
+      0,
+      size.width / 2 + holeRadius + curveRadius,
+      0,
+    );
+
+    // 1. Đi đến góc Phải Trên và bo góc
+    path.lineTo(size.width - radius, 0);
+    path.quadraticBezierTo(size.width, 0, size.width, radius);
+
+    // 2. Đi xuống góc Phải Dưới và bo góc
+    path.lineTo(size.width, size.height - radius);
+    path.quadraticBezierTo(
+      size.width,
+      size.height,
+      size.width - radius,
+      size.height,
+    );
+
+    // 3. Đi sang góc Trái Dưới và bo góc
+    path.lineTo(radius, size.height);
+    path.quadraticBezierTo(0, size.height, 0, size.height - radius);
+
+    // 4. Đi lên góc Trái Trên và bo góc cuối cùng
+    path.lineTo(0, radius);
+    path.quadraticBezierTo(0, 0, radius, 0);
+
+    canvas.drawShadow(path, Colors.black.withOpacity(0.5), 10, true);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+// --- PHẦN STATE CHÍNH ---
 class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
   int currentIndex = 0;
   bool _isCollapsed = false;
@@ -55,195 +116,164 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    // Pass showWelcomeDialog to HomeScreen
-    // Desktop: hide AppBar cho các screen khác
     screens = [
       HomeScreen(showWelcomeDialog: widget.showWelcomeDialog),
-      MapPage(hideAppBar: false), // Mobile: hiển thị AppBar
+      MapPage(hideAppBar: false),
       ListReportPage(),
       ProfileScreen(hideAppBar: false),
       SettingsScreen(),
-      const RankingScreen(hideHeader: false), // Ranking screen
+      const RankingScreen(hideHeader: false),
     ];
     WidgetsBinding.instance.addObserver(this);
-    // Check session ngay khi vào màn hình
     SessionCheckerService.checkNow();
-    // Bắt đầu check session định kỳ khi vào app (mỗi 3 giây để test nhanh hơn)
     SessionCheckerService.startChecking(interval: const Duration(seconds: 3));
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    // Dừng check session khi rời khỏi app
     SessionCheckerService.stopChecking();
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      // Khi app resume, check session ngay và tiếp tục check định kỳ
-      SessionCheckerService.checkNow();
-      SessionCheckerService.startChecking(interval: const Duration(seconds: 5));
-    } else if (state == AppLifecycleState.paused) {
-      // Khi app pause, dừng check để tiết kiệm tài nguyên
-      SessionCheckerService.stopChecking();
-    }
+  Widget _navItem(IconData icon, int index) {
+    bool isActive = currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => currentIndex = index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: isActive
+                ? const Color(0xFF2E7D32)
+                : Colors.grey.withOpacity(0.6),
+            size: 20,
+          ),
+          const SizedBox(height: 0),
+          if (isActive)
+            Container(
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: Color(0xFF2E7D32),
+                shape: BoxShape.circle,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth > 800; // Desktop breakpoint
+    final isDesktop = screenWidth > 800;
 
-    if (isDesktop) {
-      // Desktop: Header full width (luôn hiển thị header của Home), Sidebar bên trái ở phần content
-      return Scaffold(
-        body: Column(
-          children: [
-            // Header full width (luôn hiển thị header của Home cho tất cả screen)
-            HeaderWidget(
-              controller: homeController.profileController,
-              onAvatarTap: () {
-                // Switch tới Profile tab (index 2)
-                setState(() {
-                  currentIndex = 2;
-                });
-              },
-            ),
-            // Content với sidebar bên trái
-            Expanded(
-              child: Row(
-                children: [
-                  _buildDesktopSidebar(),
-                  Expanded(
-                    child: currentIndex == 0
-                        ? HomeScreen(
-                            showWelcomeDialog: widget.showWelcomeDialog,
-                            hideHeader: true,
-                          )
-                        : _getDesktopScreen(currentIndex),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      extendBody: true,
+      body: isDesktop
+          ? Column(
+              children: [
+                HeaderWidget(
+                  controller: homeController.profileController,
+                  onAvatarTap: () => setState(() => currentIndex = 1),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      _buildDesktopSidebar(),
+                      Expanded(child: _getDesktopScreen(currentIndex)),
+                    ],
                   ),
-                ],
+                ),
+              ],
+            )
+          : screens[currentIndex],
+      bottomNavigationBar: isDesktop ? null : _buildFloatingNavBar(),
+    );
+  }
+
+  Widget _buildFloatingNavBar() {
+    return Container(
+      margin: const EdgeInsets.only(left: 3, right: 3, bottom: 3),
+      height: 70,
+      color: Colors.transparent,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          CustomPaint(
+            size: const Size(double.infinity, 45),
+            painter: BottomNotchPainter(),
+          ),
+          Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _navItem(Icons.home_rounded, 0),
+                _navItem(Icons.map_outlined, 1),
+                const SizedBox(width: 45),
+                _navItem(Icons.person_outline, 3),
+                _navItem(Icons.settings_outlined, 4),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 6,
+            child: GestureDetector(
+              onTap: () => setState(() => currentIndex = 2),
+              child: Container(
+                height: 50,
+                width: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2E7D32),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 20,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.eco, color: Colors.white, size: 30),
               ),
             ),
-          ],
-        ),
-      );
-    } else {
-      // Mobile: Bottom navigation bar (giữ nguyên)
-      return Scaffold(
-        body: screens[currentIndex],
-        bottomNavigationBar: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(15),
-            topRight: Radius.circular(15),
           ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.white.withOpacity(0.6), // 👈 sửa tại đây
-            elevation: 0,
-            currentIndex: currentIndex,
-            onTap: (value) {
-              setState(() {
-                currentIndex = value;
-              });
-            },
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: const Color.fromARGB(255, 2, 85, 2),
-            unselectedItemColor: Colors.grey,
-            selectedFontSize: 12,
-            unselectedFontSize: 11,
-            iconSize: 22,
-            items: [
-              const BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 2),
-                  child: Icon(Icons.home_rounded),
-                ),
-                label: 'Home',
-              ),
-              const BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 2),
-                  child: Icon(Icons.map),
-                ),
-                label: 'Map',
-              ),
-              const BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 2),
-                  child: Icon(Icons.list),
-                ),
-                label: 'List Report',
-              ),
-              const BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 2),
-                  child: Icon(Icons.person_rounded),
-                ),
-                label: 'Profile',
-              ),
-              const BottomNavigationBarItem(
-                icon: Padding(
-                  padding: EdgeInsets.only(bottom: 2),
-                  child: Icon(Icons.settings),
-                ),
-                label: 'Setting',
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+        ],
+      ),
+    );
   }
 
   Widget _buildDesktopSidebar() {
     double sidebarWidth = _isCollapsed ? 80 : 260;
-    double totalWidth = sidebarWidth + 12;
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      width: totalWidth,
-      height: double.infinity,
-      color: Colors.transparent,
+      width: sidebarWidth + 12,
       child: Stack(
         children: [
           _buildSidebarContent(sidebarWidth, _isCollapsed),
-          // Nút collapse
           Positioned(
             right: 0,
             top: 0,
             bottom: 0,
             child: Center(
               child: InkWell(
-                onTap: () {
-                  setState(() {
-                    _isCollapsed = !_isCollapsed;
-                  });
-                },
-                borderRadius: BorderRadius.circular(20),
+                onTap: () => setState(() => _isCollapsed = !_isCollapsed),
                 child: Container(
-                  width: 24,
-                  height: 24,
+                  width: 5,
+                  height: 5,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey.shade300),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Icon(
                     _isCollapsed ? Icons.chevron_right : Icons.chevron_left,
-                    size: 14,
-                    color: Colors.grey[600],
+                    size: 1,
                   ),
                 ),
               ),
@@ -257,40 +287,21 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
   Widget _buildSidebarContent(double width, bool isCollapsed) {
     return Container(
       width: width,
-      height: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(right: BorderSide(color: Colors.grey.shade200)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(2, 0),
-          ),
-        ],
       ),
-      child: Column(
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         children: [
           const SizedBox(height: 16),
-          // MENU ITEMS
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: navItems.asMap().entries.map((entry) {
-                final index = entry.key;
-                final item = entry.value;
-                return _MenuItem(
-                  icon: item.icon,
-                  label: item.label,
-                  isSelected: currentIndex == index,
-                  isCollapsed: isCollapsed,
-                  onTap: () {
-                    setState(() {
-                      currentIndex = index;
-                    });
-                  },
-                );
-              }).toList(),
+          ...navItems.asMap().entries.map(
+            (entry) => _MenuItem(
+              icon: entry.value.icon,
+              label: entry.value.label,
+              isSelected: currentIndex == entry.key,
+              isCollapsed: isCollapsed,
+              onTap: () => setState(() => currentIndex = entry.key),
             ),
           ),
         ],
@@ -298,17 +309,16 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
     );
   }
 
-  // Get screen cho desktop mode (ẩn AppBar)
   Widget _getDesktopScreen(int index) {
     switch (index) {
-      case 1: // Map
+      case 1:
         return MapPage(hideAppBar: true);
-      case 2: // Profile
+      case 2:
+        return ListReportPage();
+      case 3:
         return ProfileScreen(hideAppBar: true);
-      case 3: // Setting
+      case 4:
         return SettingsScreen(hideAppBar: true);
-      case 4: // Ranking
-        return const RankingScreen(hideHeader: true);
       default:
         return HomeScreen(
           showWelcomeDialog: widget.showWelcomeDialog,
@@ -317,18 +327,12 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
     }
   }
 
-  // Method để switch sang ranking screen từ bên ngoài
-  void switchToRanking() {
-    setState(() {
-      currentIndex = 4;
-    });
-  }
+  void switchToRanking() => setState(() => currentIndex = 5);
 }
 
 class _NavItem {
   final IconData icon;
   final String label;
-
   _NavItem({required this.icon, required this.label});
 }
 
@@ -388,7 +392,6 @@ class _MenuItem extends StatelessWidget {
                         ? const Color(0xFF5EAC24)
                         : const Color(0xFF1A1A1A),
                   ),
-                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

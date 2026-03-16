@@ -9,12 +9,16 @@ import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart'
 import 'package:frontend_ecotrack/presentation/user_app/minigame/quiz_overview_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/ProfileScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/edit_profile_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/ActivityHistoryScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/UserLayout.dart';
 import 'package:frontend_ecotrack/presentation/user_app/ranking/screens/ranking_screen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/auth_partner/PartnerLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/PartnerDashboardScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
+import 'package:frontend_ecotrack/presentation/auth_user/forgot_password_screen.dart';
 import '../data/models/ProfileView.dart';
+import 'auth_user/register_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/profile/BadgeListScreen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -31,6 +35,8 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => const AuthCombinedScreen(initialIsLogin: false),
         );
+      case '/forgot_password':
+        return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       case '/home':
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case '/report':
@@ -46,7 +52,12 @@ class AppRouter {
         );
       case '/otp':
         final email = settings.arguments as String;
-        return MaterialPageRoute(builder: (_) => OtpScreenSingle(email: email));
+        return MaterialPageRoute(
+          builder: (_) => OtpScreenSingle(
+            email: email,
+            purpose: OtpPurpose.register,
+          ),
+        );
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screenreal());
       case '/ranking':
@@ -81,6 +92,14 @@ class AppRouter {
         // 2. Bỏ từ khóa 'const' vì profile là biến động
         return MaterialPageRoute(
           builder: (_) => EditProfileScreen(currentProfile: profile),
+        );
+      case '/activity_history':
+        return MaterialPageRoute(builder: (_) => const ActivityHistoryScreen());
+
+      case '/badge_list':
+      // ĐÃ XÓA BIẾN BADGES DƯ THỪA ĐI
+        return MaterialPageRoute(
+          builder: (_) => const BadgeListScreen(),
         );
       default:
         return MaterialPageRoute(
