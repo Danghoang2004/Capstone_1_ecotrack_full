@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
-import 'package:frontend_ecotrack/presentation/auth_user/LoginScreen.dart';
+import 'package:frontend_ecotrack/presentation/auth_user/auth_combined_screen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignListScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
@@ -24,11 +24,17 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case '/':
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        return MaterialPageRoute(
+          builder: (_) => const AuthCombinedScreen(initialIsLogin: true),
+        );
       case '/login':
-        return MaterialPageRoute(builder: (_) => const LoginScreen());
+        return MaterialPageRoute(
+          builder: (_) => const AuthCombinedScreen(initialIsLogin: true),
+        );
       case '/register':
-        return MaterialPageRoute(builder: (_) => RegisterScreen());
+        return MaterialPageRoute(
+          builder: (_) => const AuthCombinedScreen(initialIsLogin: false),
+        );
       case '/forgot_password':
         return MaterialPageRoute(builder: (_) => const ForgotPasswordScreen());
       case '/home':
