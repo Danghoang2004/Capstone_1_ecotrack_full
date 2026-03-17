@@ -26,6 +26,11 @@ public class CampaignController {
         return service.getActiveCampaigns();
     }
 
+    @GetMapping
+    public List<CampaignResponse> getAllCampaigns() {
+        return service.getAllCampaigns();
+    }
+
     @GetMapping("/upcoming")
     public List<CampaignResponse> getUpcomingCampaigns() {
         return service.getUpcomingCampaigns();

@@ -124,6 +124,32 @@ public class CampaignServiceImpl implements CampaignService {
         sendJoinCampaignEmail(user, campaign);
     }
 
+    @Override
+    public List<CampaignResponse> getAllCampaigns() {
+        LocalDate today = LocalDate.now();
+
+        return campaignRepository.findAll().stream()
+                .map(c -> {
+                    long daysLeft = 0;
+                    if (c.getEndDate() != null) {
+                        daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
+                    }
+
+                    return new CampaignResponse(
+                            c.getCampaignId(),
+                            c.getTitle(),
+                            c.getDescription(),
+                            c.getImageUrl(),
+                            c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                            campaignRepository.countParticipants(c.getCampaignId()),
+                            c.getLocationAddress(),
+                            c.getRewardPoints(),
+                            (int) (daysLeft < 0 ? 0 : daysLeft)
+                    );
+                })
+                .toList();
+    }
+
     public List<CampaignResponse> getActiveCampaigns() {
         LocalDate today = LocalDate.now();
 
