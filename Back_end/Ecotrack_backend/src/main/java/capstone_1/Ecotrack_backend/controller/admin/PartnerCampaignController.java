@@ -3,12 +3,18 @@ package capstone_1.Ecotrack_backend.controller.admin;
 import capstone_1.Ecotrack_backend.cloudinaryconfig.CloudinaryService;
 import capstone_1.Ecotrack_backend.dto.request.CampaignRequestDto;
 import capstone_1.Ecotrack_backend.dto.response.AdminCampaignDetailDto;
+import capstone_1.Ecotrack_backend.dto.response.AdminCampaignDetailWithNotificationsDto;
 import capstone_1.Ecotrack_backend.dto.response.AdminCampaignListDto;
+import capstone_1.Ecotrack_backend.dto.response.AdminNotificationDetailDto;
 import capstone_1.Ecotrack_backend.dto.response.DashboardStatsDto;
 import capstone_1.Ecotrack_backend.model.Campaign;
+import capstone_1.Ecotrack_backend.model.Notification;
+import capstone_1.Ecotrack_backend.model.User;
 
 import capstone_1.Ecotrack_backend.repository.CampaignParticipantRepository;
 import capstone_1.Ecotrack_backend.repository.CampaignRepository;
+import capstone_1.Ecotrack_backend.repository.NotificationRepository;
+import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.service.CampaignService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -36,6 +42,12 @@ public class PartnerCampaignController {
 
     @Autowired
     private CampaignRepository campaignRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private CloudinaryService cloudinaryService;
@@ -146,6 +158,58 @@ public class PartnerCampaignController {
                 c.getCurrentParticipants(),
                 c.getImageUrl(),
                 c.getQrCodeUrl());
+    }
+
+    @GetMapping("/{id}/with-notifications")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<?> getCampaignDetailWithNotifications(
+            @PathVariable Long id) {
+
+        Campaign campaign = campaignRepository.findById(id).orElse(null);
+        if (campaign == null) {
+            return ResponseEntity.status(404)
+                    .body(Map.of(
+                            "success", false,
+                            "error", "Not Found",
+                            "message", "Không tìm thấy chiến dịch với ID: " + id));
+        }
+
+        List<Notification> notifications = notificationRepository
+                .findByTargetTypeAndTargetIdOrderByCreatedAtDesc("CAMPAIGN", id);
+
+        int totalNotifications = notifications.size();
+        int unreadCount = (int) notifications.stream().filter(n -> !n.isRead()).count();
+        int readCount = totalNotifications - unreadCount;
+
+        List<AdminNotificationDetailDto> notificationDtos = notifications.stream()
+                .map(notification -> {
+                    User user = userRepository.findById(notification.getUserId()).orElse(null);
+                    String userName = user != null ? user.getUsername() : "Unknown User";
+                    return AdminNotificationDetailDto.fromEntity(notification, userName);
+                })
+                .toList();
+
+        AdminCampaignDetailWithNotificationsDto response = new AdminCampaignDetailWithNotificationsDto(
+                campaign.getCampaignId(),
+                campaign.getTitle(),
+                campaign.getDescription(),
+                campaign.getLocationAddress(),
+                campaign.getStartDate(),
+                campaign.getEndDate(),
+                campaign.getStartTime(),
+                campaign.getEndTime(),
+                campaign.getMaxParticipants(),
+                campaign.getCurrentParticipants(),
+                campaign.getRewardPoints(),
+                campaign.getImageUrl(),
+                campaign.getQrCodeUrl(),
+                campaign.getPartner() != null ? campaign.getPartner().getCompanyName() : "Hệ thống EcoTrack",
+                totalNotifications,
+                unreadCount,
+                readCount,
+                notificationDtos);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/stats")
