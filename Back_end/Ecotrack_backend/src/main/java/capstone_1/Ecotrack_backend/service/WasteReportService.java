@@ -1,6 +1,8 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.response.AiDetectionResponse; // Đảm bảo import đúng DTO của bạn
+import capstone_1.Ecotrack_backend.dto.response.AdminReportDetailDTO;
+import capstone_1.Ecotrack_backend.dto.response.AdminReportListResponse;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,11 +37,9 @@ public class WasteReportService {
     @Autowired
     private NotificationService notificationService;
 
-    // RestTemplate để gọi API Python
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // URL của FastAPI (Python)
     private static final String AI_SERVICE_URL = "http://localhost:8000/ai/detect-waste";
 
     public WasteReportService(WasteReportRepository reportRepository) {
@@ -58,7 +58,8 @@ public class WasteReportService {
         long reportsToday = reportRepository.countByUserIdAndCreatedAtAfter(userId, startOfDay);
 
         if (reportsToday >= MAX_REPORTS_PER_DAY) {
-            throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY + " lần). Hãy quay lại vào ngày mai nhé!");
+            throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY
+                    + " lần). Hãy quay lại vào ngày mai nhé!");
         }
 
         WasteReport lastReport = reportRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
@@ -66,7 +67,8 @@ public class WasteReportService {
         if (lastReport != null) {
             long minutesSinceLast = Duration.between(lastReport.getCreatedAt(), LocalDateTime.now()).toMinutes();
             if (minutesSinceLast < COOLDOWN_MINUTES) {
-                throw new RuntimeException("Vui lòng chờ thêm " + (COOLDOWN_MINUTES - minutesSinceLast) + " phút trước khi gửi báo cáo tiếp theo.");
+                throw new RuntimeException("Vui lòng chờ thêm " + (COOLDOWN_MINUTES - minutesSinceLast)
+                        + " phút trước khi gửi báo cáo tiếp theo.");
             }
         }
 
@@ -85,7 +87,9 @@ public class WasteReportService {
             reportData.setAiAnalyzedImageUrl(data.getOutputImage());
             try {
                 reportData.setAiAnalysisJson(objectMapper.writeValueAsString(data.getTypePercentage()));
-            } catch (Exception e) { reportData.setAiAnalysisJson("{}"); }
+            } catch (Exception e) {
+                reportData.setAiAnalysisJson("{}");
+            }
 
             if (data.isWaste() && data.getOverallConfidence() >= AI_CONFIDENCE_THRESHOLD) {
                 isEligibleForPoints = true;
@@ -100,25 +104,26 @@ public class WasteReportService {
         }
         WasteReport saved = reportRepository.save(reportData);
 
-
         if (isEligibleForPoints) {
             processPointsAndNotification(saved, true);
         } else {
             processPointsAndNotification(saved, false);
         }
+
+        // Gửi thông báo cho Admin khi có báo cáo mới
+        notifyAdminsNewReport(saved);
+
         return saved;
     }
 
-    // --- HÀM GỌI PYTHON FASTAPI (Đã thêm vào đây) ---
     private AiDetectionResponse callAiDetectionService(MultipartFile file) {
         try {
-            // 1. Tạo file tạm để gửi đi (RestTemplate cần File resource)
+
             File tempFile = File.createTempFile("upload", file.getOriginalFilename());
             try (FileOutputStream fos = new FileOutputStream(tempFile)) {
                 fos.write(file.getBytes());
             }
 
-            // 2. Chuẩn bị Header và Body cho Request
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
@@ -127,11 +132,9 @@ public class WasteReportService {
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // 3. Gửi POST request sang Python (cổng 8000)
             ResponseEntity<AiDetectionResponse> response = restTemplate.postForEntity(
                     AI_SERVICE_URL, requestEntity, AiDetectionResponse.class);
 
-            // 4. Xóa file tạm sau khi gửi xong để giải phóng bộ nhớ
             tempFile.delete();
 
             return response.getBody();
@@ -163,8 +166,7 @@ public class WasteReportService {
 
             notificationService.createNotification(
                     report.getUserId(), NotificationType.CAMPAIGN, "Cộng 10 điểm!",
-                    "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId()
-            );
+                    "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId());
         } else {
             String message = "";
             if (report.getStatus() == WasteReport.Status.REJECTED) {
@@ -175,8 +177,7 @@ public class WasteReportService {
 
             notificationService.createNotification(
                     report.getUserId(), NotificationType.SYSTEM, "Báo cáo chưa được duyệt",
-                    message, "REPORT", report.getReportId()
-            );
+                    message, "REPORT", report.getReportId());
         }
     }
 
@@ -188,19 +189,18 @@ public class WasteReportService {
         return reportRepository.findAllByOrderByCreatedAtDesc();
     }
 
-
     public boolean updateReportStatus(Long reportId, String newStatusStr) {
         // 1. Tìm báo cáo
         WasteReport report = reportRepository.findById(reportId).orElse(null);
-        if (report == null) return false;
+        if (report == null)
+            return false;
 
         try {
-            // 2. Convert String sang Enum
+
             WasteReport.Status newStatus = WasteReport.Status.valueOf(newStatusStr.toUpperCase());
             report.setStatus(newStatus);
             reportRepository.save(report);
 
-            // 3. Gửi thông báo cho User sở hữu báo cáo đó
             String title = "Cập nhật trạng thái báo cáo";
             String message = "";
 
@@ -224,13 +224,86 @@ public class WasteReportService {
                     title,
                     message,
                     "REPORT",
-                    report.getReportId()
-            );
+                    report.getReportId());
 
             return true;
         } catch (IllegalArgumentException e) {
-            // Lỗi nếu gửi lên status không tồn tại trong Enum
+
             return false;
+        }
+    }
+
+    public AdminReportListResponse getAllReportsWithDetails() {
+
+        List<WasteReport> reports = reportRepository.findAllByOrderByCreatedAtDesc();
+
+        List<AdminReportDetailDTO> reportDTOs = reports.stream().map(report -> {
+            User user = userRepository.findById(report.getUserId()).orElse(null);
+            String userName = "Unknown User";
+            String userAvatar = "default_avatar.png";
+
+            if (user != null && user.getUserProfile() != null) {
+                userName = user.getUserProfile().getFullName() != null ? user.getUserProfile().getFullName()
+                        : user.getUsername();
+                userAvatar = user.getUserProfile().getAvatarUrl() != null ? user.getUserProfile().getAvatarUrl()
+                        : "default_avatar.png";
+            }
+
+            return new AdminReportDetailDTO(
+                    report.getReportId(),
+                    report.getUserId(),
+                    userName,
+                    userAvatar,
+                    report.getTitle(),
+                    report.getDescription(),
+                    report.getCategory(),
+                    report.getStatus().toString(),
+                    report.getGpsLat(),
+                    report.getGpsLong(),
+                    report.getImageUrl(),
+                    report.getAiVerified(),
+                    report.getAiConfidence(),
+                    report.getCreatedAt());
+        }).toList();
+
+        Long totalCount = (long) reports.size();
+        Long pendingCount = reports.stream()
+                .filter(r -> r.getStatus() == WasteReport.Status.PENDING).count();
+        Long verifiedCount = reports.stream()
+                .filter(r -> r.getStatus() == WasteReport.Status.VERIFIED).count();
+        Long rejectedCount = reports.stream()
+                .filter(r -> r.getStatus() == WasteReport.Status.REJECTED).count();
+        Long cleanedCount = reports.stream()
+                .filter(r -> r.getStatus() == WasteReport.Status.CLEANED).count();
+
+        return new AdminReportListResponse(
+                totalCount,
+                pendingCount,
+                verifiedCount,
+                rejectedCount,
+                cleanedCount,
+                reportDTOs);
+    }
+
+    public void notifyAdminsNewReport(WasteReport report) {
+        try {
+
+            List<User> admins = userRepository.findAll().stream()
+                    .filter(user -> user.getRoles().stream()
+                            .anyMatch(role -> "ADMIN".equals(role.getName())))
+                    .toList();
+
+            for (User admin : admins) {
+                notificationService.createNotification(
+                        admin.getId(),
+                        NotificationType.SYSTEM,
+                        "Báo cáo rác mới",
+                        "Có báo cáo mới từ người dùng: " + report.getTitle(),
+                        "REPORT",
+                        report.getReportId());
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi gửi thông báo cho admin: " + e.getMessage());
         }
     }
 }

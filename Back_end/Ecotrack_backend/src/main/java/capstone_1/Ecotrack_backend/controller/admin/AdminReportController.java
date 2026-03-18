@@ -1,5 +1,7 @@
 package capstone_1.Ecotrack_backend.controller.admin;
 
+import capstone_1.Ecotrack_backend.dto.response.AdminReportListResponse;
+import capstone_1.Ecotrack_backend.dto.response.ApiResponse;
 import capstone_1.Ecotrack_backend.model.WasteReport;
 import capstone_1.Ecotrack_backend.service.WasteReportService;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/reports") // URL dành riêng cho Admin
+@RequestMapping("/api/admin/reports")
 @CrossOrigin
 public class AdminReportController {
 
@@ -39,6 +41,21 @@ public class AdminReportController {
             return ResponseEntity.ok(Map.of("message", "Update status successfully"));
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Update failed or Invalid status"));
+        }
+    }
+
+    @GetMapping("/list-with-details")
+    public ResponseEntity<ApiResponse<AdminReportListResponse>> getReportsWithDetails() {
+        try {
+            AdminReportListResponse response = reportService.getAllReportsWithDetails();
+            return ResponseEntity.ok(
+                    ApiResponse.success(
+                            "200",
+                            "Lấy danh sách báo cáo thành công",
+                            response));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(
+                    ApiResponse.error("500", "Lỗi: " + e.getMessage()));
         }
     }
 }
