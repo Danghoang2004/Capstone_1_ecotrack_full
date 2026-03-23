@@ -9,7 +9,7 @@ import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_management/screens/user_management_screen.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_header.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_sidebar.dart';
-
+import '../notification_manage_admin/AdminNotificationPage.dart';
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
 
@@ -82,6 +82,9 @@ class _AdminLayoutState extends State<AdminLayout> {
         return const AdminCampaignPage();
       case "quiz":
         return const AdminQuizPage();
+      case "notifications":
+        return const AdminNotificationPage();
+      // ----------------------------
       default:
         return const Center(child: Text("Chức năng đang phát triển"));
     }
