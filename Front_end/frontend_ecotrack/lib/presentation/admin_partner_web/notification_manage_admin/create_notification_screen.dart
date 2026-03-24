@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'package:frontend_ecotrack/core/services/notification_service.dart';
 
 class CreateNotificationScreen extends StatefulWidget {
   const CreateNotificationScreen({super.key});
 
   @override
-  State<CreateNotificationScreen> createState() => _CreateNotificationScreenState();
+  State<CreateNotificationScreen> createState() =>
+      _CreateNotificationScreenState();
 }
 
 class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
@@ -58,8 +59,14 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
           children: [
             Row(
               children: [
-                IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-                const Text("Tạo Thông Báo Mới", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const Text(
+                  "Tạo Thông Báo Mới",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -80,14 +87,20 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
                       Expanded(flex: 4, child: _buildRightColumn()),
                     ],
                   ),
-                  const Padding(padding: EdgeInsets.symmetric(vertical: 32), child: Divider(height: 1)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Divider(height: 1),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
                           foregroundColor: Colors.red.shade400,
                         ),
                         child: const Text("Hủy bỏ"),
@@ -98,21 +111,45 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
                             onPressed: () => Navigator.pop(context),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.grey.shade200,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
                             ),
-                            child: const Text("Lưu Dự Thảo", style: TextStyle(color: Colors.black87)),
+                            child: const Text(
+                              "Lưu Dự Thảo",
+                              style: TextStyle(color: Colors.black87),
+                            ),
                           ),
                           const SizedBox(width: 16),
                           // 🟢 NÚT GỬI NGAY ĐÃ KẾT NỐI API
                           ElevatedButton(
-                            onPressed: _isLoading ? null : _handleSendNotification,
+                            onPressed: _isLoading
+                                ? null
+                                : _handleSendNotification,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryGreen,
-                              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 16,
+                              ),
                             ),
-                            child: _isLoading 
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text("Gửi Ngay", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Gửi Ngay",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ],
                       ),
@@ -133,35 +170,58 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
     String content = _contentController.text.trim();
 
     if (title.isEmpty || content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập đầy đủ nội dung!'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập đầy đủ nội dung!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
     String? scheduleStr;
     if (_sendTimeOption == 1) {
       if (_selectedDate == null || _selectedTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn ngày giờ lên lịch!'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng chọn ngày giờ lên lịch!'),
+            backgroundColor: Colors.red,
+          ),
+        );
         return;
       }
-      scheduleStr = "${DateFormat('yyyy-MM-dd').format(_selectedDate!)} ${_selectedTime!.format(context)}";
+      scheduleStr =
+          "${DateFormat('yyyy-MM-dd').format(_selectedDate!)} ${_selectedTime!.format(context)}";
     }
 
     setState(() => _isLoading = true);
-    
+
     // Gọi Service chung của hệ thống
     bool success = await _notificationService.sendBroadcastNotification(
       title: title,
       message: content,
+      notificationType: 'SYSTEM',
       scheduledTime: scheduleStr,
     );
 
     setState(() => _isLoading = false);
 
     if (success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã gửi thông báo thành công!'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã gửi thông báo thành công!'),
+          backgroundColor: Colors.green,
+        ),
+      );
       Navigator.pop(context);
     } else {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gửi thất bại! Hãy kiểm tra quyền Admin.'), backgroundColor: Colors.red));
+      if (context.mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gửi thất bại! Hãy kiểm tra quyền Admin.'),
+            backgroundColor: Colors.red,
+          ),
+        );
     }
   }
 
@@ -169,15 +229,29 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("A. Thông tin cơ bản", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5EAC24))),
+        const Text(
+          "A. Thông tin cơ bản",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF5EAC24),
+          ),
+        ),
         const SizedBox(height: 24),
         const Text("Tiêu đề thông báo", style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 8),
-        TextField(controller: _titleController, decoration: const InputDecoration(border: OutlineInputBorder())),
+        TextField(
+          controller: _titleController,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
         const SizedBox(height: 24),
         const Text("Nội dung thông báo", style: TextStyle(color: Colors.grey)),
         const SizedBox(height: 8),
-        TextField(controller: _contentController, maxLines: 10, decoration: const InputDecoration(border: OutlineInputBorder())),
+        TextField(
+          controller: _contentController,
+          maxLines: 10,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
       ],
     );
   }
@@ -186,15 +260,32 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("B. Cấu hình gửi", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF5EAC24))),
+        const Text(
+          "B. Cấu hình gửi",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF5EAC24),
+          ),
+        ),
         const SizedBox(height: 24),
         const Text("Thời gian gửi", style: TextStyle(color: Colors.grey)),
         Row(
           children: [
-            Radio<int>(value: 0, groupValue: _sendTimeOption, activeColor: primaryGreen, onChanged: (val) => setState(() => _sendTimeOption = val!)),
+            Radio<int>(
+              value: 0,
+              groupValue: _sendTimeOption,
+              activeColor: primaryGreen,
+              onChanged: (val) => setState(() => _sendTimeOption = val!),
+            ),
             const Text("Gửi ngay lập tức"),
             const SizedBox(width: 24),
-            Radio<int>(value: 1, groupValue: _sendTimeOption, activeColor: primaryGreen, onChanged: (val) => setState(() => _sendTimeOption = val!)),
+            Radio<int>(
+              value: 1,
+              groupValue: _sendTimeOption,
+              activeColor: primaryGreen,
+              onChanged: (val) => setState(() => _sendTimeOption = val!),
+            ),
             const Text("Lên lịch gửi"),
           ],
         ),
@@ -208,11 +299,23 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
                     onTap: _pickDate,
                     child: Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-                      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(_selectedDate == null ? "Chọn ngày" : DateFormat('dd/MM/yyyy').format(_selectedDate!)),
-                        const Icon(Icons.calendar_today, size: 20),
-                      ]),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedDate == null
+                                ? "Chọn ngày"
+                                : DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(_selectedDate!),
+                          ),
+                          const Icon(Icons.calendar_today, size: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -222,11 +325,21 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
                     onTap: _pickTime,
                     child: Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-                      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(_selectedTime == null ? "00:00" : _selectedTime!.format(context)),
-                        const Icon(Icons.access_time, size: 20),
-                      ]),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedTime == null
+                                ? "00:00"
+                                : _selectedTime!.format(context),
+                          ),
+                          const Icon(Icons.access_time, size: 20),
+                        ],
+                      ),
                     ),
                   ),
                 ),

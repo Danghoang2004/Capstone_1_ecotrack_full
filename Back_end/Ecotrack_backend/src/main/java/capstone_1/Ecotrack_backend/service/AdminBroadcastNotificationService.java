@@ -2,14 +2,14 @@ package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.response.BroadcastAllNotificationResult;
 import capstone_1.Ecotrack_backend.model.Notification;
+import capstone_1.Ecotrack_backend.model.NotificationSourceScope;
 import capstone_1.Ecotrack_backend.model.NotificationType;
+import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.repository.NotificationRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 
 @Service
@@ -30,28 +30,31 @@ public class AdminBroadcastNotificationService {
             String message,
             String notificationTypeRaw,
             String targetType,
-            Long targetId) {
+            Long targetId,
+            String adminPrincipal) {
         NotificationType notificationType = parseType(notificationTypeRaw);
 
-        var users = userRepository.findAll();
-        if (users.isEmpty()) {
+        User admin = userRepository.findByEmail(adminPrincipal)
+                .orElseGet(() -> userRepository.findByUsername(adminPrincipal)
+                        .orElseThrow(() -> new RuntimeException("Admin not found")));
+
+        long userCount = userRepository.count();
+        if (userCount == 0) {
             return new BroadcastAllNotificationResult(0, notificationType.name());
         }
 
-        List<Notification> notifications = new ArrayList<>(users.size());
-        for (var user : users) {
-            Notification n = new Notification();
-            n.setUserId(user.getId());
-            n.setNotificationType(notificationType);
-            n.setTitle(title);
-            n.setMessage(message);
-            n.setTargetType(targetType);
-            n.setTargetId(targetId);
-            notifications.add(n);
-        }
+        Notification master = new Notification();
+        master.setUserId(null);
+        master.setNotificationType(notificationType);
+        master.setTitle(title);
+        master.setMessage(message);
+        master.setTargetType(targetType);
+        master.setTargetId(targetId);
+        master.setCreatedByUserId(admin.getId());
+        master.setSourceScope(NotificationSourceScope.ADMIN_BROADCAST_MASTER);
+        notificationRepository.save(master);
 
-        notificationRepository.saveAll(notifications);
-        return new BroadcastAllNotificationResult(notifications.size(), notificationType.name());
+        return new BroadcastAllNotificationResult(Math.toIntExact(userCount), notificationType.name());
     }
 
     private NotificationType parseType(String raw) {

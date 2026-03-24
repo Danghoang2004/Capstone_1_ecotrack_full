@@ -130,6 +130,7 @@ Hoặc khởi động với tham số dòng lệnh:
 - Sử dụng `spring.jpa.hibernate.ddl-auto=update` chỉ trên môi trường dev nếu muốn để JPA tự tạo/điều chỉnh schema. Hiện project để `validate`.
 - Bật `spring.mail.properties.mail.debug` chỉ trên môi trường dev.
 - Đối với Lombok, IDE cần plugin Lombok (IntelliJ/Eclipse) để hiển thị code generated.
+- Với mô hình thông báo admin mới (chống phồng dữ liệu), cần chạy script `test-data/notification_broadcast_scaling.sql` trước khi start backend để tạo bảng `admin_broadcast_read_state` và index hỗ trợ đọc nhanh.
 
 ---
 

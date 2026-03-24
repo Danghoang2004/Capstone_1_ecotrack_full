@@ -1,0 +1,22 @@
+services:
+  mysql-ecotrack:
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: "ecotrack_demo1"
+      TZ: "Asia/Ho_Chi_Minh"
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    volumes:
+      - mysql_ecotrack_data:/var/lib/mysql
+      - ./data.mysql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql_ecotrack_data:

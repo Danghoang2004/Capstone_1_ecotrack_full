@@ -12,7 +12,7 @@ public class NotificationResponse {
     private Long id;
     private String title;
     private String message;
-    private String type;      // CAMPAIGN / REWARD / ...
+    private String type; // CAMPAIGN / REWARD / ...
     private boolean read;
     private String createdAt; // ISO string
 
@@ -23,7 +23,16 @@ public class NotificationResponse {
                 n.getMessage(),
                 n.getNotificationType().name(),
                 n.isRead(),
-                n.getCreatedAt() == null ? null : n.getCreatedAt().toString()
-        );
+                n.getCreatedAt() == null ? null : n.getCreatedAt().toString());
+    }
+
+    public static NotificationResponse fromEntityWithRead(Notification n, boolean read) {
+        return new NotificationResponse(
+                n.getId(),
+                n.getTitle(),
+                n.getMessage(),
+                n.getNotificationType().name(),
+                read,
+                n.getCreatedAt() == null ? null : n.getCreatedAt().toString());
     }
 }

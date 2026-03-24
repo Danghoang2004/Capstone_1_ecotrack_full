@@ -7,6 +7,7 @@ import capstone_1.Ecotrack_backend.service.AdminBroadcastNotificationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,13 +26,15 @@ public class AdminBroadcastNotificationController {
 
     @PostMapping("/broadcast-all")
     public ResponseEntity<ApiResponse<BroadcastAllNotificationResult>> broadcastAll(
-            @Valid @RequestBody BroadcastAllNotificationRequest request) {
+            @Valid @RequestBody BroadcastAllNotificationRequest request,
+            Authentication authentication) {
         BroadcastAllNotificationResult result = broadcastService.broadcastToAllUsers(
                 request.getTitle(),
                 request.getMessage(),
                 request.getNotificationType(),
                 request.getTargetType(),
-                request.getTargetId());
+                request.getTargetId(),
+                authentication.getName());
 
         return ResponseEntity.ok(
                 ApiResponse.success(

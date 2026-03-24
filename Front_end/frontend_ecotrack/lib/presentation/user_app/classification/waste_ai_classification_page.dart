@@ -104,7 +104,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Phan Loai Rac'), centerTitle: true),
+      appBar: AppBar(title: const Text('AI Phân Lọai Rác'), centerTitle: true),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -117,14 +117,14 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
               ElevatedButton.icon(
                 onPressed: _pickImage,
                 icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Chon Anh'),
+                label: const Text('Chọn Ảnh'),
               ),
               const SizedBox(height: 10),
               ElevatedButton.icon(
                 onPressed: _isClassifying ? null : _classifyImage,
                 icon: const Icon(Icons.auto_awesome),
                 label: Text(
-                  _isClassifying ? 'Dang Phan Loai...' : 'Phan Loai Bang AI',
+                  _isClassifying ? 'Đang Phân Loại...' : 'Phân Loại Bằng AI',
                 ),
               ),
               if (_isClassifying) ...[
@@ -161,7 +161,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
         border: Border.all(color: const Color(0xFFD0D0D0)),
       ),
       child: _selectedImageBytes == null
-          ? const Center(child: Text('Chua co anh duoc chon'))
+          ? const Center(child: Text('Chưa có ảnh được chọn'))
           : ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.memory(
@@ -210,29 +210,29 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ket Qua AI',
+            'Kết Quả AI',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
-          _infoRow('Phat hien rac', result.trashDetected ? 'Co' : 'Khong'),
+          _infoRow('Phát hiện rác', result.trashDetected ? 'Có' : 'Không'),
           _infoRow(
-            'Do tin cay tong',
+            'Độ tin cậy tổng',
             '${(result.overallConfidence * 100).toStringAsFixed(1)}%',
           ),
           _infoRow(
-            'Tong vat the nhan dien',
+            'Tổng vật thể nhận diện',
             result.totalObjectsDetected.toString(),
           ),
           const SizedBox(height: 12),
           const Text(
-            'Tong Hop Theo Loai Rac',
+            'Tổng Hợp Theo Loại Rác',
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           if (groupedEntries.isEmpty)
-            const Text('Khong co du lieu loai rac de tong hop.')
+            const Text('Không có dữ liệu loại rác để tổng hợp.')
           else
             ...displayedEntries.map(
               (entry) => Container(
@@ -286,7 +286,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Text(
-                'Loai chiem uu the: ${topEntry.key} (${topEntry.value} vat - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
+                'Loại chiêm ưu thế: ${topEntry.key} (${topEntry.value} vat - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
                 style: const TextStyle(
                   color: Color(0xFF166534),
                   fontWeight: FontWeight.w600,
@@ -296,7 +296,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
           ],
           const SizedBox(height: 12),
           Text(
-            'Thong tin da duoc gom nhom tu ${result.detections.length} vung nhan dien de de theo doi hon.',
+            'Thông tin đã được nhóm từ ${result.detections.length} vùng nhận diện để dễ theo dõi hơn.',
             style: const TextStyle(color: Color(0xFF4A5568)),
           ),
         ],

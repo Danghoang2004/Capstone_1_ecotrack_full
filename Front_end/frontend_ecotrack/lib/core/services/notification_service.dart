@@ -91,24 +91,33 @@ class NotificationService {
       rethrow;
     }
   }
+
   // --- THÊM HÀM NÀY ĐỂ ADMIN GỬI THÔNG BÁO ---
   Future<bool> sendBroadcastNotification({
     required String title,
     required String message,
+    String notificationType = 'SYSTEM',
     String? scheduledTime,
   }) async {
     try {
       final payload = {
         "title": title,
         "message": message,
-        if (scheduledTime != null) "scheduledTime": scheduledTime,
+        "notificationType": notificationType,
+        "targetType": "GLOBAL",
       };
 
-      // ApiClient đã tự động gắn BaseUrl từ .env và tự gắn Header (jwt_token) rồi
-      final res = await apiClient.post("/api/admin/notifications/send-all", payload);
+      final res = await apiClient.post(
+        "/api/admin/notifications/broadcast-all",
+        payload,
+      );
 
       if (res.statusCode == 200 || res.statusCode == 201) {
-        return true;
+        final body = apiClient.decodeUtf8Json(res);
+        if (body is Map<String, dynamic>) {
+          return body['success'] == true;
+        }
+        return false;
       } else {
         print("Lỗi từ BE: ${res.statusCode} - ${res.body}");
         return false;

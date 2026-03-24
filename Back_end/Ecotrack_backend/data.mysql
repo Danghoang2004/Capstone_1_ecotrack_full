@@ -355,7 +355,9 @@ CREATE TABLE campaign_comments (
 -- ================================================================
 CREATE TABLE notifications (
     notification_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
+    user_id BIGINT,
+    source_scope ENUM('USER_EVENT','ADMIN_BROADCAST_MASTER','ADMIN_BROADCAST_DELIVERY') NOT NULL DEFAULT 'USER_EVENT',
+    created_by_user_id BIGINT,
     notification_type ENUM('CAMPAIGN','ACHIEVEMENT','REWARD','SYSTEM') NOT NULL,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
@@ -363,7 +365,19 @@ CREATE TABLE notifications (
     target_type VARCHAR(50),
     target_id BIGINT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by_user_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    INDEX idx_notifications_source_scope_created_at (source_scope, created_at),
+    INDEX idx_notifications_user_scope_created_at (user_id, source_scope, created_at)
+);
+
+CREATE TABLE user_broadcast_read_state (
+    user_id BIGINT PRIMARY KEY,
+    last_read_master_notification_id BIGINT NULL,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (last_read_master_notification_id) REFERENCES notifications(notification_id) ON DELETE SET NULL,
+    INDEX idx_ubrs_last_read_master (last_read_master_notification_id)
 );
 
 -- ================================================================
@@ -812,11 +826,13 @@ JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
 -- 28) notifications: 20 dòng
 INSERT INTO notifications
 (
-    user_id, notification_type, title, message,
+    user_id, source_scope, created_by_user_id, notification_type, title, message,
     is_read, target_type, target_id, created_at
 )
 SELECT
     u.user_id,
+    'USER_EVENT',
+    NULL,
     CASE MOD(s.n, 4)
         WHEN 1 THEN 'CAMPAIGN'
         WHEN 2 THEN 'ACHIEVEMENT'

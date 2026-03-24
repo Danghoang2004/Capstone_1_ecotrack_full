@@ -12,8 +12,15 @@ public class Notification {
     @Column(name = "notification_id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source_scope", nullable = false)
+    private NotificationSourceScope sourceScope = NotificationSourceScope.USER_EVENT;
+
+    @Column(name = "created_by_user_id")
+    private Long createdByUserId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_type", nullable = false)
@@ -29,7 +36,7 @@ public class Notification {
     private boolean read = false;
 
     @Column(name = "target_type")
-    private String targetType;   
+    private String targetType;
 
     @Column(name = "target_id")
     private Long targetId;
@@ -45,32 +52,91 @@ public class Notification {
     }
 
     // ===== GET/SET =====
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public NotificationType getNotificationType() { return notificationType; }
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public NotificationSourceScope getSourceScope() {
+        return sourceScope;
+    }
+
+    public void setSourceScope(NotificationSourceScope sourceScope) {
+        this.sourceScope = sourceScope;
+    }
+
+    public Long getCreatedByUserId() {
+        return createdByUserId;
+    }
+
+    public void setCreatedByUserId(Long createdByUserId) {
+        this.createdByUserId = createdByUserId;
+    }
+
+    public NotificationType getNotificationType() {
+        return notificationType;
+    }
+
     public void setNotificationType(NotificationType notificationType) {
         this.notificationType = notificationType;
     }
 
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getTitle() {
+        return title;
+    }
 
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+    public void setTitle(String title) {
+        this.title = title;
+    }
 
-    public boolean isRead() { return read; }
-    public void setRead(boolean read) { this.read = read; }
+    public String getMessage() {
+        return message;
+    }
 
-    public String getTargetType() { return targetType; }
-    public void setTargetType(String targetType) { this.targetType = targetType; }
+    public void setMessage(String message) {
+        this.message = message;
+    }
 
-    public Long getTargetId() { return targetId; }
-    public void setTargetId(Long targetId) { this.targetId = targetId; }
+    public boolean isRead() {
+        return read;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setRead(boolean read) {
+        this.read = read;
+    }
+
+    public String getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
+
+    public Long getTargetId() {
+        return targetId;
+    }
+
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
