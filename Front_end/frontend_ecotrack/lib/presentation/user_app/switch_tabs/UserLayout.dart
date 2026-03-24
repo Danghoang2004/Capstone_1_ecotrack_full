@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_ecotrack/presentation/user_app/Report/ListReport_page.dart';
+import 'package:frontend_ecotrack/presentation/user_app/classification/waste_ai_classification_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Map/Map_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Setting/Setting_page.dart';
@@ -119,7 +119,7 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
     screens = [
       HomeScreen(showWelcomeDialog: widget.showWelcomeDialog),
       MapPage(hideAppBar: false),
-      ListReportPage(),
+      WasteAiClassificationPage(),
       ProfileScreen(hideAppBar: false),
       SettingsScreen(),
       const RankingScreen(hideHeader: false),
@@ -314,7 +314,7 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
       case 1:
         return MapPage(hideAppBar: true);
       case 2:
-        return ListReportPage();
+        return WasteAiClassificationPage();
       case 3:
         return ProfileScreen(hideAppBar: true);
       case 4:

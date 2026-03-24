@@ -318,10 +318,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         const SizedBox(height: 24),
-
-        RecentActivitySection(
-          controller: homeController.recentActivityController,
-        ),
       ],
     );
   }
@@ -503,9 +499,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 24),
 
-                  RecentActivitySection(
-                    controller: homeController.recentActivityController,
-                  ),
+                  // RecentActivitySection(
+                  //   controller: homeController.recentActivityController,
+                  // ),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:frontend_ecotrack/presentation/auth_user/auth_combined_screen.da
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignListScreen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/campaign/checkin_screen.dart';
+import 'package:frontend_ecotrack/presentation/user_app/classification/waste_ai_classification_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Report/Report_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/minigame/quiz_overview_screen.dart';
@@ -53,10 +54,8 @@ class AppRouter {
       case '/otp':
         final email = settings.arguments as String;
         return MaterialPageRoute(
-          builder: (_) => OtpScreenSingle(
-            email: email,
-            purpose: OtpPurpose.register,
-          ),
+          builder: (_) =>
+              OtpScreenSingle(email: email, purpose: OtpPurpose.register),
         );
       case '/QR_check':
         return MaterialPageRoute(builder: (context) => CheckIn_screenreal());
@@ -97,9 +96,11 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ActivityHistoryScreen());
 
       case '/badge_list':
-      // ĐÃ XÓA BIẾN BADGES DƯ THỪA ĐI
+        // ĐÃ XÓA BIẾN BADGES DƯ THỪA ĐI
+        return MaterialPageRoute(builder: (_) => const BadgeListScreen());
+      case '/ai_classification':
         return MaterialPageRoute(
-          builder: (_) => const BadgeListScreen(),
+          builder: (_) => const WasteAiClassificationPage(),
         );
       default:
         return MaterialPageRoute(

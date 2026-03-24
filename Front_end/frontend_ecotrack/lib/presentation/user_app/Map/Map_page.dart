@@ -412,7 +412,7 @@ class _MapPageState extends State<MapPage> {
               backgroundColor: Color(0xFF2E7D32),
               title: const Text(
                 "Bản đồ báo cáo",
-                style: TextStyle(color: Colors.white , fontSize: 20),
+                style: TextStyle(color: Colors.white, fontSize: 20),
               ),
               centerTitle: true,
               leading: IconButton(
@@ -434,6 +434,7 @@ class _MapPageState extends State<MapPage> {
             children: [
               TileLayer(
                 urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                userAgentPackageName: 'com.ecotrack.frontend_ecotrack',
               ),
               if (_routePoints.isNotEmpty)
                 PolylineLayer(

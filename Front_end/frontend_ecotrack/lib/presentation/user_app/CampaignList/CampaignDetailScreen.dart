@@ -27,33 +27,114 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     _loadCampaign();
   }
 
+  // --- GỌI API THẬT ĐỂ LẤY CHI TIẾT ---
   void _loadCampaign() {
     setState(() {
       _campaignFuture = _repo.fetchCampaignDetail(widget.campaignId);
     });
   }
 
+  // --- HÀM THIẾT KẾ POPUP THÀNH CÔNG ---
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, 
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2E7D32),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Đăng ký thành công!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Cảm ơn bạn đã tham gia chiến dịch. Hãy cùng EcoTrack tạo nên những giá trị xanh nhé!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Đóng popup
+                    },
+                    icon: const Icon(Icons.check, color: Colors.white, size: 20),
+                    label: const Text(
+                      "Tuyệt vời",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // --- GỌI API THẬT ĐỂ THAM GIA CHIẾN DỊCH ---
   Future<void> _handleJoinCampaign() async {
     setState(() {
       _isJoining = true;
     });
 
     try {
+      // GỌI API LÊN BACKEND
       await _repo.joinCampaign(widget.campaignId);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Tham gia chiến dịch thành công!"),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-        _loadCampaign(); // Refresh data
+        // Hiện Popup thành công
+        _showSuccessDialog(context);
+        
+        // Gọi lại API load chi tiết để cập nhật số người và trạng thái nút bấm
+        _loadCampaign(); 
       }
     } catch (e) {
       if (mounted) {
-        // Backend trả về message lỗi, hiển thị cho user
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceAll("Exception:", "").trim()),
@@ -75,14 +156,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7F6),
       appBar: AppBar(
-        backgroundColor: Color(0xFF2E7D32),
+        backgroundColor: const Color(0xFF2E7D32),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Chi tiết chiến dịch",
-          style: TextStyle(fontWeight: FontWeight.w600 , fontSize: 20 , color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20, color: Colors.white),
         ),
         centerTitle: true,
       ),
@@ -90,7 +171,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         future: _campaignFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Colors.green));
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
@@ -103,7 +184,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   const Text("Không thể tải chiến dịch"),
                   TextButton(
                     onPressed: _loadCampaign,
-                    child: const Text("Thử lại"),
+                    child: const Text("Thử lại", style: TextStyle(color: Colors.green)),
                   ),
                 ],
               ),
@@ -133,7 +214,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
               c.imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) =>
-                  Container(color: Colors.grey.shade300),
+                  Container(color: Colors.grey.shade300, child: const Icon(Icons.image, size: 50, color: Colors.grey)),
             ),
           ),
           Padding(
@@ -153,7 +234,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   children: const [
                     Icon(Icons.verified, color: Colors.green, size: 16),
                     SizedBox(width: 6),
-                    Text("EcoVietnam tổ chức"),
+                    Text("EcoVietnam tổ chức", style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -183,7 +264,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -201,7 +282,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                       const SizedBox(height: 8),
                       Text(
                         c.description,
-                        style: const TextStyle(fontSize: 14, height: 1.5),
+                        style: TextStyle(fontSize: 14, height: 1.5, color: Colors.grey.shade800),
                       ),
                     ],
                   ),
@@ -219,14 +300,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     final bool canJoin = !c.joined && !isFull && !_isJoining;
 
     String buttonText = "Tham gia chiến dịch";
-    Color buttonColor = Colors.green;
+    Color buttonColor = const Color(0xFF2E7D32); 
 
     if (c.joined) {
       buttonText = "Đã tham gia";
       buttonColor = Colors.grey;
     } else if (isFull) {
       buttonText = "Đã đủ số lượng";
-      buttonColor = Colors.redAccent;
+      buttonColor = Colors.orange;
     } else if (_isJoining) {
       buttonText = "Đang xử lý...";
     }
@@ -236,15 +317,16 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       right: 16,
       bottom: 16,
       child: SizedBox(
-        height: 48,
+        height: 50,
         child: ElevatedButton(
           onPressed: canJoin ? _handleJoinCampaign : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: buttonColor,
-            disabledBackgroundColor: buttonColor.withOpacity(0.7),
+            disabledBackgroundColor: buttonColor.withOpacity(0.6),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(25), 
             ),
+            elevation: c.joined ? 0 : 4,
           ),
           child: _isJoining
               ? const SizedBox(
@@ -257,7 +339,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 )
               : Text(
                   buttonText,
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
+                  style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
         ),
       ),
@@ -269,7 +351,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       children: [
         Icon(icon, size: 18, color: Colors.grey[700]),
         const SizedBox(width: 4),
-        Text("$value"),
+        Text("$value", style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -280,8 +362,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         Icon(Icons.calendar_today, size: 18, color: Colors.grey[700]),
         const SizedBox(width: 4),
         Text(
-          endDate, // Hiển thị ngày kết thúc hoặc logic tùy ý
-          style: const TextStyle(fontSize: 14),
+          endDate, 
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade800, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -301,7 +383,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
           const SizedBox(height: 6),
           Text(
             value,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
@@ -312,7 +394,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
 
   Widget _participants(int current, int max, double progress) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -321,23 +403,23 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Người tham gia",
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            "Tiến độ tham gia",
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
           LinearProgressIndicator(
             value: progress,
             backgroundColor: Colors.green.shade100,
-            color: Colors.green,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(4),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(10),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("$current / $max người đã đăng ký"),
-              Text("${(progress * 100).toStringAsFixed(0)}%"),
+              Text("$current / $max người đã đăng ký", style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+              Text("${(progress * 100).toStringAsFixed(0)}%", style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold)),
             ],
           ),
         ],

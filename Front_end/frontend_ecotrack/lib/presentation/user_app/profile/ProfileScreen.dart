@@ -21,7 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _viewFuture = _userService.getProfileView();
     _badgesFuture = _userService
-        .getAllBadges(); // 👉 Khởi tạo gọi dữ liệu huy hiệu
+        .getAllBadges(); // Khởi tạo gọi dữ liệu huy hiệu
   }
 
   @override
@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // =================== UI CHÍNH ===================
+// =================== UI CHÍNH ===================
 
   Widget _buildProfileContent(ProfileView view) {
     return CustomScrollView(
@@ -69,20 +69,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildSliverAppBar(view),
         SliverToBoxAdapter(
           child: Container(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0, top: 0),
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0, top: 16.0), // Thêm chút top padding để cách ảnh bìa ra một tí xíu nếu cần
             color: Colors.transparent,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatsGrid(view),
-                const SizedBox(height: 20),
+                
+                const SizedBox(height: 0), // SỬA: Giảm từ 20 xuống 12
 
-                // 👉 Khu vực Huy hiệu sẽ tự render bằng dữ liệu thật
+                //Khu vực Huy hiệu
                 _buildAchievementsSection(context),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 0), // SỬA: Giảm từ 24 xuống 12
+                
                 _buildRecentActivitySection(view.recentActivities),
-                const SizedBox(height: 24),
+                
+                const SizedBox(height: 0), // SỬA: Giảm từ 24 xuống 16
 
                 // Nút "Xem bảng xếp hạng"
                 SizedBox(
@@ -111,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 40), // Giữ nguyên khoảng trống dưới đáy để không bị lẹm thanh điều hướng
               ],
             ),
           ),
@@ -119,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-
+  
   /// Skeleton
   Widget _buildProfileSkeleton() {
     final placeholder = ProfileView(
@@ -174,14 +177,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   end: Alignment.bottomCenter,
                   colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
                 ),
-              ),
-            ),
-            Positioned(
-              top: 28,
-              left: 12,
-              child: IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white),
-                onPressed: () {},
               ),
             ),
             Positioned(

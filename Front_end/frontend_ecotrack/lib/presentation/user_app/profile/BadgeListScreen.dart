@@ -31,8 +31,19 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
     return Scaffold(
       backgroundColor: bgLight,
       appBar: AppBar(
-        // ... (Giữ nguyên phần AppBar của bạn)
+      backgroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      title: const Text(
+        "Danh Sách Huy Hiệu",
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
       ),
+      iconTheme: const IconThemeData(color: Colors.black), // nút back
+    ),
       body: FutureBuilder<List<BadgeModel>>(
         future: _badgesFuture,
         builder: (context, snapshot) {

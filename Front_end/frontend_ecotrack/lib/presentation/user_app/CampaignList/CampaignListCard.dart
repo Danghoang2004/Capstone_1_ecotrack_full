@@ -1,218 +1,340 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:frontend_ecotrack/data/models/CampaignModel.dart';
+import 'package:frontend_ecotrack/data/models/CampaignModel.dart'; 
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignDetailScreen.dart';
 
-class CampaignListCard extends StatelessWidget {
-  final CampaignModel campaign;
+// Đổi từ StatelessWidget sang StatefulWidget để quản lý trạng thái nút bấm
+class CampaignListCard extends StatefulWidget {
+  final CampaignModel campaign; 
+  
   const CampaignListCard({super.key, required this.campaign});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+  State<CampaignListCard> createState() => _CampaignListCardState();
+}
+
+class _CampaignListCardState extends State<CampaignListCard> {
+  // Thêm 2 biến trạng thái để quản lý nút bấm
+  bool _isLoading = false;
+  bool _isJoined = false;
+
+  // --- HÀM THIẾT KẾ POPUP THÀNH CÔNG ---
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, 
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
           ),
-        ],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: () => _navigateToDetail(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // --- PHẦN ẢNH & BADGE THỜI GIAN ---
-            Stack(
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2E7D32),
+                    shape: BoxShape.circle,
                   ),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Image.network(
-                      campaign.imageUrl,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey.shade100,
-                        child: const Icon(
-                          Icons.image,
-                          size: 50,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 40,
                   ),
                 ),
-                // Badge "Ngày còn lại" nổi trên ảnh
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                const SizedBox(height: 24),
+                const Text(
+                  "Đăng ký thành công!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Cảm ơn bạn đã tham gia chiến dịch. Hãy cùng EcoTrack tạo nên những giá trị xanh nhé!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Đóng popup
+                    },
+                    icon: const Icon(Icons.check, color: Colors.white, size: 20),
+                    label: const Text(
+                      "Tuyệt vời",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.timer_outlined,
-                          size: 14,
-                          color: Colors.orange.shade800,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          campaign.daysRemaining > 0
-                              ? "Còn ${campaign.daysRemaining} ngày"
-                              : "Hết hạn",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.orange.shade900,
-                          ),
-                        ),
-                      ],
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
                     ),
                   ),
                 ),
               ],
             ),
+          ),
+        );
+      },
+    );
+  }
 
-            // --- NỘI DUNG CHI TIẾT ---
-            Padding(
-              padding: const EdgeInsets.all(20),
+  // --- HÀM XỬ LÝ KHI BẤM NÚT THAM GIA ---
+  Future<void> _handleJoin() async {
+    setState(() {
+      _isLoading = true; // Bật vòng xoay loading
+    });
+
+    // Giả lập gọi API mất 1 giây
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false; // Tắt loading
+        _isJoined = true;   // Cập nhật trạng thái thành Đã tham gia
+      });
+      // Hiện popup
+      _showSuccessDialog(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Dùng widget.campaign vì đang ở trong State class
+    final campaign = widget.campaign;
+
+    int fakeMaxParticipants = campaign.participants == 0 ? 1000 : campaign.participants + 500;
+    
+    double progressValue = (fakeMaxParticipants > 0) 
+        ? (campaign.participants / fakeMaxParticipants) 
+        : 0.0;
+    if (progressValue > 1.0) progressValue = 1.0; 
+
+    // --- LOGIC XÁC ĐỊNH MÀU VÀ CHỮ CHO NÚT BẤM ---
+    String buttonText = "Tham gia chiến dịch";
+    Color buttonColor = const Color(0xFF2E7D32);
+
+    if (_isJoined) {
+      buttonText = "Đã tham gia";
+      buttonColor = Colors.grey; // Đổi sang xám khi đã tham gia
+    } else if (_isLoading) {
+      buttonText = "Đang xử lý...";
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.5),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => _navigateToDetail(context),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Stack(
                     children: [
-                      Expanded(
-                        child: Text(
-                          campaign.title,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24),
+                        ),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 8,
+                          child: Image.network(
+                            campaign.imageUrl,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Colors.green.shade50,
+                              child: const Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 50,
+                                color: Colors.green,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      _buildPointBadge(campaign.rewardPoints),
+                      Positioned(
+                        bottom: 12,
+                        right: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            campaign.daysRemaining > 0
+                                ? "${campaign.daysRemaining} ngày còn lại" 
+                                : "Đã kết thúc",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    campaign.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // --- TIẾN ĐỘ ---
-                  _buildProgress(),
-
-                  const SizedBox(height: 20),
-
-                  // --- THÔNG TIN ĐỊA ĐIỂM & THAM GIA ---
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          campaign.location,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade700,
-                          ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                campaign.title,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF2D4F1E),
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.eco,
+                              color: Colors.green.shade600,
+                              size: 28,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          campaign.location, 
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          "${campaign.participants} người tham gia",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        _buildProgress(progressValue, fakeMaxParticipants),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.people_alt, size: 18, color: Colors.green.shade700),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "${campaign.participants} người", 
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            // --- NÚT BẤM CÓ TRẠNG THÁI ---
+                            ElevatedButton(
+                              // Nếu đã tham gia hoặc đang loading thì khóa nút (trả về null)
+                              onPressed: (_isJoined || _isLoading) ? null : _handleJoin,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: buttonColor,
+                                disabledBackgroundColor: buttonColor.withOpacity(0.7), // Màu xám khi khóa
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: _isLoading 
+                                ? const SizedBox(
+                                    width: 16, 
+                                    height: 16, 
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                                  )
+                                : Text(
+                                    buttonText,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPointBadge(int pts) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.green.shade700,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        "+$pts pts",
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
+  Widget _buildProgress(double progressValue, int maxParticipants) {
+    int percent = (progressValue * 100).toInt();
 
-  Widget _buildProgress() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Mục tiêu chiến dịch",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            Row(
+              children: [
+                Icon(Icons.group_outlined, size: 18, color: Colors.green.shade700),
+                const SizedBox(width: 6),
+                Text(
+                  "$maxParticipants người",
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
+                ),
+              ],
             ),
             Text(
-              "75%",
+              "$percent%",
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.green,
+                fontSize: 14,
+                color: Colors.grey.shade800,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -222,10 +344,10 @@ class CampaignListCard extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: LinearProgressIndicator(
-            value: 0.75,
-            backgroundColor: Colors.green.withOpacity(0.1),
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
-            minHeight: 10,
+            value: progressValue,
+            backgroundColor: Colors.green.shade100.withOpacity(0.5),
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+            minHeight: 8,
           ),
         ),
       ],
@@ -236,7 +358,7 @@ class CampaignListCard extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CampaignDetailScreen(campaignId: campaign.id),
+        builder: (_) => CampaignDetailScreen(campaignId: widget.campaign.id), 
       ),
     );
   }
