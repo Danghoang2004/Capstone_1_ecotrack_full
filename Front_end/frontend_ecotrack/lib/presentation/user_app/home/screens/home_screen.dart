@@ -12,6 +12,8 @@ import '../widgets/ranking/ranking_section.dart';
 import '../widgets/recent_activity/recent_activity_section.dart';
 import '../widgets/welcome_dialog/welcome_dialog.dart';
 import '../controllers/home_controller.dart';
+import 'package:frontend_ecotrack/core/services/notification_service.dart';
+import '../widgets/notification_dialog/in_app_notification_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool showWelcomeDialog;
@@ -31,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final HomeController homeController;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   bool _hasCheckedWelcomeDialog = false;
-
+  final NotificationService _notificationService = NotificationService();
   @override
   void initState() {
     super.initState();
@@ -47,6 +49,44 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
     _checkAndShowWelcomeDialog();
+    _checkAndShowSystemNotification();
+  }
+
+  Future<void> _checkAndShowSystemNotification() async {
+    // Đợi 2.5 giây cho app ổn định rồi mới check
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    try {
+      // Dùng service lấy danh sách thông báo (đã bao gồm Token và BaseURL chuẩn)
+      final notifications = await _notificationService.getAll();
+
+      if (notifications.isNotEmpty) {
+        // Lấy thông báo mới nhất (đầu danh sách)
+        var latestNotif = notifications.first;
+
+        // Nếu thông báo CHƯA ĐỌC
+        if (!latestNotif.isRead) {
+          if (mounted) {
+            // Hiện Popup có dấu X
+            await InAppNotificationDialog.show(
+              context,
+              title: latestNotif.title,
+              content: latestNotif.message ?? '',
+            );
+
+            // 🟢 SAU KHI USER TẮT POPUP -> Tự động báo cho BE là đã đọc
+            // Mục đích: Lần sau mở app không hiện lại popup cũ này nữa
+            await _notificationService.markAsRead(latestNotif.id.toString());
+
+            // (Tùy chọn) Cập nhật lại UI nếu cần hiển thị chấm đỏ ở Icon chuông
+            setState(() {});
+          }
+        }
+      }
+    } catch (e) {
+      print("❌ Lỗi hiển thị thông báo Home: $e");
+    }
   }
 
   Future<void> _checkAndShowWelcomeDialog() async {
@@ -278,10 +318,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         const SizedBox(height: 24),
-
-        RecentActivitySection(
-          controller: homeController.recentActivityController,
-        ),
       ],
     );
   }
@@ -463,9 +499,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 24),
 
-                  RecentActivitySection(
-                    controller: homeController.recentActivityController,
-                  ),
+                  // RecentActivitySection(
+                  //   controller: homeController.recentActivityController,
+                  // ),
                 ],
               ),
             ),

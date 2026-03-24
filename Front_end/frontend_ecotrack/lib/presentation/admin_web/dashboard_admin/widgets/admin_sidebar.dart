@@ -103,6 +103,14 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   isCollapsed: isCollapsed,
                   onTap: widget.onNavigate,
                 ),
+                _MenuItem(
+                  icon: Icons.notifications_active_outlined, // Em có thể đổi icon khác nếu muốn
+                  label: 'Quản Lý Thông Báo',
+                  keyName: 'notifications', // Key này dùng để nhận diện route/tab
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
               ],
             ),
           ),
