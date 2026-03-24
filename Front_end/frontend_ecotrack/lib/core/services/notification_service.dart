@@ -91,4 +91,31 @@ class NotificationService {
       rethrow;
     }
   }
+  // --- THÊM HÀM NÀY ĐỂ ADMIN GỬI THÔNG BÁO ---
+  Future<bool> sendBroadcastNotification({
+    required String title,
+    required String message,
+    String? scheduledTime,
+  }) async {
+    try {
+      final payload = {
+        "title": title,
+        "message": message,
+        if (scheduledTime != null) "scheduledTime": scheduledTime,
+      };
+
+      // ApiClient đã tự động gắn BaseUrl từ .env và tự gắn Header (jwt_token) rồi
+      final res = await apiClient.post("/api/admin/notifications/send-all", payload);
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        return true;
+      } else {
+        print("Lỗi từ BE: ${res.statusCode} - ${res.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Lỗi mạng hoặc ApiClient: $e");
+      return false;
+    }
+  }
 }
