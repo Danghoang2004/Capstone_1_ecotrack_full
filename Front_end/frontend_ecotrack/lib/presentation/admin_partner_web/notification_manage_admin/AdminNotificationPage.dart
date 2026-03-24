@@ -1,8 +1,41 @@
 import 'package:flutter/material.dart';
-import 'create_notification_screen.dart'; // Import file em vừa tạo ở trên
+import 'package:frontend_ecotrack/core/services/notification_service.dart';
+import 'package:frontend_ecotrack/data/models/NotificationModelAdmin.dart';
+import 'create_notification_screen.dart';
+import 'package:intl/intl.dart';
 
-class AdminNotificationPage extends StatelessWidget {
+class AdminNotificationPage extends StatefulWidget {
   const AdminNotificationPage({super.key});
+
+  @override
+  State<AdminNotificationPage> createState() => _AdminNotificationPageState();
+}
+
+class _AdminNotificationPageState extends State<AdminNotificationPage> {
+  final NotificationService _notificationService = NotificationService();
+  List<NotificationModel> _notifications = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+  }
+
+  // Lấy dữ liệu từ Backend thông qua Service chung
+  Future<void> _fetchNotifications() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _notificationService.getAdminNotifications();
+      setState(() {
+        _notifications = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Lỗi lấy danh sách Admin: $e");
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,31 +61,71 @@ class AdminNotificationPage extends StatelessWidget {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5EAC24), // Xanh EcoTrack
+                  backgroundColor: const Color(0xFF5EAC24),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 16,
                   ),
                 ),
-                onPressed: () {
-                  // Chuyển hướng sang màn hình Tạo Thông Báo
-                  Navigator.push(
+                onPressed: () async {
+                  // Sau khi tạo xong và quay lại, tự động load lại danh sách
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const CreateNotificationScreen(),
                     ),
                   );
+                  _fetchNotifications();
                 },
               ),
             ],
           ),
-          const Expanded(
-            child: Center(
-              child: Text(
-                "Chưa có thông báo nào. Bấm 'Tạo thông báo mới' để bắt đầu.",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _notifications.isEmpty
+                ? const Center(child: Text("Chưa có thông báo nào."))
+                : ListView.builder(
+                    itemCount: _notifications.length,
+                    itemBuilder: (context, index) {
+                      final item = _notifications[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: const Color(
+                              0xFF5EAC24,
+                            ).withOpacity(0.1),
+                            child: const Icon(
+                              Icons.notifications,
+                              color: Color(0xFF5EAC24),
+                            ),
+                          ),
+                          title: Text(
+                            item.title ?? 'Không có tiêu đề',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            item.message ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: Text(
+                            item.createdAt != null
+                                ? DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(item.createdAt!)
+                                : '',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

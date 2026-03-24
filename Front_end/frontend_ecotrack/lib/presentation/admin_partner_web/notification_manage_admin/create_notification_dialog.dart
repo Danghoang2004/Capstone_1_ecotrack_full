@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'notification_controller.dart';
+import 'package:frontend_ecotrack/core/services/notification_service.dart'; 
 
 class CreateNotificationDialog extends StatefulWidget {
   const CreateNotificationDialog({super.key});
@@ -12,7 +12,9 @@ class CreateNotificationDialog extends StatefulWidget {
 class _CreateNotificationDialogState extends State<CreateNotificationDialog> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
-  final NotificationController _controller = NotificationController();
+  
+  //2. SỬ DỤNG NOTIFICATION SERVICE
+  final NotificationService _notificationService = NotificationService();
 
   bool _isLoading = false;
 
@@ -32,11 +34,11 @@ class _CreateNotificationDialogState extends State<CreateNotificationDialog> {
 
     setState(() => _isLoading = true);
 
-    // Gọi hàm call data ở Controller
-    bool success = await _controller.sendNotification(
-      context: context,
+    //3. GỌI HÀM TỪ SERVICE CHUNG (Không cần truyền context nữa)
+    bool success = await _notificationService.sendBroadcastNotification(
       title: title,
       message: message,
+      scheduledTime: null, // Gửi ngay lập tức
     );
 
     setState(() => _isLoading = false);

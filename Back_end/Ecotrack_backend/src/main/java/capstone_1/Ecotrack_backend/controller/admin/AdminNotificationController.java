@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+
 @RestController
 @RequestMapping("/api/admin/notifications")
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
