@@ -20,71 +20,91 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
   @override
   void initState() {
     super.initState();
-
+    // Khởi tạo các service
     final apiClient = ApiClient(storage: const FlutterSecureStorage());
-
     controller = CampaignTakesPlaceController(CampaignRepository(apiClient));
-
+    // Gọi API lấy dữ liệu thực tế
     controller.loadData();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose(); 
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      extendBodyBehindAppBar: true, 
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Color(0xFF2E7D32),
+        scrolledUnderElevation: 0, 
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: Colors.transparent, 
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87), 
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Khám phá chiến dịch",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800 , fontSize: 20),
+          "Danh Sách Chiến dịch",
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800, fontSize: 20),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: AnimatedBuilder(
-        animation: controller,
-        builder: (_, __) {
-          if (controller.loading) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.green),
-            );
-          }
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.green.shade50, Colors.white], 
+          ),
+        ),
+        child: SafeArea(
+          child: AnimatedBuilder(
+            animation: controller,
+            builder: (_, __) {
+              // 1. TRẠNG THÁI LOADING THỰC TẾ
+              if (controller.loading) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.green),
+                );
+              }
 
-          final campaigns = _getFilteredCampaigns();
+              // 2. LẤY DỮ LIỆU ĐÃ LỌC
+              final campaigns = _getFilteredCampaigns();
 
-          return Column(
-            children: [
-              _buildTabs(),
-              Expanded(
-                child: campaigns.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: campaigns.length,
-                        itemBuilder: (_, i) =>
-                            CampaignListCard(campaign: campaigns[i]),
-                      ),
-              ),
-            ],
-          );
-        },
+              // 3. HIỂN THỊ GIAO DIỆN CHÍNH
+              return Column(
+                children: [
+                  _buildTabs(),
+                  Expanded(
+                    child: campaigns.isEmpty
+                        ? _buildEmptyState()
+                        : RefreshIndicator( 
+                            onRefresh: () async => controller.loadData(),
+                            color: Colors.green,
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(), 
+                              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 10),
+                              itemCount: campaigns.length,
+                              itemBuilder: (_, i) =>
+                                  CampaignListCard(campaign: campaigns[i]),
+                            ),
+                          ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildTabs() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 5), 
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -109,27 +129,21 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10), 
         decoration: BoxDecoration(
-          color: isActive ? Colors.green : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: isActive ? const Color(0xFF386641) : Colors.white.withOpacity(0.7), 
+          borderRadius: BorderRadius.circular(25), 
           border: Border.all(
-            color: isActive ? Colors.green : Colors.transparent,
-            width: 1.5,
+            color: isActive ? Colors.transparent : Colors.grey.shade300,
+            width: 1,
           ),
           boxShadow: [
             if (isActive)
               BoxShadow(
-                color: Colors.green.withOpacity(0.25),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              )
-            else
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
+                color: const Color(0xFF386641).withOpacity(0.3),
+                blurRadius: 8,
                 offset: const Offset(0, 4),
-              ),
+              )
           ],
         ),
         child: Text(
@@ -144,23 +158,23 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
     );
   }
 
+  // --- HÀM LẤY DỮ LIỆU TỪ API THẬT QUA CONTROLLER ---
   List<CampaignModel> _getFilteredCampaigns() {
     if (selectedTab == 1) return controller.activeCampaigns;
     if (selectedTab == 2) return controller.upcomingCampaigns;
-    // Mặc định trả về tất cả
+    // Tab 0: Trả về tất cả
     return [...controller.activeCampaigns, ...controller.upcomingCampaigns];
   }
 
-  // --- HÀM GIAO DIỆN TRỐNG (Sửa lỗi undefined _buildEmptyState) ---
   Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.event_note_outlined,
+            Icons.nature_people_outlined, 
             size: 80,
-            color: Colors.grey.shade300,
+            color: Colors.green.shade200,
           ),
           const SizedBox(height: 16),
           Text(
@@ -168,14 +182,17 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey.shade600,
+              color: Colors.grey.shade700,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            "Hãy quay lại sau hoặc kiểm tra danh mục khác nhé!",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade500),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              "Hãy quay lại sau hoặc kiểm tra danh mục khác nhé!",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, height: 1.5),
+            ),
           ),
         ],
       ),
