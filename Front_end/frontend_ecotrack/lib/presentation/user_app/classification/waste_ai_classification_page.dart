@@ -174,8 +174,23 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
   }
 
   Widget _buildResultCard(AiWasteClassificationData result) {
-    final sortedWasteTypes = result.wasteTypes.entries.toList()
+    final groupedCounts = _buildGroupedCounts(result);
+    final averageConfidenceByType = _buildAverageConfidenceByType(result);
+    final groupedEntries = groupedCounts.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    final totalGroupedCount = groupedCounts.values.fold<int>(
+      0,
+      (sum, count) => sum + count,
+    );
+    const int maxDisplayedGroups = 5;
+    final displayedEntries = groupedEntries.take(maxDisplayedGroups).toList();
+    final hiddenGroups = groupedEntries.length - displayedEntries.length;
+    final hiddenCount = hiddenGroups > 0
+        ? groupedEntries
+              .skip(maxDisplayedGroups)
+              .fold<int>(0, (sum, entry) => sum + entry.value)
+        : 0;
+    final topEntry = groupedEntries.isNotEmpty ? groupedEntries.first : null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -204,49 +219,167 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
           _infoRow('Phat hien rac', result.trashDetected ? 'Co' : 'Khong'),
           _infoRow(
             'Do tin cay tong',
-            '${(result.overallConfidence * 100).toStringAsFixed(2)}%',
+            '${(result.overallConfidence * 100).toStringAsFixed(1)}%',
           ),
-          _infoRow('So doi tuong', result.totalObjectsDetected.toString()),
+          _infoRow(
+            'Tong vat the nhan dien',
+            result.totalObjectsDetected.toString(),
+          ),
           const SizedBox(height: 12),
           const Text(
-            'Ti Le Loai Rac',
+            'Tong Hop Theo Loai Rac',
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          if (sortedWasteTypes.isEmpty)
-            const Text('Khong co du lieu loai rac.')
+          if (groupedEntries.isEmpty)
+            const Text('Khong co du lieu loai rac de tong hop.')
           else
-            ...sortedWasteTypes.map(
-              (entry) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+            ...displayedEntries.map(
+              (entry) => Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
                 child: Row(
                   children: [
-                    Expanded(child: Text(entry.key)),
-                    Text('${entry.value.toStringAsFixed(2)}%'),
+                    Expanded(
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    Text(
+                      '${entry.value} vat | ${_toPercentText(entry.value, totalGroupedCount)}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    if (averageConfidenceByType.containsKey(entry.key))
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          '| ${(averageConfidenceByType[entry.key]! * 100).toStringAsFixed(1)}%',
+                          style: const TextStyle(color: Color(0xFF4A5568)),
+                        ),
+                      ),
                   ],
                 ),
               ),
             ),
-          const SizedBox(height: 12),
-          const Text(
-            'Danh Sach Doi Tuong Nhan Dien',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          if (result.detections.isEmpty)
-            const Text('Khong co doi tuong nao duoc nhan dien.')
-          else
-            ...result.detections.map(
-              (detection) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  '- ${detection.classNameVietnamese.isNotEmpty ? detection.classNameVietnamese : detection.classNameRaw} (${(detection.confidence * 100).toStringAsFixed(1)}%)',
+          if (hiddenGroups > 0)
+            Text(
+              '... va $hiddenGroups loai khac ($hiddenCount vat)',
+              style: const TextStyle(color: Color(0xFF4A5568)),
+            ),
+          if (topEntry != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF3),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+              ),
+              child: Text(
+                'Loai chiem uu the: ${topEntry.key} (${topEntry.value} vat - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
+                style: const TextStyle(
+                  color: Color(0xFF166534),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
+          ],
+          const SizedBox(height: 12),
+          Text(
+            'Thong tin da duoc gom nhom tu ${result.detections.length} vung nhan dien de de theo doi hon.',
+            style: const TextStyle(color: Color(0xFF4A5568)),
+          ),
         ],
       ),
     );
+  }
+
+  Map<String, int> _buildGroupedCounts(AiWasteClassificationData result) {
+    if (result.wasteTypes.isNotEmpty) {
+      final rawCounts = <String, int>{};
+      final sumFromWasteTypes = result.wasteTypes.values.fold<double>(
+        0,
+        (sum, value) => sum + value,
+      );
+
+      final looksLikeCounts =
+          sumFromWasteTypes > 100 ||
+          (result.totalObjectsDetected > 0 &&
+              sumFromWasteTypes > result.totalObjectsDetected * 1.2);
+
+      for (final entry in result.wasteTypes.entries) {
+        final key = entry.key.trim();
+        if (key.isEmpty) continue;
+
+        final value = entry.value;
+        if (looksLikeCounts) {
+          rawCounts[key] = value.round();
+        } else if (result.totalObjectsDetected > 0) {
+          rawCounts[key] = ((value / 100) * result.totalObjectsDetected)
+              .round();
+        }
+      }
+
+      final hasPositiveCount = rawCounts.values.any((count) => count > 0);
+      if (hasPositiveCount) {
+        return rawCounts;
+      }
+    }
+
+    final fallbackCounts = <String, int>{};
+    for (final detection in result.detections) {
+      final label = detection.classNameVietnamese.trim().isNotEmpty
+          ? detection.classNameVietnamese.trim()
+          : detection.classNameRaw.trim();
+      if (label.isEmpty) continue;
+      fallbackCounts[label] = (fallbackCounts[label] ?? 0) + 1;
+    }
+    return fallbackCounts;
+  }
+
+  Map<String, double> _buildAverageConfidenceByType(
+    AiWasteClassificationData result,
+  ) {
+    if (result.detections.isEmpty) {
+      return {};
+    }
+
+    final totalConfidence = <String, double>{};
+    final counts = <String, int>{};
+
+    for (final detection in result.detections) {
+      final label = detection.classNameVietnamese.trim().isNotEmpty
+          ? detection.classNameVietnamese.trim()
+          : detection.classNameRaw.trim();
+      if (label.isEmpty) continue;
+
+      totalConfidence[label] =
+          (totalConfidence[label] ?? 0) + detection.confidence;
+      counts[label] = (counts[label] ?? 0) + 1;
+    }
+
+    final averages = <String, double>{};
+    for (final entry in counts.entries) {
+      final total = totalConfidence[entry.key] ?? 0;
+      averages[entry.key] = total / entry.value;
+    }
+    return averages;
+  }
+
+  String _toPercentText(int value, int total) {
+    if (total <= 0) return '0%';
+    final percentage = (value / total) * 100;
+    return '${percentage.toStringAsFixed(1)}%';
   }
 
   Widget _infoRow(String label, String value) {
