@@ -236,7 +236,10 @@ class CampaignListCard extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CampaignDetailScreen(campaignId: campaign.id),
+        builder: (_) => CampaignDetailScreen(
+          campaignId: campaign.id,
+          initialImageUrl: campaign.imageUrl,
+        ),
       ),
     );
   }

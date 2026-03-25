@@ -178,12 +178,18 @@ public class CampaignServiceImpl implements CampaignService {
 
     public CampaignDetailDTO getDetail(Long campaignId, Long userId) {
         var p = campaignRepository.findCampaignDetail(campaignId);
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chiến dịch"));
 
         CampaignDetailDTO dto = new CampaignDetailDTO();
         dto.setId(p.getId());
         dto.setTitle(p.getTitle());
         dto.setDescription(p.getDescription());
-        dto.setImageUrl(p.getImageUrl());
+        String imageUrl = p.getImageUrl();
+        if (imageUrl == null || imageUrl.isBlank()) {
+            imageUrl = campaign.getImageUrl();
+        }
+        dto.setImageUrl(imageUrl);
         dto.setLocation(p.getLocation());
         dto.setStartDate(p.getStartDate());
         dto.setEndDate(p.getEndDate());
