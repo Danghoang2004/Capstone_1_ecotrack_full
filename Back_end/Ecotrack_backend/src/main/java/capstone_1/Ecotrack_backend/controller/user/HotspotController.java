@@ -5,6 +5,7 @@ import capstone_1.Ecotrack_backend.service.HotspotClusteringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import java.time.format.DateTimeParseException;
 @RestController
 @RequestMapping("/api/public/hotspots")
 @Tag(name = "Hotspot", description = "API lấy dữ liệu điểm nóng (hotspot)")
+@Slf4j
 public class HotspotController {
 
     @Autowired
@@ -94,6 +96,9 @@ public class HotspotController {
 
             @Parameter(description = "Số báo cáo tối thiểu để tạo hotspot") @RequestParam(required = false) Integer min_samples) {
         try {
+            log.info("Nhận request GET /cluster. fromDate={}, toDate={}, eps_km={}, min_samples={}",
+                    fromDate, toDate, eps_km, min_samples);
+
             // Parse datetime
             LocalDateTime fromDateTime = parseDatetime(fromDate);
             LocalDateTime toDateTime = parseDatetime(toDate);
@@ -102,24 +107,32 @@ public class HotspotController {
             validateDateRange(fromDateTime, toDateTime);
             validateClusteringParams(eps_km, min_samples);
 
+            log.debug("Validation thành công, gọi service...");
+
             // Call service and return response
             HotspotClusterResponse response = clusteringService.clusterAllReports(
                     fromDateTime, toDateTime, eps_km, min_samples);
+
+            log.info("Request GET /cluster hoàn thành. Total clusters: {}", response.getTotal_clusters());
+
             return ResponseEntity.ok(response);
 
         } catch (DateTimeParseException e) {
+            log.warn("Lỗi định dạng ngày: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(
                     "INVALID_DATE_FORMAT",
                     "Định dạng ngày không hợp lệ. Sử dụng ISO-8601: yyyy-MM-ddTHH:mm:ss. Lỗi: " + e.getMessage(),
                     HttpStatus.BAD_REQUEST.value()));
 
         } catch (IllegalArgumentException e) {
+            log.warn("Tham số không hợp lệ: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErrorResponse(
                     "INVALID_PARAMETERS",
                     "Tham số không hợp lệ: " + e.getMessage(),
                     HttpStatus.UNPROCESSABLE_ENTITY.value()));
 
         } catch (Exception e) {
+            log.error("Lỗi server trong request GET /cluster: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
                     "INTERNAL_ERROR",
                     "Lỗi server: " + e.getMessage(),
@@ -150,6 +163,10 @@ public class HotspotController {
 
             @Parameter(description = "Số báo cáo tối thiểu") @RequestParam(required = false) Integer min_samples) {
         try {
+            log.info(
+                    "Nhận request GET /cluster/area. Box: ({},{}) - ({},{}), fromDate={}, toDate={}, eps_km={}, min_samples={}",
+                    minLat, minLng, maxLat, maxLng, fromDate, toDate, eps_km, min_samples);
+
             // Validate coordinates
             validateCoordinates(minLat, maxLat, minLng, maxLng);
 
@@ -161,26 +178,34 @@ public class HotspotController {
             validateDateRange(fromDateTime, toDateTime);
             validateClusteringParams(eps_km, min_samples);
 
+            log.debug("Validation thành công, gọi service...");
+
             // Call service and return response
             HotspotClusterResponse response = clusteringService.clusterReportsInArea(
                     minLat, maxLat, minLng, maxLng,
                     fromDateTime, toDateTime,
                     eps_km, min_samples);
+
+            log.info("Request GET /cluster/area hoàn thành. Total clusters: {}", response.getTotal_clusters());
+
             return ResponseEntity.ok(response);
 
         } catch (DateTimeParseException e) {
+            log.warn("Lỗi định dạng ngày: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(
                     "INVALID_DATE_FORMAT",
                     "Định dạng ngày không hợp lệ. Sử dụng ISO-8601: yyyy-MM-ddTHH:mm:ss. Lỗi: " + e.getMessage(),
                     HttpStatus.BAD_REQUEST.value()));
 
         } catch (IllegalArgumentException e) {
+            log.warn("Tham số không hợp lệ: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErrorResponse(
                     "INVALID_PARAMETERS",
                     "Tham số không hợp lệ: " + e.getMessage(),
                     HttpStatus.UNPROCESSABLE_ENTITY.value()));
 
         } catch (Exception e) {
+            log.error("Lỗi server trong request GET /cluster/area: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
                     "INTERNAL_ERROR",
                     "Lỗi server: " + e.getMessage(),
