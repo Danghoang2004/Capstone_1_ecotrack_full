@@ -15,9 +15,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
-/**
- * API endpoint để lấy hotspot (báo cáo đã gom nhóm bằng DBSCAN)
- */
 @RestController
 @RequestMapping("/api/public/hotspots")
 @Tag(name = "Hotspot", description = "API lấy dữ liệu điểm nóng (hotspot)")
