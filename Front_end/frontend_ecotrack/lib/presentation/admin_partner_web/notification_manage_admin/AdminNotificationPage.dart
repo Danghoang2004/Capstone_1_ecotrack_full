@@ -68,12 +68,12 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
                   ),
                 ),
                 onPressed: () async {
-                  // Sau khi tạo xong và quay lại, tự động load lại danh sách
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CreateNotificationScreen(),
-                    ),
+                  // Mở form tạo thông báo dạng dialog ở giữa màn hình
+                  await showDialog<void>(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (dialogContext) =>
+                        const CreateNotificationScreen(),
                   );
                   _fetchNotifications();
                 },

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/widgets/campaign_takes_place/CampaignTakesPlaceSection.dart';
-
 import '../widgets/header/header.dart';
 import '../widgets/welcome/welcome_card.dart';
 import '../widgets/actions/mini_game.dart';
 import '../widgets/actions/reward.dart';
 import '../widgets/ranking/ranking_section.dart';
-import '../widgets/recent_activity/recent_activity_section.dart';
 import '../widgets/welcome_dialog/welcome_dialog.dart';
 import '../controllers/home_controller.dart';
 import 'package:frontend_ecotrack/core/services/notification_service.dart';
@@ -85,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
     } catch (e) {
-      print("❌ Lỗi hiển thị thông báo Home: $e");
+      print("Lỗi hiển thị thông báo Home: $e");
     }
   }
 
@@ -130,9 +127,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
     final isDesktop = screenWidth > 900;
     final maxContentWidth = isDesktop ? 1200.0 : double.infinity;
+    final double contentBottomPadding = isDesktop
+        ? 24
+        : (mediaQuery.padding.bottom + 88);
 
     // --- FIX: Đặt status bar trong suốt để HeaderWidget có thể hiển thị màu nền xuyên qua ---
     SystemChrome.setSystemUIOverlayStyle(
@@ -163,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: SingleChildScrollView(
                 physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 16),
+                padding: EdgeInsets.only(bottom: contentBottomPadding),
                 child: Center(
                   child: Container(
                     constraints: BoxConstraints(maxWidth: maxContentWidth),
@@ -506,6 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          SizedBox(height: 50),
         ],
       ),
     );

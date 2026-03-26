@@ -18,7 +18,6 @@ import 'package:frontend_ecotrack/presentation/partner_web/dashboard_partner/Par
 import 'package:frontend_ecotrack/presentation/user_app/voucher/rewards_screen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/forgot_password_screen.dart';
 import '../data/models/ProfileView.dart';
-import 'auth_user/register_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/profile/BadgeListScreen.dart';
 
 class AppRouter {

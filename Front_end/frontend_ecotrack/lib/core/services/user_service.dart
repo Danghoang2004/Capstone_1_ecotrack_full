@@ -10,7 +10,41 @@ class UserService {
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   late final ApiClient apiClient = ApiClient(storage: storage);
 
-  Future<ProfileView> getProfileView() async {
+  static ProfileView? _cachedProfile;
+  static DateTime? _profileCachedAt;
+  static Future<ProfileView>? _inFlightProfileRequest;
+  static const Duration _profileCacheTtl = Duration(seconds: 8);
+
+  static void clearProfileCache() {
+    _cachedProfile = null;
+    _profileCachedAt = null;
+    _inFlightProfileRequest = null;
+  }
+
+  Future<ProfileView> getProfileView({bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        _cachedProfile != null &&
+        _profileCachedAt != null &&
+        DateTime.now().difference(_profileCachedAt!) < _profileCacheTtl) {
+      return _cachedProfile!;
+    }
+
+    if (!forceRefresh && _inFlightProfileRequest != null) {
+      return _inFlightProfileRequest!;
+    }
+
+    _inFlightProfileRequest = _fetchProfileView();
+    try {
+      final profile = await _inFlightProfileRequest!;
+      _cachedProfile = profile;
+      _profileCachedAt = DateTime.now();
+      return profile;
+    } finally {
+      _inFlightProfileRequest = null;
+    }
+  }
+
+  Future<ProfileView> _fetchProfileView() async {
     final response = await apiClient.get("/api/user/profile");
 
     // Nếu có 401, ApiClient đã xử lý (gọi SessionService.handleSessionExpired())
@@ -164,7 +198,10 @@ class UserService {
 
       throw Exception(errorMsg);
     }
+
+    clearProfileCache();
   }
+
   Future<List<BadgeModel>> getAllBadges() async {
     // 1. Gọi API bằng apiClient
     final response = await apiClient.get("/api/user/badges/all");
@@ -191,7 +228,6 @@ class UserService {
     }
   }
 }
-
 
 class UnauthorizedException implements Exception {
   final String message;

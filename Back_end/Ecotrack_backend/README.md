@@ -13,6 +13,8 @@ Backend của dự án Ecotrack — API REST được triển khai bằng Spring
 
 **Lưu ý quan trọng về bảo mật:** không lưu thông tin nhạy cảm (mật khẩu DB, token, mật khẩu email) trong mã nguồn. Sử dụng biến môi trường hoặc công cụ secrets.
 
+D:\project_Capstone_1_full\Back_end\Ecotrack_backend 
+.\mvnw.cmd spring-boot:run
 ---
 
 **1) Chuẩn bị (Prerequisites)**

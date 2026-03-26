@@ -1,6 +1,7 @@
 package capstone_1.Ecotrack_backend.controller.user;
 
 import capstone_1.Ecotrack_backend.dto.response.HotspotClusterResponse;
+import capstone_1.Ecotrack_backend.dto.response.HotspotPredictResponse;
 import capstone_1.Ecotrack_backend.service.HotspotClusteringService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -69,6 +70,38 @@ public class HotspotController {
 
         if (min_samples != null && min_samples < 1) {
             throw new IllegalArgumentException("min_samples phải >= 1");
+        }
+    }
+
+    private void validatePredictionParams(
+            Integer horizonDays,
+            Integer gridSizeM,
+            Double topPercent,
+            Integer minPredictedCount,
+            Double dbscanEpsKm,
+            Integer dbscanMinSamples) {
+        if (horizonDays != null && (horizonDays < 1 || horizonDays > 14)) {
+            throw new IllegalArgumentException("horizonDays phải trong khoảng [1, 14]");
+        }
+
+        if (gridSizeM != null && (gridSizeM < 50 || gridSizeM > 1000)) {
+            throw new IllegalArgumentException("gridSizeM phải trong khoảng [50, 1000]");
+        }
+
+        if (topPercent != null && (topPercent <= 0 || topPercent > 1)) {
+            throw new IllegalArgumentException("topPercent phải trong khoảng (0, 1]");
+        }
+
+        if (minPredictedCount != null && minPredictedCount < 1) {
+            throw new IllegalArgumentException("minPredictedCount phải >= 1");
+        }
+
+        if (dbscanEpsKm != null && dbscanEpsKm <= 0) {
+            throw new IllegalArgumentException("dbscanEpsKm phải > 0");
+        }
+
+        if (dbscanMinSamples != null && dbscanMinSamples < 1) {
+            throw new IllegalArgumentException("dbscanMinSamples phải >= 1");
         }
     }
 
@@ -166,6 +199,146 @@ public class HotspotController {
                     minLat, maxLat, minLng, maxLng,
                     fromDateTime, toDateTime,
                     eps_km, min_samples);
+            return ResponseEntity.ok(response);
+
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(
+                    "INVALID_DATE_FORMAT",
+                    "Định dạng ngày không hợp lệ. Sử dụng ISO-8601: yyyy-MM-ddTHH:mm:ss. Lỗi: " + e.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErrorResponse(
+                    "INVALID_PARAMETERS",
+                    "Tham số không hợp lệ: " + e.getMessage(),
+                    HttpStatus.UNPROCESSABLE_ENTITY.value()));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
+                    "INTERNAL_ERROR",
+                    "Lỗi server: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
+
+    @GetMapping("/predict")
+    @Operation(summary = "Dự đoán hotspot 7 ngày tới cho toàn bộ dữ liệu")
+    public ResponseEntity<?> predictHotspots(
+            @Parameter(description = "Thời gian bắt đầu (ISO-8601)") @RequestParam(required = false) String fromDate,
+
+            @Parameter(description = "Thời gian kết thúc (ISO-8601)") @RequestParam(required = false) String toDate,
+
+            @Parameter(description = "Số ngày dự đoán") @RequestParam(required = false) Integer horizonDays,
+
+            @Parameter(description = "Kích thước grid (m)") @RequestParam(required = false) Integer gridSizeM,
+
+            @Parameter(description = "Top phần trăm ô rủi ro") @RequestParam(required = false) Double topPercent,
+
+            @Parameter(description = "Ngưỡng dự đoán tối thiểu") @RequestParam(required = false) Integer minPredictedCount,
+
+            @Parameter(description = "DBSCAN eps (km)") @RequestParam(required = false) Double dbscanEpsKm,
+
+            @Parameter(description = "DBSCAN min samples") @RequestParam(required = false) Integer dbscanMinSamples) {
+        try {
+            LocalDateTime fromDateTime = parseDatetime(fromDate);
+            LocalDateTime toDateTime = parseDatetime(toDate);
+
+            validateDateRange(fromDateTime, toDateTime);
+            validatePredictionParams(
+                    horizonDays,
+                    gridSizeM,
+                    topPercent,
+                    minPredictedCount,
+                    dbscanEpsKm,
+                    dbscanMinSamples);
+
+            HotspotPredictResponse response = clusteringService.predictAllReports(
+                    fromDateTime,
+                    toDateTime,
+                    horizonDays,
+                    gridSizeM,
+                    topPercent,
+                    minPredictedCount,
+                    dbscanEpsKm,
+                    dbscanMinSamples);
+
+            return ResponseEntity.ok(response);
+
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(
+                    "INVALID_DATE_FORMAT",
+                    "Định dạng ngày không hợp lệ. Sử dụng ISO-8601: yyyy-MM-ddTHH:mm:ss. Lỗi: " + e.getMessage(),
+                    HttpStatus.BAD_REQUEST.value()));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErrorResponse(
+                    "INVALID_PARAMETERS",
+                    "Tham số không hợp lệ: " + e.getMessage(),
+                    HttpStatus.UNPROCESSABLE_ENTITY.value()));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
+                    "INTERNAL_ERROR",
+                    "Lỗi server: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
+
+    @GetMapping("/predict/area")
+    @Operation(summary = "Dự đoán hotspot 7 ngày tới trong một vùng map")
+    public ResponseEntity<?> predictHotspotsInArea(
+            @Parameter(description = "Vĩ độ tối thiểu") @RequestParam Double minLat,
+
+            @Parameter(description = "Vĩ độ tối đa") @RequestParam Double maxLat,
+
+            @Parameter(description = "Kinh độ tối thiểu") @RequestParam Double minLng,
+
+            @Parameter(description = "Kinh độ tối đa") @RequestParam Double maxLng,
+
+            @Parameter(description = "Thời gian bắt đầu (ISO-8601)") @RequestParam(required = false) String fromDate,
+
+            @Parameter(description = "Thời gian kết thúc (ISO-8601)") @RequestParam(required = false) String toDate,
+
+            @Parameter(description = "Số ngày dự đoán") @RequestParam(required = false) Integer horizonDays,
+
+            @Parameter(description = "Kích thước grid (m)") @RequestParam(required = false) Integer gridSizeM,
+
+            @Parameter(description = "Top phần trăm ô rủi ro") @RequestParam(required = false) Double topPercent,
+
+            @Parameter(description = "Ngưỡng dự đoán tối thiểu") @RequestParam(required = false) Integer minPredictedCount,
+
+            @Parameter(description = "DBSCAN eps (km)") @RequestParam(required = false) Double dbscanEpsKm,
+
+            @Parameter(description = "DBSCAN min samples") @RequestParam(required = false) Integer dbscanMinSamples) {
+        try {
+            validateCoordinates(minLat, maxLat, minLng, maxLng);
+
+            LocalDateTime fromDateTime = parseDatetime(fromDate);
+            LocalDateTime toDateTime = parseDatetime(toDate);
+
+            validateDateRange(fromDateTime, toDateTime);
+            validatePredictionParams(
+                    horizonDays,
+                    gridSizeM,
+                    topPercent,
+                    minPredictedCount,
+                    dbscanEpsKm,
+                    dbscanMinSamples);
+
+            HotspotPredictResponse response = clusteringService.predictReportsInArea(
+                    minLat,
+                    maxLat,
+                    minLng,
+                    maxLng,
+                    fromDateTime,
+                    toDateTime,
+                    horizonDays,
+                    gridSizeM,
+                    topPercent,
+                    minPredictedCount,
+                    dbscanEpsKm,
+                    dbscanMinSamples);
+
             return ResponseEntity.ok(response);
 
         } catch (DateTimeParseException e) {

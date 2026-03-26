@@ -126,13 +126,18 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
     ];
     WidgetsBinding.instance.addObserver(this);
     SessionCheckerService.checkNow();
-    SessionCheckerService.startChecking(interval: const Duration(seconds: 3));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      SessionCheckerService.checkNow();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    SessionCheckerService.stopChecking();
     super.dispose();
   }
 

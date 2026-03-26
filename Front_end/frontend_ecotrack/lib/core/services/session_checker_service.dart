@@ -1,15 +1,17 @@
 import 'dart:async';
-import 'package:frontend_ecotrack/core/services/api_client.dart';
+import 'dart:convert';
+
+import 'package:frontend_ecotrack/core/services/session_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SessionCheckerService {
   static Timer? _timer;
   static bool _isRunning = false;
+  static bool _isChecking = false;
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
-  static final ApiClient _apiClient = ApiClient(storage: _storage);
 
-  // Bắt đầu check session định kỳ (mỗi 5 giây)
-  static void startChecking({Duration interval = const Duration(seconds: 5)}) {
+  // Bắt đầu check session định kỳ với tần suất thấp để tránh spam API.
+  static void startChecking({Duration interval = const Duration(minutes: 10)}) {
     if (_isRunning) {
       return; // Đã chạy rồi thì không chạy lại
     }
@@ -29,24 +31,42 @@ class SessionCheckerService {
     _isRunning = false;
   }
 
-  // Check session bằng cách gọi API profile (nhẹ nhất)
+  // Check session local bằng JWT exp để không tạo request lặp.
   static Future<void> _checkSession() async {
+    if (_isChecking) return;
+    _isChecking = true;
+
     try {
-      // Kiểm tra xem có token không
       final token = await _storage.read(key: 'jwt_token');
       if (token == null) {
-        // Không có token thì không cần check
-        stopChecking(); // Dừng check nếu không có token
+        stopChecking();
         return;
       }
 
-      // Gọi API profile để check session
-      // Nếu user bị disable, backend sẽ trả 401
-      // ApiClient._handleResponse sẽ tự động gọi SessionService.handleSessionExpired()
-      await _apiClient.get("/api/user/profile");
-    } catch (e, stackTrace) {
-      // Lỗi đã được xử lý trong ApiClient
+      if (_isJwtExpired(token)) {
+        stopChecking();
+        await SessionService.handleSessionExpired();
+      }
+    } catch (_) {
+      // Nếu token parse lỗi thì bỏ qua, request thật sẽ tự xử lý 401.
+    } finally {
+      _isChecking = false;
     }
+  }
+
+  static bool _isJwtExpired(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return false;
+
+    final payload =
+        jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))))
+            as Map<String, dynamic>;
+
+    final exp = payload['exp'];
+    if (exp is! num) return false;
+
+    final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return nowSeconds >= exp.toInt();
   }
 
   // Check session ngay lập tức (không chờ interval)

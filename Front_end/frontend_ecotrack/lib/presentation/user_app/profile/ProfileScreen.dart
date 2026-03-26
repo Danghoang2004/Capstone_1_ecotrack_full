@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-// =================== UI CHÍNH ===================
+  // =================== UI CHÍNH ===================
 
   Widget _buildProfileContent(ProfileView view) {
     return CustomScrollView(
@@ -69,31 +69,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildSliverAppBar(view),
         SliverToBoxAdapter(
           child: Container(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 16.0, top: 16.0), // Thêm chút top padding để cách ảnh bìa ra một tí xíu nếu cần
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              bottom: 5.0,
+              top: 10.0,
+            ), // Thêm chút top padding để cách ảnh bìa ra một tí xíu nếu cần
             color: Colors.transparent,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatsGrid(view),
-                
-                const SizedBox(height: 0), // SỬA: Giảm từ 20 xuống 12
 
+                const SizedBox(height: 4),
                 //Khu vực Huy hiệu
                 _buildAchievementsSection(context),
 
-                const SizedBox(height: 0), // SỬA: Giảm từ 24 xuống 12
-                
-                _buildRecentActivitySection(view.recentActivities),
-                
-                const SizedBox(height: 0), // SỬA: Giảm từ 24 xuống 16
+                const SizedBox(height: 10), // SỬA: Giảm từ 24 xuống 12
 
+                _buildRecentActivitySection(view.recentActivities),
+
+                const SizedBox(height: 10), // SỬA: Giảm từ 24 xuống 16
                 // Nút "Xem bảng xếp hạng"
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
+                  height: 48,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/leaderboard');
+                      Navigator.pushNamed(context, '/ranking');
                     },
                     icon: const Icon(
                       Icons.emoji_events_outlined,
@@ -110,11 +113,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: OutlinedButton.styleFrom(
                       backgroundColor: Colors.white,
                       side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 40), // Giữ nguyên khoảng trống dưới đáy để không bị lẹm thanh điều hướng
+                const SizedBox(
+                  height: 70,
+                ), // Giữ nguyên khoảng trống dưới đáy để không bị lẹm thanh điều hướng
               ],
             ),
           ),
@@ -122,13 +129,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-  
+
   /// Skeleton
   Widget _buildProfileSkeleton() {
     final placeholder = ProfileView(
-      userId: 0, fullName: 'Đang tải...', avatarUrl: '', email: '', username: '',
-      location: null, levelName: null, levelIcon: null, points: 0, minPoints: 0,
-      maxPoints: 100, reportCount: 0, groupCount: 0, rank: null, badges: [], recentActivities: [],
+      userId: 0,
+      fullName: 'Đang tải...',
+      avatarUrl: '',
+      email: '',
+      username: '',
+      location: null,
+      levelName: null,
+      levelIcon: null,
+      points: 0,
+      minPoints: 0,
+      maxPoints: 100,
+      reportCount: 0,
+      groupCount: 0,
+      rank: null,
+      badges: [],
+      recentActivities: [],
     );
     return _buildProfileContent(placeholder);
   }
@@ -137,8 +157,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   SliverAppBar _buildSliverAppBar(ProfileView view) {
     final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    final String? avatarNetworkUrl = view.avatarUrl.isNotEmpty ? '$baseUrl${view.avatarUrl}' : null;
-    final displayName = view.fullName.isNotEmpty ? view.fullName : (view.username.isNotEmpty ? view.username : 'Người dùng');
+    final String? avatarNetworkUrl = view.avatarUrl.isNotEmpty
+        ? '$baseUrl${view.avatarUrl}'
+        : null;
+    final displayName = view.fullName.isNotEmpty
+        ? view.fullName
+        : (view.username.isNotEmpty ? view.username : 'Người dùng');
 
     final double min = (view.minPoints ?? 0).toDouble();
     final double max = (view.maxPoints ?? 100).toDouble();
@@ -185,7 +209,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_none, color: Colors.white),
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Colors.white,
+                    ),
                     onPressed: () {},
                   ),
                   IconButton(
@@ -233,9 +260,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.green.shade600, borderRadius: BorderRadius.circular(12)),
-                  child: Text("Cấp độ: ${view.levelName ?? 'Thành viên mới'}", style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade600,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    "Cấp độ: ${view.levelName ?? 'Thành viên mới'}",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -246,7 +286,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       size: 14,
                     ),
                     const SizedBox(width: 4),
-                    Text(view.location ?? 'Chưa cập nhật địa điểm', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    Text(
+                      view.location ?? 'Chưa cập nhật địa điểm',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -280,7 +323,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: LinearProgressIndicator(
                           value: percent,
                           backgroundColor: Colors.white.withOpacity(0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            Colors.greenAccent,
+                          ),
                           minHeight: 7,
                         ),
                       ),
@@ -302,12 +347,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.5,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.5,
       children: [
-        _statCard(color: const Color(0xFF2E7D32), icon: Icons.eco, title: view.points.toString(), subtitle: 'Eco Points'),
-        _statCard(color: const Color(0xFFF57C00), icon: Icons.camera_alt, title: view.reportCount.toString(), subtitle: 'Báo cáo rác'),
-        _statCard(color: const Color(0xFF3F51B5), icon: Icons.people, title: view.groupCount.toString(), subtitle: 'Chiến dịch'),
-        _statCard(color: const Color(0xFFFF7043), icon: Icons.leaderboard, title: view.rank != null ? '#${view.rank}' : '-', subtitle: 'Xếp hạng'),
+        _statCard(
+          color: const Color(0xFF2E7D32),
+          icon: Icons.eco,
+          title: view.points.toString(),
+          subtitle: 'Eco Points',
+        ),
+        _statCard(
+          color: const Color(0xFFF57C00),
+          icon: Icons.camera_alt,
+          title: view.reportCount.toString(),
+          subtitle: 'Báo cáo rác',
+        ),
+        _statCard(
+          color: const Color(0xFF3F51B5),
+          icon: Icons.people,
+          title: view.groupCount.toString(),
+          subtitle: 'Chiến dịch',
+        ),
+        _statCard(
+          color: const Color(0xFFFF7043),
+          icon: Icons.leaderboard,
+          title: view.rank != null ? '#${view.rank}' : '-',
+          subtitle: 'Xếp hạng',
+        ),
       ],
     );
   }
@@ -330,8 +397,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Icon(icon, color: Colors.white, size: 24),
             const SizedBox(height: 4),
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -341,76 +419,112 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================== HUY HIỆU (100% DỮ LIỆU THẬT) ===================
   Widget _buildAchievementsSection(BuildContext context) {
     return FutureBuilder<List<BadgeModel>>(
-        future: _badgesFuture,
-        builder: (context, snapshot) {
-          // Đang chờ dữ liệu API
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Container(
-              height: 150,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
-              child: const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
-            );
-          }
-
-          // Lấy dữ liệu thật từ Backend (API /api/user/badges/all)
-          List<BadgeModel> realBadges = snapshot.data ?? [];
-
-          realBadges.sort((a, b) {
-            final aUnlocked = a.awardedAt != null;
-            final bUnlocked = b.awardedAt != null;
-            if (aUnlocked && !bUnlocked) return -1;
-            if (!aUnlocked && bUnlocked) return 1;
-            return 0;
-          });
-
-          final effective = realBadges.take(3).toList();
-
+      future: _badgesFuture,
+      builder: (context, snapshot) {
+        // Đang chờ dữ liệu API
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tiêu đề & Nút xem tất cả
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Huy hiệu thành tích', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(context, '/badge_list');
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                        child: Text("Xem tất cả >", style: TextStyle(color: Color(0xFF388E3C), fontSize: 13, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Render Grid
-                if (effective.isNotEmpty) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: effective.take(3).map((e) => Expanded(child: _buildAchievementFromBadge(e))).toList(),
-                  ),
-                  if (effective.length > 3) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: effective.skip(3).map((e) => Expanded(child: _buildAchievementFromBadge(e))).toList(),
-                    ),
-                  ]
-                ] else ...[
-                  const Center(child: Text("Chưa có huy hiệu nào", style: TextStyle(color: Colors.grey))),
-                ]
-              ],
+            height: 150,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
             ),
           );
         }
+
+        // Lấy dữ liệu thật từ Backend (API /api/user/badges/all)
+        List<BadgeModel> realBadges = snapshot.data ?? [];
+
+        realBadges.sort((a, b) {
+          final aUnlocked = a.awardedAt != null;
+          final bUnlocked = b.awardedAt != null;
+          if (aUnlocked && !bUnlocked) return -1;
+          if (!aUnlocked && bUnlocked) return 1;
+          return 0;
+        });
+
+        final effective = realBadges.take(3).toList();
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tiêu đề & Nút xem tất cả
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Huy hiệu thành tích',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/badge_list');
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: 4.0,
+                        horizontal: 8.0,
+                      ),
+                      child: Text(
+                        "Xem tất cả >",
+                        style: TextStyle(
+                          color: Color(0xFF388E3C),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Render Grid
+              if (effective.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: effective
+                      .take(3)
+                      .map(
+                        (e) => Expanded(child: _buildAchievementFromBadge(e)),
+                      )
+                      .toList(),
+                ),
+                if (effective.length > 3) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: effective
+                        .skip(3)
+                        .map(
+                          (e) => Expanded(child: _buildAchievementFromBadge(e)),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ] else ...[
+                const Center(
+                  child: Text(
+                    "Chưa có huy hiệu nào",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -419,25 +533,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
     String? imageUrl;
     if (b.iconUrl != null && b.iconUrl!.isNotEmpty) {
-      imageUrl = b.iconUrl!.startsWith('http') ? b.iconUrl : '$baseUrl/images/${b.iconUrl}';
+      imageUrl = b.iconUrl!.startsWith('http')
+          ? b.iconUrl
+          : '$baseUrl/images/${b.iconUrl}';
     }
 
     return Column(
       children: [
         Container(
-          width: 60, height: 60,
-          decoration: BoxDecoration(color: isUnlocked ? Colors.green.shade50 : Colors.grey.shade200, borderRadius: BorderRadius.circular(16)),
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: isUnlocked ? Colors.green.shade50 : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Center(
             child: !isUnlocked
                 ? const Icon(Icons.lock, color: Colors.amber, size: 28)
                 : (imageUrl != null
-                ? Image.network(imageUrl, width: 40, height: 40, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const Icon(Icons.star, color: Colors.green))
-                : const Icon(Icons.star, color: Colors.green, size: 30)),
+                      ? Image.network(
+                          imageUrl,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) =>
+                              const Icon(Icons.star, color: Colors.green),
+                        )
+                      : const Icon(Icons.star, color: Colors.green, size: 30)),
           ),
         ),
         const SizedBox(height: 8),
-        Text(b.badgeName.isNotEmpty ? b.badgeName : 'Huy hiệu', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-        Text(b.description ?? (isUnlocked ? 'Thường' : 'Khóa'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        Text(
+          b.badgeName.isNotEmpty ? b.badgeName : 'Huy hiệu',
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        ),
+        Text(
+          b.description ?? (isUnlocked ? 'Thường' : 'Khóa'),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.grey, fontSize: 10),
+        ),
       ],
     );
   }
@@ -454,16 +591,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Hoạt động gần đây', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              'Hoạt động gần đây',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  CircleAvatar(radius: 24, backgroundColor: Colors.grey[200], child: Icon(Icons.event_note, color: Colors.grey[400])),
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: Colors.grey[200],
+                    child: Icon(Icons.event_note, color: Colors.grey[400]),
+                  ),
                   const SizedBox(width: 12),
-                  const Expanded(child: Text("Chưa có hoạt động", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey))),
+                  const Expanded(
+                    child: Text(
+                      "Chưa có hoạt động",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -484,14 +639,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Hoạt động gần đây', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text(
+                'Hoạt động gần đây',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               GestureDetector(
                 onTap: () {
                   Navigator.pushNamed(context, '/activity_history');
                 },
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                  child: Text("Xem tất cả >", style: TextStyle(color: Color(0xFF388E3C), fontSize: 13, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    "Xem tất cả >",
+                    style: TextStyle(
+                      color: Color(0xFF388E3C),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -504,27 +669,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const CircleAvatar(radius: 22, backgroundColor: Color(0x335EAC24), child: Icon(Icons.history, color: Color(0xFF5EAC24))),
+                  const CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Color(0x335EAC24),
+                    child: Icon(Icons.history, color: Color(0xFF5EAC24)),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(a.description, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(
+                          a.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text("${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}", style: TextStyle(color: Colors.grey[700], fontSize: 10)),
+                        Text(
+                          "${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}",
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 10,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(999)),
-                    child: Text(pointsText, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      pointsText,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -554,6 +754,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (diff.inHours < 1) return '${diff.inMinutes} phút trước';
       if (diff.inHours < 24) return '${diff.inHours} giờ trước';
       return '${diff.inDays} ngày trước';
-    } catch (_) { return dateString; }
+    } catch (_) {
+      return dateString;
+    }
   }
 }

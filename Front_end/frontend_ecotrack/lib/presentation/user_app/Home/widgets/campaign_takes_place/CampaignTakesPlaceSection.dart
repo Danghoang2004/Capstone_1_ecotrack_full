@@ -15,6 +15,38 @@ class CampaignTakesPlaceSection extends StatefulWidget {
 class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
   CampaignTakesPlaceController get controller => widget.controller;
 
+  Widget _buildCampaignImage(String imageUrl) {
+    final bool hasValidUrl =
+        imageUrl.trim().isNotEmpty &&
+        (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+
+    if (!hasValidUrl) {
+      return _buildImagePlaceholder();
+    }
+
+    return Image.network(
+      imageUrl,
+      width: 110,
+      height: 80,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 110,
+      height: 80,
+      color: Colors.green.shade50,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        size: 30,
+        color: Colors.green,
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -94,12 +126,7 @@ class _CampaignTakesPlaceSectionState extends State<CampaignTakesPlaceSection> {
           // Ảnh
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              c.imageUrl,
-              width: 110,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
+            child: _buildCampaignImage(c.imageUrl),
           ),
           const SizedBox(width: 12),
 

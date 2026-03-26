@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:frontend_ecotrack/core/services/hotspot_service.dart';
 import 'package:frontend_ecotrack/data/models/Report.dart';
+import 'package:frontend_ecotrack/data/models/hotspot_models.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -25,33 +27,261 @@ class _MapPageState extends State<MapPage> {
   double _currentZoom = 14.0;
 
   final ApiClient apiClient = ApiClient(storage: const FlutterSecureStorage());
+  final HotspotService _hotspotService = HotspotService();
 
   List<Report> _reports = [];
   // Biến lưu trữ báo cáo đã gộp theo tọa độ
   Map<String, List<Report>> _groupedReports = {};
 
   Timer? _timer;
+  Timer? _hotspotDebounce;
   List<LatLng> _routePoints = [];
   bool _isRouting = false;
+  bool _isLoadingHotspots = false;
+  bool _isHeatmapMode = false;
   LatLng? _myLocation;
+  List<PredictedHeatmapPoint> _observedHeatmapPoints = [];
+  List<PredictedHeatmapPoint> _predictedHeatmapPoints = [];
   StreamSubscription<Position>? _positionStreamSubscription;
+
+  void _startReportsPolling() {
+    _timer?.cancel();
+    _timer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _fetchReports(),
+    );
+  }
+
+  void _stopReportsPolling() {
+    _timer?.cancel();
+    _timer = null;
+  }
 
   @override
   void initState() {
     super.initState();
     _fetchReports();
-    _timer = Timer.periodic(
-      const Duration(seconds: 10),
-      (_) => _fetchReports(),
-    );
+    _startReportsPolling();
     _startLiveTracking();
   }
 
   @override
+  void deactivate() {
+    _stopReportsPolling();
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _startReportsPolling();
+  }
+
+  @override
   void dispose() {
-    _timer?.cancel();
+    _stopReportsPolling();
+    _hotspotDebounce?.cancel();
     _positionStreamSubscription?.cancel();
     super.dispose();
+  }
+
+  void _onMapPositionChanged(MapPosition position, bool hasGesture) {
+    _center = position.center ?? _center;
+    _currentZoom = position.zoom ?? _currentZoom;
+
+    if (!_isHeatmapMode) return;
+
+    _hotspotDebounce?.cancel();
+    _hotspotDebounce = Timer(const Duration(milliseconds: 600), () {
+      _fetchHotspotsFromViewport(position.bounds);
+    });
+  }
+
+  Future<void> _fetchHotspotsFromViewport([LatLngBounds? bounds]) async {
+    final LatLngBounds? targetBounds = bounds ?? _mapController.bounds;
+    if (targetBounds == null || _isLoadingHotspots || !_isHeatmapMode) return;
+
+    _isLoadingHotspots = true;
+    try {
+      final clusterFuture = _hotspotService.fetchClusterInArea(
+        minLat: targetBounds.south,
+        maxLat: targetBounds.north,
+        minLng: targetBounds.west,
+        maxLng: targetBounds.east,
+      );
+
+      final predictFuture = _hotspotService.fetchPredictionInArea(
+        minLat: targetBounds.south,
+        maxLat: targetBounds.north,
+        minLng: targetBounds.west,
+        maxLng: targetBounds.east,
+      );
+
+      final clusterResult = await clusterFuture;
+      final predictResult = await predictFuture;
+
+      if (!mounted) return;
+
+      // DEBUG: Log dữ liệu
+      debugPrint('Cluster hotspots: ${clusterResult.hotspots.length}');
+      debugPrint(
+        'Predicted heatmap points: ${predictResult.heatmapPoints.length}',
+      );
+
+      setState(() {
+        _observedHeatmapPoints = _toObservedHeatmapPoints(
+          clusterResult.hotspots,
+        );
+        _predictedHeatmapPoints = predictResult.heatmapPoints;
+
+        // Fallback: nếu API chưa có hotspot thì dựng heatmap từ báo cáo trong vùng nhìn thấy.
+        if (_observedHeatmapPoints.isEmpty && _predictedHeatmapPoints.isEmpty) {
+          _observedHeatmapPoints = _buildFallbackHeatmapFromReports(
+            targetBounds,
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Lỗi fetch hotspot: $e');
+    } finally {
+      _isLoadingHotspots = false;
+    }
+  }
+
+  List<PredictedHeatmapPoint> _buildFallbackHeatmapFromReports(
+    LatLngBounds bounds,
+  ) {
+    final reportsInView = _reports.where((r) {
+      if (r.status == 'REJECTED') return false;
+      return r.latitude >= bounds.south &&
+          r.latitude <= bounds.north &&
+          r.longitude >= bounds.west &&
+          r.longitude <= bounds.east;
+    }).toList();
+
+    if (reportsInView.isEmpty) return [];
+
+    const double cellSize = 0.0035; // ~350-400m
+    final Map<String, int> counts = {};
+    final Map<String, double> sumLat = {};
+    final Map<String, double> sumLng = {};
+
+    for (final r in reportsInView) {
+      final int latCell = (r.latitude / cellSize).floor();
+      final int lngCell = (r.longitude / cellSize).floor();
+      final key = '$latCell:$lngCell';
+
+      counts[key] = (counts[key] ?? 0) + 1;
+      sumLat[key] = (sumLat[key] ?? 0) + r.latitude;
+      sumLng[key] = (sumLng[key] ?? 0) + r.longitude;
+    }
+
+    final int maxCount = counts.values.fold(1, (a, b) => b > a ? b : a);
+    return counts.entries.map((e) {
+      final key = e.key;
+      final count = e.value;
+      return PredictedHeatmapPoint(
+        lat: (sumLat[key] ?? 0) / count,
+        lng: (sumLng[key] ?? 0) / count,
+        intensity: (count / maxCount).clamp(0.0, 1.0),
+        predictedCount7d: count,
+      );
+    }).toList();
+  }
+
+  List<PredictedHeatmapPoint> _toObservedHeatmapPoints(
+    List<HotspotZone> zones,
+  ) {
+    if (zones.isEmpty) return [];
+
+    final int maxCount = zones
+        .map((z) => z.reportCount)
+        .fold<int>(1, (acc, value) => value > acc ? value : acc);
+
+    return zones
+        .map(
+          (z) => PredictedHeatmapPoint(
+            lat: z.centerLat,
+            lng: z.centerLng,
+            intensity: (z.reportCount / maxCount).clamp(0.0, 1.0),
+            predictedCount7d: z.reportCount,
+          ),
+        )
+        .toList();
+  }
+
+  Color _heatColor(double intensity, {required bool predicted}) {
+    final double t = intensity.clamp(0.0, 1.0);
+    if (predicted) {
+      final Color c1 = const Color(0xFFFFE082);
+      final Color c2 = const Color(0xFFFF8A65);
+      final Color c3 = const Color(0xFFD32F2F);
+      return t < 0.55
+          ? Color.lerp(c1, c2, t / 0.55)!
+          : Color.lerp(c2, c3, (t - 0.55) / 0.45)!;
+    }
+
+    final Color c1 = const Color(0xFFFFF176);
+    final Color c2 = const Color(0xFFFFB74D);
+    final Color c3 = const Color(0xFFFF5722);
+    return t < 0.55
+        ? Color.lerp(c1, c2, t / 0.55)!
+        : Color.lerp(c2, c3, (t - 0.55) / 0.45)!;
+  }
+
+  List<CircleMarker> _buildHeatCircles(
+    List<PredictedHeatmapPoint> points, {
+    required bool predicted,
+  }) {
+    final List<CircleMarker> circles = [];
+    const List<double> radiusScale = [2.2, 1.8, 1.45, 1.15, 0.85];
+    const List<double> opacityScale = [0.06, 0.09, 0.13, 0.19, 0.28];
+
+    for (final point in points) {
+      final double t = point.intensity.clamp(0.0, 1.0);
+      final double smoothT = Curves.easeOutCubic.transform(t);
+      final double baseRadius = predicted
+          ? 120 + (smoothT * 200)
+          : 110 + (smoothT * 185);
+
+      for (int i = 0; i < radiusScale.length; i++) {
+        final double layerT = (smoothT + (i * 0.04)).clamp(0.0, 1.0);
+        final Color layerColor = _heatColor(layerT, predicted: predicted);
+        circles.add(
+          CircleMarker(
+            point: LatLng(point.lat, point.lng),
+            radius: baseRadius * radiusScale[i],
+            useRadiusInMeter: true,
+            color: layerColor.withOpacity(
+              (opacityScale[i] * (0.8 + smoothT * 0.8)).clamp(0.0, 0.45),
+            ),
+            borderStrokeWidth: 0,
+          ),
+        );
+      }
+
+      circles.add(
+        CircleMarker(
+          point: LatLng(point.lat, point.lng),
+          radius: baseRadius * 0.55,
+          useRadiusInMeter: true,
+          color: _heatColor(
+            (smoothT + 0.08).clamp(0.0, 1.0),
+            predicted: predicted,
+          ).withOpacity((0.22 + smoothT * 0.30).clamp(0.0, 0.55)),
+          borderStrokeWidth: 0,
+        ),
+      );
+    }
+    return circles;
+  }
+
+  void _toggleHeatmapMode() {
+    final bool toHeatmap = !_isHeatmapMode;
+    setState(() => _isHeatmapMode = toHeatmap);
+    if (toHeatmap) {
+      _fetchHotspotsFromViewport();
+    }
   }
 
   Future<void> _startLiveTracking() async {
@@ -395,9 +625,15 @@ class _MapPageState extends State<MapPage> {
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
-          _buildLegendItem(Colors.red, "Chờ duyệt"),
-          _buildLegendItem(Colors.orange, "Đã xác thực"),
-          _buildLegendItem(Colors.green, "Đã dọn dẹp"),
+          if (_isHeatmapMode) ...[
+            _buildLegendItem(Colors.yellow, "Nhiệt thấp"),
+            _buildLegendItem(Colors.orange, "Nhiệt trung bình"),
+            _buildLegendItem(Colors.red, "Nhiệt cao / nguy cơ cao"),
+          ] else ...[
+            _buildLegendItem(Colors.red, "Chờ duyệt"),
+            _buildLegendItem(Colors.orange, "Đã xác thực"),
+            _buildLegendItem(Colors.green, "Đã dọn dẹp"),
+          ],
         ],
       ),
     );
@@ -430,12 +666,30 @@ class _MapPageState extends State<MapPage> {
         children: [
           FlutterMap(
             mapController: _mapController,
-            options: MapOptions(center: _center, zoom: _currentZoom),
+            options: MapOptions(
+              center: _center,
+              zoom: _currentZoom,
+              onPositionChanged: _onMapPositionChanged,
+            ),
             children: [
               TileLayer(
-                urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.ecotrack.frontend_ecotrack',
               ),
+              if (_isHeatmapMode && _observedHeatmapPoints.isNotEmpty)
+                CircleLayer(
+                  circles: _buildHeatCircles(
+                    _observedHeatmapPoints,
+                    predicted: false,
+                  ),
+                ),
+              if (_isHeatmapMode && _predictedHeatmapPoints.isNotEmpty)
+                CircleLayer(
+                  circles: _buildHeatCircles(
+                    _predictedHeatmapPoints,
+                    predicted: true,
+                  ),
+                ),
               if (_routePoints.isNotEmpty)
                 PolylineLayer(
                   polylines: [
@@ -462,50 +716,54 @@ class _MapPageState extends State<MapPage> {
                   ],
                 ),
               // VẼ CÁC MARKER ĐÃ ĐƯỢC GỘP
-              MarkerLayer(
-                markers: _groupedReports.entries.map((entry) {
-                  final reportsAtPos = entry.value;
-                  final firstReport = reportsAtPos.first;
+              if (!_isHeatmapMode)
+                MarkerLayer(
+                  markers: _groupedReports.entries.map((entry) {
+                    final reportsAtPos = entry.value;
+                    final firstReport = reportsAtPos.first;
 
-                  return Marker(
-                    point: LatLng(firstReport.latitude, firstReport.longitude),
-                    width: 60,
-                    height: 60,
-                    builder: (_) => GestureDetector(
-                      onTap: () => _showGroupedReportDetails(reportsAtPos),
-                      child: Stack(
-                        children: [
-                          Icon(
-                            Icons.location_pin,
-                            color: _getStatusColor(firstReport.status),
-                            size: 45,
-                          ),
-                          if (reportsAtPos.length > 1)
-                            Positioned(
-                              right: 5,
-                              top: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: const BoxDecoration(
-                                  color: Colors.blue,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Text(
-                                  "${reportsAtPos.length}",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                    return Marker(
+                      point: LatLng(
+                        firstReport.latitude,
+                        firstReport.longitude,
+                      ),
+                      width: 60,
+                      height: 60,
+                      builder: (_) => GestureDetector(
+                        onTap: () => _showGroupedReportDetails(reportsAtPos),
+                        child: Stack(
+                          children: [
+                            Icon(
+                              Icons.location_pin,
+                              color: _getStatusColor(firstReport.status),
+                              size: 45,
+                            ),
+                            if (reportsAtPos.length > 1)
+                              Positioned(
+                                right: 5,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.blue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    "${reportsAtPos.length}",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
+                    );
+                  }).toList(),
+                ),
             ],
           ),
           if (_isRouting)
@@ -517,17 +775,54 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          Positioned(top: 10, right: 10, child: _buildLegend()),
+          if (_isLoadingHotspots && _isHeatmapMode)
+            const Positioned(
+              top: 18,
+              left: 18,
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+            ),
+          Positioned(top: 12, right: 10, child: _buildLegend()),
         ],
       ),
-      floatingActionButton: _routePoints.isNotEmpty
-          ? FloatingActionButton.extended(
-              onPressed: () => setState(() => _routePoints = []),
-              backgroundColor: Colors.red,
-              icon: const Icon(Icons.close),
-              label: const Text("Xóa đường"),
-            )
-          : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (_routePoints.isNotEmpty)
+              FloatingActionButton.extended(
+                heroTag: 'clear_route',
+                onPressed: () => setState(() => _routePoints = []),
+                backgroundColor: Colors.red,
+                icon: const Icon(Icons.close, color: Colors.white),
+                label: const Text(
+                  'Xóa đường',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            if (_routePoints.isNotEmpty) const SizedBox(height: 10),
+            FloatingActionButton(
+              heroTag: 'toggle_heatmap',
+              onPressed: _toggleHeatmapMode,
+              backgroundColor: _isHeatmapMode
+                  ? Colors.deepOrange
+                  : const Color(0xFF2E7D32),
+              child: Icon(
+                _isHeatmapMode
+                    ? Icons.layers_clear
+                    : Icons.local_fire_department,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
