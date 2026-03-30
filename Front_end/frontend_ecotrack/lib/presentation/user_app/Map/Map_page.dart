@@ -326,6 +326,16 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
+  void _zoomIn() {
+    final double nextZoom = (_currentZoom + 1).clamp(3.0, 19.0);
+    _mapController.move(_center, nextZoom);
+  }
+
+  void _zoomOut() {
+    final double nextZoom = (_currentZoom - 1).clamp(3.0, 19.0);
+    _mapController.move(_center, nextZoom);
+  }
+
   void _groupReportsByDistance(List<Report> reports) {
     const double clusterRadius = 40; // mét
     final Distance distance = Distance();
@@ -807,6 +817,38 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             if (_routePoints.isNotEmpty) const SizedBox(height: 10),
+            SizedBox(
+              width: 42,
+              height: 42,
+              child: FloatingActionButton(
+                mini: true,
+                heroTag: 'zoom_in',
+                onPressed: _zoomIn,
+                backgroundColor: Colors.white,
+                child: const Icon(
+                  Icons.add,
+                  color: Color(0xFF2E7D32),
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: 42,
+              height: 42,
+              child: FloatingActionButton(
+                mini: true,
+                heroTag: 'zoom_out',
+                onPressed: _zoomOut,
+                backgroundColor: Colors.white,
+                child: const Icon(
+                  Icons.remove,
+                  color: Color(0xFF2E7D32),
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
             FloatingActionButton(
               heroTag: 'toggle_heatmap',
               onPressed: _toggleHeatmapMode,
