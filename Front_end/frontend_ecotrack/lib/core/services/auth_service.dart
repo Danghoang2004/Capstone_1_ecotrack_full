@@ -1,10 +1,15 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
+  AuthService._internal();
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final String baseUrl = dotenv.env['API_BASE_URL']!;
 
@@ -47,7 +52,7 @@ class AuthService {
     }
   }
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId:
         '798523892228-hihng8k1s63khd4pcsp54fpgpqrdd60m.apps.googleusercontent.com',
     scopes: ['email', 'profile'],
@@ -95,8 +100,9 @@ class AuthService {
   Future<void> logoutGoogle() async {
     try {
       await _googleSignIn.signOut();
-
-      await _googleSignIn.disconnect();
+      if (!kIsWeb) {
+        await _googleSignIn.disconnect();
+      }
     } catch (e) {
       print('Lỗi khi ngắt kết nối Google: $e');
     }
@@ -164,36 +170,42 @@ class AuthService {
       return {'success': false, 'message': 'Không thể kết nối máy chủ ($e)'};
     }
   }
+
   // --- 4. Quên mật khẩu ---
   Future<Map<String, dynamic>> forgotPassword(String email) async {
-  final url = Uri.parse('$baseUrl/api/auth/reset-password/request');
+    final url = Uri.parse('$baseUrl/api/auth/reset-password/request');
 
-  try {
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json; charset=UTF-8'},
-      body: jsonEncode({'email': email}),
-    );
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({'email': email}),
+      );
 
-    final data = jsonDecode(utf8.decode(response.bodyBytes));
+      final data = jsonDecode(utf8.decode(response.bodyBytes));
 
-    if (response.statusCode == 200) {
-      return {'success': true, 'data': data['data'], 'message': data['message']};
-    } else {
-      return {
-        'success': false,
-        'message': data['message'] ?? data['error'] ?? 'Gửi email thất bại',
-      };
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': data['data'],
+          'message': data['message'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? data['error'] ?? 'Gửi email thất bại',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Không thể kết nối server'};
     }
-  } catch (e) {
-    return {
-      'success': false,
-      'message': 'Không thể kết nối server',
-    };
   }
-}
 
-  Future<Map<String, dynamic>> confirmResetPassword(String email, String otp, String newPassword) async {
+  Future<Map<String, dynamic>> confirmResetPassword(
+    String email,
+    String otp,
+    String newPassword,
+  ) async {
     final url = Uri.parse('$baseUrl/api/auth/reset-password/confirm');
 
     try {
@@ -203,7 +215,7 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'otp': otp,
-          'newPassword': newPassword
+          'newPassword': newPassword,
         }),
       );
 
@@ -214,17 +226,15 @@ class AuthService {
       } else {
         return {
           'success': false,
-          'message': data['message'] ?? data['error'] ?? 'Xác nhận OTP thất bại',
+          'message':
+              data['message'] ?? data['error'] ?? 'Xác nhận OTP thất bại',
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Không thể kết nối server',
-      };
+      return {'success': false, 'message': 'Không thể kết nối server'};
     }
   }
-    
+
   // --- Hàm phụ: Lưu dữ liệu User vào máy ---
   Future<void> _saveUserData(Map<String, dynamic> data) async {
     final token = data['token'];
