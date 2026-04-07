@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:frontend_ecotrack/core/services/hotspot_service.dart';
 import 'package:frontend_ecotrack/data/models/Report.dart';
 import 'package:frontend_ecotrack/data/models/hotspot_models.dart';
@@ -11,6 +13,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:frontend_ecotrack/presentation/user_app/Map/goong_map_bridge.dart';
 
 class MapPage extends StatefulWidget {
   final bool hideAppBar;
@@ -21,10 +24,112 @@ class MapPage extends StatefulWidget {
   State<MapPage> createState() => _MapPageState();
 }
 
+class _SimpleBounds {
+  final LatLng southwest;
+  final LatLng northeast;
+
+  const _SimpleBounds({required this.southwest, required this.northeast});
+}
+
+class LatLng {
+  final double latitude;
+  final double longitude;
+  const LatLng(this.latitude, this.longitude);
+}
+
+class MarkerId {
+  final String value;
+  const MarkerId(this.value);
+}
+
+class InfoWindow {
+  final String? title;
+  final String? snippet;
+  const InfoWindow({this.title, this.snippet});
+}
+
+class BitmapDescriptor {
+  static const double hueRed = 0;
+  static const double hueOrange = 30;
+  static const double hueGreen = 120;
+  static const double hueAzure = 210;
+  static const double hueBlue = 240;
+
+  static double defaultMarkerWithHue(double hue) => hue;
+}
+
+class Marker {
+  final MarkerId markerId;
+  final LatLng position;
+  final InfoWindow infoWindow;
+  final double? icon;
+  final VoidCallback? onTap;
+
+  const Marker({
+    required this.markerId,
+    required this.position,
+    this.infoWindow = const InfoWindow(),
+    this.icon,
+    this.onTap,
+  });
+}
+
+class PolylineId {
+  final String value;
+  const PolylineId(this.value);
+}
+
+class Polyline {
+  final PolylineId polylineId;
+  final List<LatLng> points;
+  final Color color;
+  final int width;
+
+  const Polyline({
+    required this.polylineId,
+    required this.points,
+    required this.color,
+    required this.width,
+  });
+}
+
+class CircleId {
+  final String value;
+  const CircleId(this.value);
+}
+
+class Circle {
+  final CircleId circleId;
+  final LatLng center;
+  final double radius;
+  final Color fillColor;
+  final int strokeWidth;
+
+  const Circle({
+    required this.circleId,
+    required this.center,
+    required this.radius,
+    required this.fillColor,
+    required this.strokeWidth,
+  });
+}
+
 class _MapPageState extends State<MapPage> {
-  GoogleMapController? _mapController;
   LatLng _center = LatLng(16.0471, 108.2068);
   double _currentZoom = 14.0;
+  WebViewController? _mobileWebViewController;
+  bool _mobileWebViewLoaded = false;
+  String _pinDataUri = '';
+
+  bool _mapReady = false;
+  bool _mapInitializing = false;
+  bool _mapInitialized = false;
+  String _mapStatus = 'Đang khởi tạo Goong map...';
+  late final String _viewType;
+  Object? _mapContainer;
+  final GoongMapBridge _goongBridge = GoongMapBridge.instance;
+  Timer? _mapInitRetryTimer;
+  Timer? _mapReadyPoller;
 
   final ApiClient apiClient = ApiClient(storage: const FlutterSecureStorage());
   final HotspotService _hotspotService = HotspotService();
@@ -64,6 +169,12 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+    _viewType = 'goong-user-map-${DateTime.now().microsecondsSinceEpoch}';
+    if (kIsWeb) {
+      _registerViewFactory();
+    } else {
+      unawaited(_setupMobileGoongView());
+    }
     _fetchReports();
     _startReportsPolling();
     _startLiveTracking();
@@ -86,44 +197,400 @@ class _MapPageState extends State<MapPage> {
     _stopReportsPolling();
     _hotspotDebounce?.cancel();
     _positionStreamSubscription?.cancel();
+    _mapInitRetryTimer?.cancel();
+    _mapReadyPoller?.cancel();
+    if (kIsWeb) {
+      try {
+        _goongBridge.disposeMap();
+      } catch (_) {
+        // ignore
+      }
+    }
     super.dispose();
   }
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
+  void _registerViewFactory() {
+    _goongBridge.registerViewFactory(_viewType);
   }
 
-  void _onCameraChange(CameraPosition position) {
-    _center = position.target;
-    _currentZoom = position.zoom;
+  void _onPlatformViewCreated(int viewId) {
+    _mapContainer ??= _goongBridge.findContainer(_viewType);
+    _waitForContainerAndInit();
+  }
 
-    if (!_isHeatmapMode) return;
+  Future<void> _setupMobileGoongView() async {
+    _pinDataUri = await _loadPinDataUri();
 
-    _hotspotDebounce?.cancel();
-    _hotspotDebounce = Timer(const Duration(milliseconds: 600), () {
-      _fetchHotspotsFromViewport();
+    _mobileWebViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'GoongMapChannel',
+        onMessageReceived: (JavaScriptMessage message) {
+          _onMobileMapMessage(message.message);
+        },
+      )
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            _mobileWebViewLoaded = true;
+            _initializeGoongMap();
+          },
+        ),
+      )
+      ..loadHtmlString(_buildMobileGoongHostHtml());
+
+    if (mounted) setState(() {});
+  }
+
+  Future<String> _loadPinDataUri() async {
+    try {
+      final data = await rootBundle.load('assets/icons/pin.png');
+      final bytes = data.buffer.asUint8List();
+      return 'data:image/png;base64,${base64Encode(bytes)}';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  void _onMobileMapMessage(String raw) {
+    if (!mounted) return;
+    try {
+      final dynamic decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return;
+      if (decoded['type'] != 'camera') return;
+
+      final double? lat = (decoded['lat'] as num?)?.toDouble();
+      final double? lng = (decoded['lng'] as num?)?.toDouble();
+      final double? zoom = (decoded['zoom'] as num?)?.toDouble();
+      if (lat == null || lng == null || zoom == null) return;
+
+      _center = LatLng(lat, lng);
+      _currentZoom = zoom;
+
+      if (!_isHeatmapMode) return;
+      _hotspotDebounce?.cancel();
+      _hotspotDebounce = Timer(const Duration(milliseconds: 600), () {
+        _fetchHotspotsFromViewport();
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  void _waitForContainerAndInit() {
+    int attempts = 0;
+
+    void check() {
+      if (!mounted || _mapInitialized || _mapInitializing) {
+        return;
+      }
+
+      final container = _mapContainer;
+      final ready = _goongBridge.isContainerReady(container);
+
+      if (ready) {
+        _initializeGoongMap();
+        return;
+      }
+
+      attempts += 1;
+      if (attempts == 30) {
+        _mapStatus = 'Đang chờ container Goong map sẵn sàng...';
+        if (mounted) setState(() {});
+      }
+
+      Future.delayed(const Duration(milliseconds: 100), check);
+    }
+
+    check();
+  }
+
+  Future<void> _initializeGoongMap() async {
+    if (_mapInitializing || _mapInitialized) {
+      return;
+    }
+
+    _mapInitializing = true;
+
+    try {
+      final String mapKey = dotenv.env['GOONG_MAP_KEY'] ?? '';
+      if (mapKey.isEmpty) {
+        _mapStatus = 'Thiếu GOONG_MAP_KEY trong .env';
+        if (mounted) setState(() {});
+        return;
+      }
+
+      final styleUrl =
+          'https://tiles.goong.io/assets/goong_map_web.json?api_key=$mapKey';
+
+      _mapReadyPoller?.cancel();
+      _mapReady = false;
+      _mapStatus = 'Đang tải Goong map...';
+
+      if (kIsWeb) {
+        if (!_goongBridge.hasInitFunction) {
+          _scheduleMapInitRetry();
+          return;
+        }
+
+        final container = _mapContainer;
+        if (!_goongBridge.isContainerReady(container)) {
+          _scheduleMapInitRetry();
+          return;
+        }
+
+        _goongBridge.initMap(
+          container: container!,
+          styleUrl: styleUrl,
+          lng: _center.longitude,
+          lat: _center.latitude,
+          zoom: _currentZoom,
+        );
+      } else {
+        if (!_mobileWebViewLoaded || _mobileWebViewController == null) {
+          _scheduleMapInitRetry();
+          return;
+        }
+        await _runMobileMapJs(
+          'window.goongAdminMapInit(${jsonEncode(styleUrl)}, ${_center.longitude}, ${_center.latitude}, $_currentZoom);',
+        );
+      }
+
+      _mapReadyPoller = Timer.periodic(const Duration(milliseconds: 150), (
+        timer,
+      ) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        try {
+          final isReady = kIsWeb
+              ? _goongBridge.isMapReady()
+              : await _isMobileMapReady();
+          if (isReady == true) {
+            timer.cancel();
+            _mapReady = true;
+            _mapInitialized = true;
+            _mapStatus = 'Goong map đã sẵn sàng';
+            _syncGoongMapState();
+            if (mounted) setState(() {});
+          }
+        } catch (_) {
+          timer.cancel();
+        }
+      });
+    } finally {
+      _mapInitializing = false;
+    }
+  }
+
+  Future<void> _runMobileMapJs(String script) async {
+    final controller = _mobileWebViewController;
+    if (controller == null) return;
+    await controller.runJavaScript(script);
+  }
+
+  Future<bool> _isMobileMapReady() async {
+    final controller = _mobileWebViewController;
+    if (controller == null) return false;
+    try {
+      final dynamic result = await controller.runJavaScriptReturningResult(
+        'window.goongAdminMapIsReady && window.goongAdminMapIsReady() === true',
+      );
+      return result.toString().contains('true');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _scheduleMapInitRetry() {
+    if (!mounted || _mapReady || _mapInitialized) {
+      return;
+    }
+
+    _mapInitRetryTimer?.cancel();
+    _mapInitRetryTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted && !_mapReady && !_mapInitialized && !_mapInitializing) {
+        _initializeGoongMap();
+      }
     });
   }
 
+  List<Map<String, dynamic>> _buildGoongReportPayload() {
+    return _groupedReports.entries.map((entry) {
+      final reportsAtPos = [...entry.value]
+        ..sort((a, b) => (a.id).compareTo(b.id));
+      final first = reportsAtPos.first;
+      final parts = entry.key.split(',');
+      final centerLat = parts.isNotEmpty
+          ? double.tryParse(parts[0]) ?? first.latitude
+          : first.latitude;
+      final centerLng = parts.length > 1
+          ? double.tryParse(parts[1]) ?? first.longitude
+          : first.longitude;
+
+      return <String, dynamic>{
+        'reportId': first.id,
+        'title': first.title,
+        'description': first.description,
+        'imageUrl': first.imageUrl,
+        'latitude': centerLat,
+        'longitude': centerLng,
+        'status': _pickClusterStatus(reportsAtPos),
+        'category': '',
+        'count': reportsAtPos.length,
+        'reports': reportsAtPos
+            .map(
+              (r) => <String, dynamic>{
+                'id': r.id,
+                'title': r.title,
+                'description': r.description,
+                'imageUrl': r.imageUrl,
+                'latitude': r.latitude,
+                'longitude': r.longitude,
+                'status': r.status,
+              },
+            )
+            .toList(),
+      };
+    }).toList();
+  }
+
+  String _pickClusterStatus(List<Report> reports) {
+    final statuses = reports.map((r) => r.status.toUpperCase()).toSet();
+    if (statuses.contains('PENDING')) return 'PENDING';
+    if (statuses.contains('VERIFIED')) return 'VERIFIED';
+    if (statuses.contains('CLEANED')) return 'CLEANED';
+    if (reports.isEmpty) return 'UNKNOWN';
+    return reports.first.status;
+  }
+
+  List<Map<String, dynamic>> _buildGoongHeatPayload(
+    List<PredictedHeatmapPoint> points, {
+    required bool predicted,
+  }) {
+    return points
+        .map(
+          (point) => <String, dynamic>{
+            'lat': point.lat,
+            'lng': point.lng,
+            'intensity': point.intensity,
+            'predictedCount7d': point.predictedCount7d,
+            'predicted': predicted,
+          },
+        )
+        .toList();
+  }
+
+  void _syncGoongMapState() {
+    if (!_mapReady) {
+      return;
+    }
+
+    try {
+      final mode = _isHeatmapMode
+          ? (_showPredictedHotspots ? 'heat_predicted' : 'heat_observed')
+          : 'reports';
+
+      if (kIsWeb) {
+        _goongBridge.setMode(mode);
+      } else {
+        unawaited(
+          _runMobileMapJs('window.goongAdminMapSetMode(${jsonEncode(mode)});'),
+        );
+      }
+
+      if (mode == 'reports') {
+        final reportsJson = jsonEncode(_buildGoongReportPayload());
+        if (kIsWeb) {
+          _goongBridge.setReports(reportsJson);
+        } else {
+          unawaited(
+            _runMobileMapJs(
+              'window.goongAdminMapSetReports(${jsonEncode(reportsJson)});',
+            ),
+          );
+        }
+      } else {
+        final payload = _showPredictedHotspots
+            ? _buildGoongHeatPayload(_predictedHeatmapPoints, predicted: true)
+            : _buildGoongHeatPayload(_observedHeatmapPoints, predicted: false);
+        final heatJson = jsonEncode(payload);
+        if (kIsWeb) {
+          _goongBridge.setHeatPoints(heatJson);
+        } else {
+          unawaited(
+            _runMobileMapJs(
+              'window.goongAdminMapSetHeatPoints(${jsonEncode(heatJson)});',
+            ),
+          );
+        }
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
   Future<void> _fetchHotspotsFromViewport() async {
-    if (_mapController == null || _isLoadingHotspots || !_isHeatmapMode) return;
+    if (_isLoadingHotspots || !_isHeatmapMode) return;
+
+    if (kIsWeb) {
+      _isLoadingHotspots = true;
+      try {
+        final clusterFuture = _hotspotService.fetchClusterInArea(
+          minLat: 8.0,
+          maxLat: 24.0,
+          minLng: 102.0,
+          maxLng: 110.0,
+        );
+
+        final predictFuture = _hotspotService.fetchPredictionInArea(
+          minLat: 8.0,
+          maxLat: 24.0,
+          minLng: 102.0,
+          maxLng: 110.0,
+        );
+
+        final clusterResult = await clusterFuture;
+        final predictResult = await predictFuture;
+
+        if (!mounted) return;
+        setState(() {
+          _observedHeatmapPoints = _toObservedHeatmapPoints(
+            clusterResult.hotspots,
+          );
+          _predictedHeatmapPoints = predictResult.heatmapPoints;
+        });
+        _syncGoongMapState();
+      } catch (_) {
+        // ignore
+      } finally {
+        _isLoadingHotspots = false;
+      }
+      return;
+    }
 
     _isLoadingHotspots = true;
     try {
-      final bounds = await _mapController!.getVisibleRegion();
+      final double span = max(0.08, 14 / pow(2, _currentZoom - 5));
+      final double minLat = _center.latitude - span;
+      final double maxLat = _center.latitude + span;
+      final double minLng = _center.longitude - span;
+      final double maxLng = _center.longitude + span;
 
       final clusterFuture = _hotspotService.fetchClusterInArea(
-        minLat: bounds.southwest.latitude,
-        maxLat: bounds.northeast.latitude,
-        minLng: bounds.southwest.longitude,
-        maxLng: bounds.northeast.longitude,
+        minLat: minLat,
+        maxLat: maxLat,
+        minLng: minLng,
+        maxLng: maxLng,
       );
 
       final predictFuture = _hotspotService.fetchPredictionInArea(
-        minLat: bounds.southwest.latitude,
-        maxLat: bounds.northeast.latitude,
-        minLng: bounds.southwest.longitude,
-        maxLng: bounds.northeast.longitude,
+        minLat: minLat,
+        maxLat: maxLat,
+        minLng: minLng,
+        maxLng: maxLng,
       );
 
       final clusterResult = await clusterFuture;
@@ -143,11 +610,17 @@ class _MapPageState extends State<MapPage> {
         _predictedHeatmapPoints = predictResult.heatmapPoints;
 
         if (_observedHeatmapPoints.isEmpty && _predictedHeatmapPoints.isEmpty) {
-          _observedHeatmapPoints = _buildFallbackHeatmapFromReports(bounds);
+          _observedHeatmapPoints = _buildFallbackHeatmapFromReports(
+            _SimpleBounds(
+              southwest: LatLng(minLat, minLng),
+              northeast: LatLng(maxLat, maxLng),
+            ),
+          );
         }
 
         _updateHeatmapCircles();
       });
+      _syncGoongMapState();
     } catch (e) {
       debugPrint('Lỗi fetch hotspot: $e');
     } finally {
@@ -156,7 +629,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   List<PredictedHeatmapPoint> _buildFallbackHeatmapFromReports(
-    LatLngBounds bounds,
+    _SimpleBounds bounds,
   ) {
     final reportsInView = _reports.where((r) {
       if (r.status == 'REJECTED') return false;
@@ -327,21 +800,27 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _zoomIn() async {
-    if (_mapController != null) {
-      await _mapController!.animateCamera(CameraUpdate.zoomIn());
+    if (kIsWeb && _mapReady) {
+      _goongBridge.zoomIn();
+      return;
     }
+    await _runMobileMapJs('window.goongAdminMapZoomIn();');
   }
 
   Future<void> _zoomOut() async {
-    if (_mapController != null) {
-      await _mapController!.animateCamera(CameraUpdate.zoomOut());
+    if (kIsWeb && _mapReady) {
+      _goongBridge.zoomOut();
+      return;
     }
+    await _runMobileMapJs('window.goongAdminMapZoomOut();');
   }
 
   Future<void> _centerOnMe() async {
-    if (_myLocation != null && _mapController != null) {
-      await _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(_myLocation!, 16.0),
+    if (_myLocation != null) {
+      _center = _myLocation!;
+      _currentZoom = max(_currentZoom, 16.0);
+      await _runMobileMapJs(
+        'window.goongAdminMapFlyTo(${_myLocation!.longitude}, ${_myLocation!.latitude}, $_currentZoom);',
       );
     }
   }
@@ -375,15 +854,19 @@ class _MapPageState extends State<MapPage> {
         );
 
     Position? firstPos = await Geolocator.getLastKnownPosition();
-    if (firstPos != null && _myLocation == null && _mapController != null) {
+    if (firstPos != null && _myLocation == null) {
       final LatLng initialPos = LatLng(firstPos.latitude, firstPos.longitude);
       setState(() {
         _myLocation = initialPos;
         _updateMarkers();
       });
-      await _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(initialPos, 15),
-      );
+      _center = initialPos;
+      _currentZoom = 15;
+      if (!kIsWeb) {
+        await _runMobileMapJs(
+          'window.goongAdminMapFlyTo(${initialPos.longitude}, ${initialPos.latitude}, $_currentZoom);',
+        );
+      }
     }
   }
 
@@ -438,46 +921,57 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _zoomIn() {
-    final double nextZoom = (_currentZoom + 1).clamp(3.0, 19.0);
-    _mapController.move(_center, nextZoom);
-  }
-
-  void _zoomOut() {
-    final double nextZoom = (_currentZoom - 1).clamp(3.0, 19.0);
-    _mapController.move(_center, nextZoom);
-  }
-
   void _groupReportsByDistance(List<Report> reports) {
     const double clusterRadius = 40; // mét
-    Map<String, List<Report>> clusters = {};
+    final List<Report> sortedReports = [...reports]
+      ..sort((a, b) {
+        final latCmp = a.latitude.compareTo(b.latitude);
+        if (latCmp != 0) return latCmp;
+        final lngCmp = a.longitude.compareTo(b.longitude);
+        if (lngCmp != 0) return lngCmp;
+        return a.id.compareTo(b.id);
+      });
 
-    for (final report in reports) {
-      bool addedToCluster = false;
+    final List<List<Report>> clusterReports = [];
+    final List<LatLng> clusterCenters = [];
 
-      for (final entry in clusters.entries) {
-        final firstReport = entry.value.first;
-        final double dist = _calculateDistance(
+    for (final report in sortedReports) {
+      int targetIndex = -1;
+      double bestDistance = double.infinity;
+
+      for (int i = 0; i < clusterCenters.length; i++) {
+        final center = clusterCenters[i];
+        final distance = _calculateDistance(
           report.latitude,
           report.longitude,
-          firstReport.latitude,
-          firstReport.longitude,
+          center.latitude,
+          center.longitude,
         );
 
-        if (dist <= clusterRadius) {
-          entry.value.add(report);
-          addedToCluster = true;
-          break;
+        if (distance <= clusterRadius && distance < bestDistance) {
+          bestDistance = distance;
+          targetIndex = i;
         }
       }
 
-      if (!addedToCluster) {
-        final key = "${report.latitude},${report.longitude}";
-        clusters[key] = [report];
+      if (targetIndex == -1) {
+        clusterReports.add([report]);
+        clusterCenters.add(LatLng(report.latitude, report.longitude));
+      } else {
+        final cluster = clusterReports[targetIndex];
+        cluster.add(report);
       }
     }
 
-    _groupedReports = clusters;
+    final Map<String, List<Report>> grouped = {};
+    for (int i = 0; i < clusterReports.length; i++) {
+      final center = clusterCenters[i];
+      final key =
+          '${center.latitude.toStringAsFixed(7)},${center.longitude.toStringAsFixed(7)}';
+      grouped[key] = clusterReports[i];
+    }
+
+    _groupedReports = grouped;
   }
 
   double _calculateDistance(
@@ -513,6 +1007,7 @@ class _MapPageState extends State<MapPage> {
           _reports = allReports;
           _groupReportsByDistance(allReports);
         });
+        _syncGoongMapState();
       }
     }
   }
@@ -789,12 +1284,360 @@ class _MapPageState extends State<MapPage> {
           ],
           const SizedBox(height: 6),
           const Text(
-            'Nguồn bản đồ: Google Maps',
+            'Nguồn bản đồ: Goong Maps',
             style: TextStyle(fontSize: 11, color: Colors.black54),
           ),
         ],
       ),
     );
+  }
+
+  void _setReportView() {
+    setState(() {
+      _isHeatmapMode = false;
+      _showPredictedHotspots = false;
+      _circles.clear();
+      _observedHeatmapPoints.clear();
+      _predictedHeatmapPoints.clear();
+    });
+    _syncGoongMapState();
+  }
+
+  String _buildMobileGoongHostHtml() {
+    final encodedPinDataUri = jsonEncode(_pinDataUri);
+    return '''<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <style>
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    (function () {
+      const PIN_DATA_URI = $encodedPinDataUri;
+      const state = {
+        map: null,
+        ready: false,
+        mode: 'reports',
+        reports: [],
+        heatPoints: [],
+        markers: [],
+        popup: null,
+        reportEventsBound: false,
+      };
+
+      function postCamera() {
+        if (!window.GoongMapChannel || !state.map) return;
+        const c = state.map.getCenter();
+        window.GoongMapChannel.postMessage(JSON.stringify({
+          type: 'camera',
+          lat: c.lat,
+          lng: c.lng,
+          zoom: state.map.getZoom()
+        }));
+      }
+
+      function clearLayers() {
+        if (!state.map) return;
+
+        if (state.popup) {
+          state.popup.remove();
+          state.popup = null;
+        }
+
+        for (const marker of state.markers) {
+          marker.remove();
+        }
+        state.markers = [];
+
+        const layers = ['goong-heat-outer', 'goong-heat-mid', 'goong-heat-core'];
+        for (const id of layers) {
+          if (state.map.getLayer(id)) state.map.removeLayer(id);
+        }
+        if (state.map.getLayer('goong-reports-circle')) state.map.removeLayer('goong-reports-circle');
+        if (state.map.getSource('goong-heat')) state.map.removeSource('goong-heat');
+        if (state.map.getSource('goong-reports')) state.map.removeSource('goong-reports');
+      }
+
+      function statusColor(status) {
+        switch (String(status || '').toUpperCase()) {
+          case 'PENDING':
+            return '#f44336';
+          case 'VERIFIED':
+            return '#fb8c00';
+          case 'CLEANED':
+            return '#2e7d32';
+          default:
+            return '#3874c7';
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function buildReportsPopupHtml(item) {
+        const reports = Array.isArray(item.reports) && item.reports.length
+          ? item.reports
+          : [item];
+
+        let html = '';
+        html += '<div style="min-width:260px;max-width:320px;font-family:Arial,sans-serif;line-height:1.4;">';
+        html += '<div style="font-weight:700;font-size:14px;margin-bottom:8px;color:#111827;">';
+        html += 'Cụm báo cáo (' + reports.length + ')';
+        html += '</div>';
+
+        for (let i = 0; i < reports.length; i++) {
+          const r = reports[i] || {};
+          const title = escapeHtml(r.title || 'Không có tiêu đề');
+          const desc = escapeHtml(r.description || 'Không có mô tả');
+          const status = String(r.status || 'UNKNOWN').toUpperCase();
+          const statusColorValue = statusColor(status);
+          const imageUrl = String(r.imageUrl || '').trim();
+
+          html += '<div style="padding:8px 0;border-top:' + (i === 0 ? 'none' : '1px solid #e5e7eb') + ';">';
+          html += '<div style="font-weight:600;font-size:13px;color:#111827;">' + title + '</div>';
+          html += '<div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;background:' + statusColorValue + ';">' + escapeHtml(status) + '</div>';
+          html += '<div style="margin-top:6px;font-size:12px;color:#374151;">' + desc + '</div>';
+
+          if (imageUrl) {
+            html += '<div style="margin-top:6px;">';
+            html += '<a href="' + escapeHtml(imageUrl) + '" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:#2563eb;text-decoration:underline;">Xem ảnh đính kèm</a>';
+            html += '</div>';
+          }
+
+          html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+      }
+
+      function renderReports() {
+        clearLayers();
+        if (!state.reports.length) return;
+
+        const features = state.reports.map((item) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [Number(item.longitude), Number(item.latitude)],
+          },
+          properties: {
+            statusKey: String(item.status || 'UNKNOWN').toUpperCase(),
+            count: Number(item.count || 1),
+            popupHtml: buildReportsPopupHtml(item),
+          },
+        }));
+
+        state.map.addSource('goong-reports', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features,
+          },
+        });
+
+        state.map.addLayer({
+          id: 'goong-reports-circle',
+          type: 'circle',
+          source: 'goong-reports',
+          paint: {
+            'circle-color': [
+              'match',
+              ['get', 'statusKey'],
+              'PENDING', '#f44336',
+              'VERIFIED', '#fb8c00',
+              'CLEANED', '#2e7d32',
+              '#3874c7',
+            ],
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'count'], 1],
+              1, 8,
+              3, 11,
+              10, 14,
+            ],
+            'circle-opacity': 0.92,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 2,
+          },
+        });
+
+        if (!state.reportEventsBound) {
+          state.reportEventsBound = true;
+
+          state.map.on('click', 'goong-reports-circle', (event) => {
+            if (!event.features || event.features.length === 0) return;
+
+            const feature = event.features[0];
+            const popupHtml = feature.properties && feature.properties.popupHtml
+              ? feature.properties.popupHtml
+              : 'Không có dữ liệu';
+
+            if (state.popup) {
+              state.popup.remove();
+              state.popup = null;
+            }
+
+            state.popup = new maplibregl.Popup({ offset: 18, closeButton: true, closeOnClick: true })
+              .setLngLat(feature.geometry.coordinates)
+              .setHTML(popupHtml)
+              .addTo(state.map);
+          });
+
+          state.map.on('mouseenter', 'goong-reports-circle', () => {
+            state.map.getCanvas().style.cursor = 'pointer';
+          });
+
+          state.map.on('mouseleave', 'goong-reports-circle', () => {
+            state.map.getCanvas().style.cursor = '';
+          });
+        }
+      }
+
+      function renderHeat() {
+        clearLayers();
+        if (!state.heatPoints.length) return;
+
+        const features = state.heatPoints.map((point) => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [Number(point.lng), Number(point.lat)] },
+          properties: { intensity: Number(point.intensity || 0) }
+        }));
+
+        state.map.addSource('goong-heat', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features }
+        });
+
+        const predicted = state.mode === 'heat_predicted';
+        const colorOuter = predicted ? '#dc2626' : '#f59e0b';
+        const colorMid = predicted ? '#fb7185' : '#fb923c';
+        const colorCore = predicted ? '#991b1b' : '#d97706';
+
+        state.map.addLayer({
+          id: 'goong-heat-outer',
+          type: 'circle',
+          source: 'goong-heat',
+          paint: {
+            'circle-color': colorOuter,
+            'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 12, 1, 36],
+            'circle-opacity': 0.16,
+            'circle-blur': 0.7
+          }
+        });
+
+        state.map.addLayer({
+          id: 'goong-heat-mid',
+          type: 'circle',
+          source: 'goong-heat',
+          paint: {
+            'circle-color': colorMid,
+            'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 8, 1, 24],
+            'circle-opacity': 0.28,
+            'circle-blur': 0.45
+          }
+        });
+
+        state.map.addLayer({
+          id: 'goong-heat-core',
+          type: 'circle',
+          source: 'goong-heat',
+          paint: {
+            'circle-color': colorCore,
+            'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 4, 1, 12],
+            'circle-opacity': 0.55,
+            'circle-blur': 0.1
+          }
+        });
+      }
+
+      function render() {
+        if (!state.map || !state.map.isStyleLoaded()) return;
+        if (state.mode === 'reports') renderReports();
+        else renderHeat();
+      }
+
+      window.goongAdminMapInit = function (styleUrl, lng, lat, zoom) {
+        if (state.map) {
+          state.map.jumpTo({ center: [Number(lng), Number(lat)], zoom: Number(zoom) });
+          return;
+        }
+
+        state.map = new maplibregl.Map({
+          container: 'map',
+          style: styleUrl,
+          center: [Number(lng), Number(lat)],
+          zoom: Number(zoom),
+          attributionControl: false
+        });
+
+        state.map.on('load', function () {
+          state.ready = true;
+          render();
+          postCamera();
+        });
+
+        state.map.on('moveend', postCamera);
+        state.map.on('zoomend', postCamera);
+      };
+
+      window.goongAdminMapIsReady = function () {
+        return state.ready === true;
+      };
+
+      window.goongAdminMapSetMode = function (mode) {
+        state.mode = mode || 'reports';
+        render();
+      };
+
+      window.goongAdminMapSetReports = function (json) {
+        try {
+          state.reports = JSON.parse(json || '[]');
+        } catch (_) {
+          state.reports = [];
+        }
+        render();
+      };
+
+      window.goongAdminMapSetHeatPoints = function (json) {
+        try {
+          state.heatPoints = JSON.parse(json || '[]');
+        } catch (_) {
+          state.heatPoints = [];
+        }
+        render();
+      };
+
+      window.goongAdminMapZoomIn = function () {
+        if (state.map) state.map.zoomIn();
+      };
+
+      window.goongAdminMapZoomOut = function () {
+        if (state.map) state.map.zoomOut();
+      };
+
+      window.goongAdminMapFlyTo = function (lng, lat, zoom) {
+        if (!state.map) return;
+        state.map.flyTo({ center: [Number(lng), Number(lat)], zoom: Number(zoom || state.map.getZoom()) });
+      };
+    })();
+  </script>
+</body>
+</html>''';
   }
 
   @override
@@ -837,21 +1680,19 @@ class _MapPageState extends State<MapPage> {
             ),
       body: Stack(
         children: [
-          GoogleMap(
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(
-              target: _center,
-              zoom: _currentZoom,
+          if (kIsWeb)
+            Positioned.fill(
+              child: HtmlElementView(
+                viewType: _viewType,
+                onPlatformViewCreated: _onPlatformViewCreated,
+              ),
+            )
+          else
+            Positioned.fill(
+              child: _mobileWebViewController == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : WebViewWidget(controller: _mobileWebViewController!),
             ),
-            onCameraMove: _onCameraChange,
-            markers: _markers,
-            polylines: _polylines,
-            circles: _circles,
-            myLocationEnabled: false,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapType: MapType.normal,
-          ),
           if (_isRouting)
             const Center(
               child: Card(
@@ -869,6 +1710,46 @@ class _MapPageState extends State<MapPage> {
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+            ),
+          if (kIsWeb && !_mapReady)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Text(
+                  _mapStatus,
+                  style: const TextStyle(fontSize: 12, color: Colors.red),
+                ),
+              ),
+            ),
+          if (!kIsWeb && (dotenv.env['GOONG_MAP_KEY'] ?? '').isEmpty)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: const Text(
+                  'Thiếu GOONG_MAP_KEY trong .env',
+                  style: TextStyle(fontSize: 12, color: Colors.red),
+                ),
               ),
             ),
           Positioned(top: 12, right: 10, child: _buildLegend()),
@@ -899,15 +1780,7 @@ class _MapPageState extends State<MapPage> {
                 FloatingActionButton(
                   heroTag: 'mode_reports',
                   mini: true,
-                  onPressed: () {
-                    setState(() {
-                      _isHeatmapMode = false;
-                      _showPredictedHotspots = false;
-                      _circles.clear();
-                      _observedHeatmapPoints.clear();
-                      _predictedHeatmapPoints.clear();
-                    });
-                  },
+                  onPressed: _setReportView,
                   backgroundColor: !_isHeatmapMode ? Colors.blue : Colors.grey,
                   child: const Icon(Icons.list, color: Colors.white),
                 ),

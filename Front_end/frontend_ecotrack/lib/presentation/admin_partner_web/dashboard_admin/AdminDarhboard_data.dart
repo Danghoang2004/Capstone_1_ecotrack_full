@@ -64,69 +64,72 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
         const SizedBox(height: 18),
 
         // ===== TOP STATS CARDS =====
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SizedBox(
-              width: 270,
-              height: 177,
-              child: _StatCard(
-                title: "Tổng người dùng",
-                value: data.totalUsers.toString(),
-                subtitle:
-                    "${data.userGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                icon: Icons.group_outlined,
-                iconBg: const Color(0xFFE8F4FF),
-                valueColor: Colors.black,
-                subtitleColor: const Color(0xFF00B894),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 270,
+                height: 177,
+                child: _StatCard(
+                  title: "Tổng người dùng",
+                  value: data.totalUsers.toString(),
+                  subtitle:
+                      "${data.userGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                  icon: Icons.group_outlined,
+                  iconBg: const Color(0xFFE8F4FF),
+                  valueColor: Colors.black,
+                  subtitleColor: const Color(0xFF00B894),
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 270,
-              height: 177,
-              child: _StatCard(
-                title: "Báo cáo rác",
-                value: data.totalReports.toString(),
-                subtitle:
-                    "${data.reportGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                icon: Icons.place_outlined,
-                iconBg: const Color(0xFFFFEBEE),
-                valueColor: Colors.black,
-                subtitleColor: const Color(0xFF00B894),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 270,
+                height: 177,
+                child: _StatCard(
+                  title: "Báo cáo rác",
+                  value: data.totalReports.toString(),
+                  subtitle:
+                      "${data.reportGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                  icon: Icons.place_outlined,
+                  iconBg: const Color(0xFFFFEBEE),
+                  valueColor: Colors.black,
+                  subtitleColor: const Color(0xFF00B894),
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 270,
-              height: 177,
-              child: _StatCard(
-                title: "Chiến dịch",
-                value: data.totalCampaigns.toString(),
-                subtitle:
-                    "${data.campaignGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                icon: Icons.radio_button_checked_outlined,
-                iconBg: const Color(0xFFE8F8F2),
-                valueColor: Colors.black,
-                subtitleColor: const Color(0xFF00B894),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 270,
+                height: 177,
+                child: _StatCard(
+                  title: "Chiến dịch",
+                  value: data.totalCampaigns.toString(),
+                  subtitle:
+                      "${data.campaignGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                  icon: Icons.radio_button_checked_outlined,
+                  iconBg: const Color(0xFFE8F8F2),
+                  valueColor: Colors.black,
+                  subtitleColor: const Color(0xFF00B894),
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 270,
-              height: 177,
-              child: _StatCard(
-                title: "Điểm thưởng",
-                value: data.totalPoints.toString(),
-                subtitle:
-                    "${data.pointGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                icon: Icons.emoji_events_outlined,
-                iconBg: const Color(0xFFFFF8E1),
-                valueColor: Colors.black,
-                subtitleColor: const Color(0xFF00B894),
+              const SizedBox(width: 16),
+              SizedBox(
+                width: 270,
+                height: 177,
+                child: _StatCard(
+                  title: "Điểm thưởng",
+                  value: data.totalPoints.toString(),
+                  subtitle:
+                      "${data.pointGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                  icon: Icons.emoji_events_outlined,
+                  iconBg: const Color(0xFFFFF8E1),
+                  valueColor: Colors.black,
+                  subtitleColor: const Color(0xFF00B894),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
 
         const SizedBox(height: 26),

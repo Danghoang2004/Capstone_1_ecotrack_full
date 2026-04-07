@@ -33,8 +33,808 @@
   <title>frontend_ecotrack</title>
   <link rel="manifest" href="manifest.json">
 
-  <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDBthF-2GZldCcIDlUf-O3Wn93OJd0ARGs&loading=async&v=weekly"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #eef4ef;
+    }
+
+    .goong-map-host,
+    .goong-map-host .maplibregl-map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .goong-map-host {
+      display: block;
+      overflow: hidden;
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+
+  <script>
+    (function () {
+      const state = {
+        map: null,
+        markers: [],
+        popup: null,
+        mode: 'reports',
+        reports: [],
+        heatPoints: [],
+        ready: false,
+        lastError: null,
+        lastStage: 'boot',
+        events: [],
+        missingImageIds: new Set(),
+        resizeObserver: null,
+        resizeTimer: null,
+        lastGoodContainerSize: { width: 0, height: 0 },
+        recoveryAttempts: 0,
+      };
+
+      function pushEvent(stage, detail) {
+        const entry = {
+          time: new Date().toISOString(),
+          stage,
+          detail: detail || '',
+        };
+        state.events.push(entry);
+        if (state.events.length > 20) {
+          state.events.shift();
+        }
+      }
+
+      function logStage(stage, detail) {
+        state.lastStage = stage;
+        pushEvent(stage, detail);
+        console.log(`[GoongMap][${stage}] ${detail || ''}`);
+      }
+
+      function logError(stage, detail, error) {
+        state.lastStage = stage;
+        state.lastError = detail;
+        pushEvent(`error:${stage}`, detail);
+        console.error(`[GoongMap][ERROR][${stage}] ${detail}`, error || '');
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function clearMarkers() {
+        if (state.map) {
+          if (state.map.getLayer('goong-reports-circle')) {
+            state.map.removeLayer('goong-reports-circle');
+          }
+          if (state.map.getSource('goong-reports')) {
+            state.map.removeSource('goong-reports');
+          }
+        }
+        state.markers = [];
+        state.reportLayersInitialized = false;
+      }
+
+      function clearHeat() {
+        if (!state.map) return;
+        const layerIds = ['goong-heat-outer', 'goong-heat-mid', 'goong-heat-core'];
+        for (const layerId of layerIds) {
+          if (state.map.getLayer(layerId)) {
+            state.map.removeLayer(layerId);
+          }
+        }
+        if (state.map.getSource('goong-heat')) {
+          state.map.removeSource('goong-heat');
+        }
+      }
+
+      function clearPopup() {
+        if (state.popup) {
+          state.popup.remove();
+          state.popup = null;
+        }
+      }
+
+      function statusColor(status) {
+        switch (String(status || '').toUpperCase()) {
+          case 'PENDING':
+            return '#f44336';
+          case 'VERIFIED':
+            return '#fb8c00';
+          case 'CLEANED':
+            return '#2e7d32';
+          default:
+            return '#3874c7';
+        }
+      }
+
+      function scheduleMapResize(container) {
+        if (!state.map || !container || !container.isConnected) {
+          return;
+        }
+
+        if (state.resizeTimer) {
+          window.clearTimeout(state.resizeTimer);
+        }
+
+        state.resizeTimer = window.setTimeout(() => {
+          if (!state.map || !container || !container.isConnected) {
+            return;
+          }
+
+          const width = container.clientWidth || 0;
+          const height = container.clientHeight || 0;
+
+          if (width > 0 && height > 0) {
+            state.map.resize();
+            logStage('resize', `container=${width}x${height}`);
+          }
+        }, 80);
+      }
+
+      function renderReports() {
+        clearMarkers();
+        clearHeat();
+        clearPopup();
+
+        if (!state.reports.length) {
+          state.map.getSource('goong-reports') && state.map.removeSource('goong-reports');
+          return;
+        }
+
+        const features = state.reports.map((item) => {
+          const status = escapeHtml(item.status || 'UNKNOWN');
+          const title = escapeHtml(item.title || 'Không có tiêu đề');
+          const category = escapeHtml(item.category || 'Khác');
+          const count = Number(item.count || 1);
+
+          // Build summary header
+          let popupHtml = `
+            <div style="min-width: 260px; font-family: Arial, sans-serif; line-height: 1.5;">
+              <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px; color: #1f2937;">${title}</div>
+              <div style="font-size: 12px; color: #2563eb; margin-bottom: 4px; font-weight: 600;">Trạng thái: ${status}</div>
+              <div style="font-size: 12px; color: #374151; margin-bottom: 2px;">Loại rác: ${category}</div>
+              <div style="font-size: 12px; color: #6b7280;">Tổng báo cáo: ${count}</div>`;
+
+          // Add detailed list if multiple reports in cluster
+          if (item.reports && item.reports.length > 1) {
+            popupHtml += `
+              <div style="margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
+                <div style="font-weight: 600; font-size: 12px; color: #1f2937; margin-bottom: 8px;">Chi tiết báo cáo:</div>`;
+
+            for (let i = 0; i < item.reports.length; i++) {
+              const r = item.reports[i];
+              const rStatus = escapeHtml(r.status || 'UNKNOWN');
+              const rTitle = escapeHtml(r.title || 'Không có tiêu đề');
+              const rDesc = escapeHtml((r.description || '').substring(0, 50));
+
+              popupHtml += `
+                <div style="margin-bottom: 8px; padding: 6px; background: #f3f4f6; border-radius: 4px; border-left: 3px solid ${statusColor(rStatus)};">
+                  <div style="font-weight: 600; font-size: 11px; color: #1f2937;">${i + 1}. ${rTitle}</div>
+                  <div style="font-size: 11px; color: #6b7280;">Trạng thái: <span style="color: ${statusColor(rStatus)}; font-weight: 600;">${rStatus}</span></div>
+                  ${rDesc ? `<div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Mô tả: ${rDesc}...</div>` : ''}
+                </div>`;
+            }
+
+            popupHtml += `</div>`;
+          }
+
+          popupHtml += `</div>`;
+
+          return {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [Number(item.longitude), Number(item.latitude)],
+            },
+            properties: {
+              reportId: item.reportId || '',
+              title: item.title || 'Không có tiêu đề',
+              description: item.description || '',
+              status: item.status || 'UNKNOWN',
+              category: item.category || 'Khác',
+              count,
+              popupHtml,
+            },
+          };
+        });
+
+        const reportsData = {
+          type: 'FeatureCollection',
+          features,
+        };
+
+        const existingSource = state.map.getSource('goong-reports');
+        if (existingSource && typeof existingSource.setData === 'function') {
+          existingSource.setData(reportsData);
+        } else {
+          if (state.map.getLayer('goong-reports-circle')) {
+            state.map.removeLayer('goong-reports-circle');
+          }
+          if (state.map.getSource('goong-reports')) {
+            state.map.removeSource('goong-reports');
+          }
+
+          state.map.addSource('goong-reports', {
+            type: 'geojson',
+            data: reportsData,
+          });
+
+          if (!state.reportLayersInitialized) {
+            state.reportLayersInitialized = true;
+
+            state.map.on('click', 'goong-reports-circle', (event) => {
+              if (!event.features || event.features.length === 0) {
+                return;
+              }
+
+              const feature = event.features[0];
+              const properties = feature.properties || {};
+
+              clearPopup();
+              state.popup = new maplibregl.Popup({
+                offset: 18,
+                closeButton: true,
+                closeOnClick: true,
+                maxWidth: '350px',
+              })
+                .setLngLat(feature.geometry.coordinates)
+                .setHTML(properties.popupHtml || 'Không có dữ liệu')
+                .addTo(state.map);
+            });
+
+            state.map.on('mouseenter', 'goong-reports-circle', () => {
+              state.map.getCanvas().style.cursor = 'pointer';
+            });
+
+            state.map.on('mouseleave', 'goong-reports-circle', () => {
+              state.map.getCanvas().style.cursor = '';
+            });
+
+            logStage('renderReports', 'initialized event handlers for report layer');
+          }
+        }
+
+        if (!state.map.getLayer('goong-reports-circle')) {
+          state.map.addLayer({
+            id: 'goong-reports-circle',
+            type: 'circle',
+            source: 'goong-reports',
+            paint: {
+              'circle-color': [
+                'match',
+                ['upcase', ['coalesce', ['get', 'status'], 'UNKNOWN']],
+                'PENDING', '#f44336',
+                'VERIFIED', '#fb8c00',
+                'CLEANED', '#2e7d32',
+                '#3874c7',
+              ],
+              'circle-radius': [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', 'count'], 1],
+                1, 9,
+                3, 12,
+                10, 16,
+              ],
+              'circle-opacity': 0.92,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff',
+            },
+          });
+        }
+
+        state.map.setLayoutProperty('goong-reports-circle', 'visibility', 'visible');
+
+        logStage('renderReports', `rendered ${features.length} report clusters as circle layer`);
+      }
+
+      function renderHeat() {
+        clearMarkers();
+        clearPopup();
+
+        if (!state.heatPoints.length) {
+          clearHeat();
+          return;
+        }
+
+        const features = state.heatPoints.map((point) => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [Number(point.lng), Number(point.lat)],
+          },
+          properties: {
+            intensity: Number(point.intensity || 0),
+            label: Number(point.predictedCount7d || 0),
+          },
+        }));
+
+        const heatData = {
+          type: 'FeatureCollection',
+          features,
+        };
+
+        const existingSource = state.map.getSource('goong-heat');
+        if (existingSource && typeof existingSource.setData === 'function') {
+          existingSource.setData(heatData);
+        } else {
+          clearHeat();
+          state.map.addSource('goong-heat', {
+            type: 'geojson',
+            data: heatData,
+          });
+        }
+
+        const colorOuter = state.mode === 'heat_predicted' ? '#dc2626' : '#f59e0b';
+        const colorMid = state.mode === 'heat_predicted' ? '#fb7185' : '#fb923c';
+        const colorCore = state.mode === 'heat_predicted' ? '#991b1b' : '#d97706';
+
+        if (!state.map.getLayer('goong-heat-outer')) {
+          state.map.addLayer({
+            id: 'goong-heat-outer',
+            type: 'circle',
+            source: 'goong-heat',
+            paint: {
+              'circle-color': colorOuter,
+              'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 12, 1, 36],
+              'circle-opacity': 0.16,
+              'circle-blur': 0.7,
+            },
+          });
+        }
+
+        if (!state.map.getLayer('goong-heat-mid')) {
+          state.map.addLayer({
+            id: 'goong-heat-mid',
+            type: 'circle',
+            source: 'goong-heat',
+            paint: {
+              'circle-color': colorMid,
+              'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 8, 1, 24],
+              'circle-opacity': 0.28,
+              'circle-blur': 0.45,
+            },
+          });
+        }
+
+        if (!state.map.getLayer('goong-heat-core')) {
+          state.map.addLayer({
+            id: 'goong-heat-core',
+            type: 'circle',
+            source: 'goong-heat',
+            paint: {
+              'circle-color': colorCore,
+              'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 4, 1, 12],
+              'circle-opacity': 0.55,
+              'circle-blur': 0.1,
+            },
+          });
+        }
+
+        state.map.setPaintProperty('goong-heat-outer', 'circle-color', colorOuter);
+        state.map.setPaintProperty('goong-heat-mid', 'circle-color', colorMid);
+        state.map.setPaintProperty('goong-heat-core', 'circle-color', colorCore);
+      }
+
+      function render() {
+        if (!state.map || !state.map.isStyleLoaded()) {
+          return;
+        }
+
+        if (!state.ready) {
+          state.ready = true;
+          state.lastError = null;
+        }
+
+        if (state.mode === 'reports') {
+          renderReports();
+        } else {
+          renderHeat();
+        }
+      }
+
+      function installMissingImageFallback(map) {
+        map.on('styleimagemissing', (event) => {
+          const id = event && event.id ? event.id : null;
+          if (id) {
+            if (state.missingImageIds.has(id) || map.hasImage(id)) {
+              return;
+            }
+
+            state.missingImageIds.add(id);
+            logStage('styleimagemissing', id);
+
+            const size = 16;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const context = canvas.getContext('2d');
+
+            if (!context) {
+              logError('styleimagemissing', `Missing Goong sprite image: ${id} (no canvas context)`);
+              return;
+            }
+
+            context.clearRect(0, 0, size, size);
+            context.beginPath();
+            context.arc(size / 2, size / 2, 5, 0, Math.PI * 2);
+            context.fillStyle = '#2563eb';
+            context.fill();
+            context.lineWidth = 2;
+            context.strokeStyle = '#ffffff';
+            context.stroke();
+
+            const imageData = context.getImageData(0, 0, size, size);
+
+            try {
+              map.addImage(id, imageData);
+              logStage('styleimagemissing', `blue-circle fallback injected for ${id}`);
+            } catch (error) {
+              logError('styleimagemissing', `failed to inject fallback for ${id}`, error);
+            }
+          }
+        });
+      }
+
+      function suppressSpriteHeavyLayers(map) {
+        if (!map || !map.getStyle || !map.getStyle().layers) {
+          return;
+        }
+
+        const symbolLayers = [];
+        for (const layer of map.getStyle().layers) {
+          const layout = layer.layout || {};
+          const usesIconImage = Object.prototype.hasOwnProperty.call(layout, 'icon-image');
+          if (layer.type === 'symbol' && usesIconImage) {
+            symbolLayers.push(layer.id);
+          }
+        }
+
+        if (symbolLayers.length > 0) {
+          logStage('suppress-layers', `detected ${symbolLayers.length} symbol layers: ${symbolLayers.slice(0, 12).join(', ')}`);
+        } else {
+          logStage('suppress-layers', 'no sprite-heavy symbol layers found');
+        }
+      }
+
+      function installResizeObserver(container) {
+        if (state.resizeObserver) {
+          state.resizeObserver.disconnect();
+          state.resizeObserver = null;
+        }
+
+        if (typeof ResizeObserver === 'undefined') {
+          return;
+        }
+
+        let lastWidth = 0;
+        let lastHeight = 0;
+
+        state.resizeObserver = new ResizeObserver(() => {
+          const width = container.clientWidth || 0;
+          const height = container.clientHeight || 0;
+
+          if (width > 0 && height > 0 && (width !== lastWidth || height !== lastHeight)) {
+            lastWidth = width;
+            lastHeight = height;
+            scheduleMapResize(container);
+          }
+        });
+        state.resizeObserver.observe(container);
+      }
+
+      function findContainerDeep(containerId) {
+        const queue = [document];
+
+        while (queue.length > 0) {
+          const root = queue.shift();
+          if (!root) continue;
+
+          if (root.getElementById) {
+            const byId = root.getElementById(containerId);
+            if (byId) return byId;
+          }
+
+          const nodes = root.querySelectorAll ? root.querySelectorAll('*') : [];
+          for (const node of nodes) {
+            if (node.id === containerId) {
+              return node;
+            }
+            if (node.shadowRoot) {
+              queue.push(node.shadowRoot);
+            }
+          }
+        }
+
+        return null;
+      }
+
+      window.goongAdminMapInit = function (containerOrId, styleUrl, lng, lat, zoom) {
+        logStage('init', 'called');
+        if (state.map) {
+          state.map.remove();
+          state.map = null;
+        }
+        if (state.resizeObserver) {
+          state.resizeObserver.disconnect();
+          state.resizeObserver = null;
+        }
+        if (state.resizeTimer) {
+          window.clearTimeout(state.resizeTimer);
+          state.resizeTimer = null;
+        }
+        state.ready = false;
+        state.lastError = null;
+
+        let container = null;
+        if (typeof containerOrId === 'string') {
+          container = findContainerDeep(containerOrId);
+        } else if (containerOrId instanceof HTMLElement) {
+          container = containerOrId;
+        } else if (containerOrId && typeof containerOrId.id === 'string') {
+          container = findContainerDeep(containerOrId.id);
+        }
+
+        if (!container) {
+          logError('init', 'Container not found', containerOrId);
+          return;
+        }
+
+        if (!container.isConnected) {
+          logError('init', 'Container not connected to DOM', container);
+          return;
+        }
+
+        if (container.clientWidth <= 0 || container.clientHeight <= 0) {
+          logError('init', `Container has invalid size ${container.clientWidth}x${container.clientHeight}`, container);
+          return;
+        }
+
+        logStage('init', `container=${container.clientWidth}x${container.clientHeight} styleUrl=${styleUrl}`);
+
+        window.requestAnimationFrame(() => {
+          window.setTimeout(() => {
+            try {
+              if (!container.isConnected) {
+                logError('init', 'Container detached before creating MapLibre map', container);
+                return;
+              }
+
+              if (container.clientWidth <= 0 || container.clientHeight <= 0) {
+                logError('init', `Container collapsed before creating map: ${container.clientWidth}x${container.clientHeight}`, container);
+                return;
+              }
+
+              logStage('init', 'creating MapLibre map');
+
+              // Ensure lng and lat are valid numbers
+              const validLng = Number(lng);
+              const validLat = Number(lat);
+              const validZoom = Number(zoom);
+
+              if (isNaN(validLng) || isNaN(validLat) || isNaN(validZoom)) {
+                throw new Error(`Invalid map parameters: lng=${lng} (${validLng}), lat=${lat} (${validLat}), zoom=${zoom} (${validZoom})`);
+              }
+
+              state.map = new maplibregl.Map({
+                container,
+                style: styleUrl,
+                center: [validLng, validLat],
+                zoom: validZoom,
+              });
+
+              installMissingImageFallback(state.map);
+              installResizeObserver(container);
+              // Disabled Goong NavigationControl to avoid UI overlap with admin zoom buttons
+              // state.map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+              state.map.on('load', () => {
+                state.ready = true;
+                state.lastError = null;
+                logStage('load', 'map load event fired');
+                suppressSpriteHeavyLayers(state.map);
+                scheduleMapResize(container);
+                render();
+              });
+              state.map.on('idle', () => {
+                if (state.map && state.map.isStyleLoaded()) {
+                  state.ready = true;
+                  state.lastError = null;
+
+                  const canvas = state.map.getCanvas();
+                  const cw = container.clientWidth || 0;
+                  const ch = container.clientHeight || 0;
+
+                  // Track good container sizes for collapse detection
+                  if (cw > 0 && ch > 0) {
+                    state.lastGoodContainerSize = { width: cw, height: ch };
+                    state.recoveryAttempts = 0;
+                  }
+
+                  if (canvas) {
+                    const computed = window.getComputedStyle(canvas);
+                    const rect = canvas.getBoundingClientRect();
+                    const visible =
+                      rect.width > 0 &&
+                      rect.height > 0 &&
+                      computed.visibility !== 'hidden' &&
+                      computed.display !== 'none';
+
+                    logStage(
+                      'idle',
+                      `container=${cw}x${ch}, canvas=${Math.round(rect.width)}x${Math.round(rect.height)}, visible=${visible}`
+                    );
+
+                    if (computed.backgroundColor === 'rgba(0, 0, 0, 0)' || !computed.backgroundColor) {
+                      canvas.style.backgroundColor = '#ffffff';
+                    }
+
+                    // Only attempt recovery if:
+                    // 1. Container has good size (> 0)
+                    // 2. Canvas is 0x0 (needs resize)
+                    // 3. We haven't exceeded recovery attempts
+                    if (cw > 0 && ch > 0 && rect.width === 0 && rect.height === 0 && state.recoveryAttempts < 1) {
+                      state.recoveryAttempts += 1;
+                      window.setTimeout(() => {
+                        if (state.map && container.isConnected) {
+                          const w = container.clientWidth || 0;
+                          const h = container.clientHeight || 0;
+                          if (w > 0 && h > 0) {
+                            state.map.resize();
+                            logStage('recover', `forced resize (attempt ${state.recoveryAttempts}) because canvas was 0x0 while container=${w}x${h}`);
+                          }
+                        }
+                      }, 120);
+                    }
+                  } else {
+                    logStage('idle', 'style loaded and map idle (NO CANVAS FOUND)');
+                  }
+                }
+              });
+              state.map.on('error', (event) => {
+                const msg = event && event.error && event.error.message ? event.error.message : 'Unknown map error';
+                logError('map-error', msg, event);
+              });
+              state.map.on('data', (event) => {
+                if (event && event.sourceId) {
+                  if (event.isSourceLoaded) {
+                    logStage('data', `source '${event.sourceId}' loaded`);
+                  }
+                }
+              });
+              state.map.on('styledata', () => {
+                if (state.map && state.map.isStyleLoaded()) {
+                  state.ready = true;
+                  state.lastError = null;
+                  logStage('styledata', 'style is loaded');
+                  suppressSpriteHeavyLayers(state.map);
+                }
+              });
+              state.map.on('click', clearPopup);
+
+              scheduleMapResize(container);
+            } catch (e) {
+              logError('init', String(e), e);
+            }
+          }, 0);
+        });
+      };
+
+      window.goongAdminMapIsReady = function () {
+        return !!state.ready;
+      };
+
+      window.goongAdminMapLastError = function () {
+        return state.lastError;
+      };
+
+      window.goongAdminMapDiagnostics = function () {
+        let canvasInfo = { found: false, visible: false, width: 0, height: 0 };
+        let styleInfo = { loaded: false, layers: 0, sources: 0 };
+
+        if (state.map) {
+          const canvas = state.map.getCanvas();
+          if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const computed = window.getComputedStyle(canvas);
+            canvasInfo = {
+              found: true,
+              visible: rect.width > 0 && rect.height > 0 && computed.display !== 'none' && computed.visibility !== 'hidden',
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
+              opacity: computed.opacity,
+              zIndex: computed.zIndex,
+            };
+          }
+
+          if (state.map.isStyleLoaded && state.map.getStyle) {
+            const style = state.map.getStyle();
+            styleInfo = {
+              loaded: state.map.isStyleLoaded(),
+              layers: style && style.layers ? style.layers.length : 0,
+              sources: style && style.sources ? Object.keys(style.sources).length : 0,
+            };
+          }
+        }
+
+        return JSON.stringify({
+          ready: state.ready,
+          lastStage: state.lastStage,
+          lastError: state.lastError,
+          map: state.map ? 'exists' : 'null',
+          canvas: canvasInfo,
+          style: styleInfo,
+          recentEvents: state.events.slice(-10),
+        });
+      };
+
+      window.goongAdminMapSetMode = function (mode) {
+        state.mode = mode;
+        render();
+      };
+
+      window.goongAdminMapSetReports = function (json) {
+        try {
+          state.reports = JSON.parse(json || '[]');
+        } catch (e) {
+          state.reports = [];
+        }
+        render();
+      };
+
+      window.goongAdminMapSetHeatPoints = function (json) {
+        try {
+          state.heatPoints = JSON.parse(json || '[]');
+        } catch (e) {
+          state.heatPoints = [];
+        }
+        render();
+      };
+
+      window.goongAdminMapZoomIn = function () {
+        if (state.map) {
+          state.map.zoomIn();
+        }
+      };
+
+      window.goongAdminMapZoomOut = function () {
+        if (state.map) {
+          state.map.zoomOut();
+        }
+      };
+
+      window.goongAdminMapDispose = function () {
+        clearMarkers();
+        clearHeat();
+        clearPopup();
+        if (state.resizeObserver) {
+          state.resizeObserver.disconnect();
+          state.resizeObserver = null;
+        }
+        if (state.resizeTimer) {
+          window.clearTimeout(state.resizeTimer);
+          state.resizeTimer = null;
+        }
+        if (state.map) {
+          state.map.remove();
+          state.map = null;
+        }
+      };
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </head>
 
