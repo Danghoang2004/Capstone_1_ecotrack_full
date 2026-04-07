@@ -1,13 +1,20 @@
+import 'dart:async';
+import 'dart:convert';
+// ignore: deprecated_member_use, avoid_web_libraries_in_flutter
+import 'dart:js' as js;
+// ignore: deprecated_member_use, avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'dart:ui_web' as ui;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:frontend_ecotrack/core/services/hotspot_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend_ecotrack/core/services/ReportService.dart';
+import 'package:frontend_ecotrack/core/services/hotspot_service.dart';
 import 'package:frontend_ecotrack/data/models/hotspot_models.dart';
 import 'package:frontend_ecotrack/data/models/report_model.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
-import 'dart:async';
+import 'package:http/http.dart' as http;
 
 class AdminMapPage extends StatefulWidget {
   const AdminMapPage({super.key});
@@ -17,46 +24,391 @@ class AdminMapPage extends StatefulWidget {
 }
 
 class _AdminMapPageState extends State<AdminMapPage> {
-  GoogleMapController? _mapController;
+  static const String _initialModeReports = 'reports';
+  static const String _initialModeObserved = 'heat_observed';
+  static const String _initialModePredicted = 'heat_predicted';
+  static const double _initialLat = 16.0471;
+  static const double _initialLng = 108.2068;
+  static const double _initialZoom = 16.2;
+
   final ReportServiceAdmin _reportService = ReportServiceAdmin();
   final HotspotService _hotspotService = HotspotService();
 
-  List<Report> _reports = [];
-
-  // ================== [THÊM MỚI] ==================
+  final List<Report> _reports = [];
   List<List<Report>> _groupedReports = [];
+  List<PredictedHeatmapPoint> _observedHeatmapPoints = [];
+  List<PredictedHeatmapPoint> _predictedHeatmapPoints = [];
+
+  Timer? _reportsPollingTimer;
   Timer? _hotspotDebounce;
+  Timer? _mapInitRetryTimer;
+  Timer? _mapReadyPoller;
+  bool _isLoadingReports = true;
   bool _isLoadingHotspots = false;
   bool _isHeatmapMode = false;
   bool _showPredictedHotspots = false;
-  List<PredictedHeatmapPoint> _observedHeatmapPoints = [];
-  List<PredictedHeatmapPoint> _predictedHeatmapPoints = [];
-  LatLngBounds? _lastVisibleBounds;
-  // =================================================
+  bool _mapReady = false;
+  bool _mapInitializing = false;
+  bool _mapInitialized = false;
+  String _mapStatus = 'Đang khởi tạo Goong map...';
+
+  late final String _viewType;
+  html.DivElement? _mapContainer;
 
   @override
   void initState() {
     super.initState();
+    _viewType = 'goong-admin-map-${DateTime.now().microsecondsSinceEpoch}';
+    _registerViewFactory();
     _fetchReports();
+    _startReportsPolling();
+    _validateGoongApiKey();
+  }
+
+  void _startReportsPolling() {
+    _reportsPollingTimer?.cancel();
+    _reportsPollingTimer = Timer.periodic(const Duration(seconds: 60), (_) {
+      _fetchReports();
+      if (_isHeatmapMode) {
+        _hotspotDebounce?.cancel();
+        _hotspotDebounce = Timer(const Duration(milliseconds: 250), () {
+          if (mounted && _isHeatmapMode) {
+            _fetchHotspots();
+          }
+        });
+      }
+    });
+  }
+
+  void _stopReportsPolling() {
+    _reportsPollingTimer?.cancel();
+    _reportsPollingTimer = null;
+  }
+
+  @override
+  void deactivate() {
+    _stopReportsPolling();
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _startReportsPolling();
+  }
+
+  void _registerViewFactory() {
+    ui.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
+      final container = html.DivElement()
+        ..id = _viewType
+        ..className = 'goong-map-host'
+        ..style.width = '100%'
+        ..style.height = '100%'
+        ..style.position = 'absolute'
+        ..style.top = '0'
+        ..style.right = '0'
+        ..style.bottom = '0'
+        ..style.left = '0'
+        ..style.backgroundColor = '#eef4ef';
+
+      _mapContainer = container;
+      return container;
+    });
+  }
+
+  void _onPlatformViewCreated(int viewId) {
+    _mapContainer ??=
+        html.document.getElementById(_viewType) as html.DivElement?;
+    _waitForContainerAndInit();
+  }
+
+  void _waitForContainerAndInit() {
+    int attempts = 0;
+
+    void check() {
+      if (!mounted || _mapInitialized || _mapInitializing) {
+        return;
+      }
+
+      final container = _mapContainer;
+      final ready =
+          container != null &&
+          container.isConnected == true &&
+          container.clientWidth > 0 &&
+          container.clientHeight > 0;
+
+      if (ready) {
+        _initializeGoongMap();
+        return;
+      }
+
+      attempts += 1;
+      if (attempts == 30) {
+        _setMapStatus('Đang chờ container Goong map sẵn sàng...');
+        _logMapTrace(
+          'attach',
+          'Container still not ready after 30 retries, continue waiting',
+        );
+      }
+
+      Future.delayed(const Duration(milliseconds: 100), check);
+    }
+
+    check();
+  }
+
+  Future<void> _initializeGoongMap() async {
+    if (!kIsWeb || _mapInitializing || _mapInitialized) {
+      return;
+    }
+
+    _mapInitializing = true;
+
+    try {
+      final String mapKey = dotenv.env['GOONG_MAP_KEY'] ?? '';
+      if (mapKey.isEmpty) {
+        _setMapStatus('Thiếu GOONG_MAP_KEY trong .env');
+        _logMapTrace('init', 'Missing GOONG_MAP_KEY');
+        return;
+      }
+
+      final container = _mapContainer;
+      if (container == null || container.isConnected != true) {
+        _logMapTrace('init', 'container is null or not connected');
+        _scheduleMapInitRetry('Chưa sẵn sàng container cho Goong map');
+        return;
+      }
+
+      if (container.clientWidth <= 0 || container.clientHeight <= 0) {
+        _logMapTrace(
+          'init',
+          'container size is not ready yet (${container.clientWidth}x${container.clientHeight})',
+        );
+        _scheduleMapInitRetry('Đang chờ kích thước container Goong map...');
+        return;
+      }
+
+      final styleUrl =
+          'https://tiles.goong.io/assets/goong_map_web.json?api_key=$mapKey';
+
+      _mapReadyPoller?.cancel();
+
+      _mapReady = false;
+      _setMapStatus('Đang tải Goong map...');
+      _logMapTrace(
+        'init',
+        'starting with center=($_initialLng,$_initialLat) zoom=$_initialZoom',
+      );
+
+      if (!_hasGoongMapHostMethod('goongAdminMapInit')) {
+        _logMapTrace('init', 'goongAdminMapInit is not available yet');
+        _scheduleMapInitRetry('Chưa nạp được Goong map host');
+        return;
+      }
+
+      _startGoongMapInit(
+        container: container,
+        styleUrl: styleUrl,
+        lng: _initialLng,
+        lat: _initialLat,
+        zoom: _initialZoom,
+      );
+
+      _mapReadyPoller = Timer.periodic(const Duration(milliseconds: 150), (
+        timer,
+      ) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        try {
+          if (!_hasGoongMapHostMethod('goongAdminMapIsReady')) {
+            timer.cancel();
+            _logMapTrace('poll', 'goongAdminMapIsReady is not available yet');
+            _scheduleMapInitRetry('Chưa nạp được Goong map host');
+            return;
+          }
+
+          final isReady = js.context.callMethod(
+            'goongAdminMapIsReady',
+            const [],
+          );
+
+          if (isReady == true) {
+            timer.cancel();
+            _mapReady = true;
+            _mapInitialized = true;
+            _setMapStatus('Goong map đã sẵn sàng');
+            _logMapTrace('ready', 'Goong map reported ready by JS host');
+            setState(() {});
+            _syncMapState();
+            return;
+          }
+
+          final error = _hasGoongMapHostMethod('goongAdminMapLastError')
+              ? js.context.callMethod('goongAdminMapLastError', const [])
+              : null;
+          if (error != null && error.toString().isNotEmpty) {
+            _setMapStatus('Goong map chưa tải xong: $error');
+            _logMapTrace('poll', error.toString());
+            _logMapTrace('poll', _readGoongMapDiagnostics());
+            setState(() {});
+          }
+        } catch (e) {
+          timer.cancel();
+          _logMapTrace('poll', 'status poll failed: $e');
+        }
+      });
+
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      _logMapTrace('init', 'Goong map init failed: $e');
+      if (mounted) {
+        _setMapStatus('Không thể khởi tạo Goong map');
+      }
+    } finally {
+      _mapInitializing = false;
+    }
+  }
+
+  void _startGoongMapInit({
+    required html.DivElement container,
+    required String styleUrl,
+    required double lng,
+    required double lat,
+    required double zoom,
+  }) {
+    Timer.run(() {
+      if (!mounted) {
+        return;
+      }
+
+      try {
+        _logMapTrace(
+          'host-call',
+          'Calling goongAdminMapInit with lng=$lng, lat=$lat, zoom=$zoom',
+        );
+        js.context.callMethod('goongAdminMapInit', [
+          container,
+          styleUrl,
+          lng,
+          lat,
+          zoom,
+        ]);
+        _logMapTrace('host-init', 'goongAdminMapInit invoked successfully');
+        _logMapTrace('host-init', _readGoongMapDiagnostics());
+      } catch (e) {
+        _logMapTrace('host-init', 'goongAdminMapInit call failed: $e');
+        if (mounted) {
+          _setMapStatus('Không thể gọi init của Goong map');
+          _scheduleMapInitRetry('Chưa thể gọi Goong map host, sẽ thử lại');
+        }
+      }
+    });
+  }
+
+  void _scheduleMapInitRetry(String status) {
+    if (!mounted || _mapReady || _mapInitialized) {
+      return;
+    }
+
+    _mapStatus = status;
+    _logMapTrace('retry', status);
+    setState(() {});
+
+    _mapInitRetryTimer?.cancel();
+    _mapInitRetryTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted && !_mapReady && !_mapInitialized && !_mapInitializing) {
+        _initializeGoongMap();
+      }
+    });
+  }
+
+  void _setMapStatus(String status) {
+    _mapStatus = status;
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _logMapTrace(String stage, String message) {
+    debugPrint('[GoongMap][$stage] $message');
+  }
+
+  bool _hasGoongMapHostMethod(String methodName) {
+    try {
+      return js.context.hasProperty(methodName) == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _readGoongMapDiagnostics() {
+    try {
+      if (_hasGoongMapHostMethod('goongAdminMapDiagnostics')) {
+        final diagnostics = js.context.callMethod(
+          'goongAdminMapDiagnostics',
+          const [],
+        );
+        return '[GoongMap][diagnostics] ${diagnostics.toString()}';
+      }
+    } catch (e) {
+      return '[GoongMap][diagnostics] failed: $e';
+    }
+
+    return '[GoongMap][diagnostics] unavailable';
+  }
+
+  Future<void> _validateGoongApiKey() async {
+    final String apiKey = dotenv.env['GOONG_API_KEY'] ?? '';
+    if (apiKey.isEmpty) {
+      debugPrint('GOONG_API_KEY is empty. Goong API calls are disabled.');
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(
+        'https://rsapi.goong.io/Geocode?address=Da%20Nang&api_key=$apiKey',
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        debugPrint('Goong API key is valid. NPS/API call is working.');
+      } else {
+        debugPrint(
+          'Goong API check failed: ${response.statusCode} ${response.body}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Goong API check error: $e');
+    }
   }
 
   Future<void> _fetchReports() async {
     try {
       final data = await _reportService.fetchAllReports();
-      if (mounted) {
-        setState(() {
-          _reports = data;
-        });
+      if (!mounted) return;
 
-        // ===== [THÊM] Gom nhóm GPS trong bán kính 40m =====
+      setState(() {
+        _reports
+          ..clear()
+          ..addAll(data);
         _groupReportsByDistance(data, radiusInMeters: 40);
-      }
+        _isLoadingReports = false;
+      });
+
+      _syncMapState();
     } catch (e) {
-      debugPrint("Lỗi tải báo cáo: $e");
+      debugPrint('Lỗi tải báo cáo: $e');
+      if (mounted) {
+        setState(() => _isLoadingReports = false);
+      }
     }
   }
 
-  // ================== [THÊM MỚI] ==================
   void _groupReportsByDistance(
     List<Report> reports, {
     double radiusInMeters = 40,
@@ -68,7 +420,6 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
       for (final group in groups) {
         final center = group.first;
-
         final double dist = Geolocator.distanceBetween(
           center.latitude,
           center.longitude,
@@ -88,55 +439,163 @@ class _AdminMapPageState extends State<AdminMapPage> {
       }
     }
 
-    setState(() {
-      _groupedReports = groups;
-    });
+    _groupedReports = groups;
   }
-  // =================================================
 
   @override
   void dispose() {
+    _stopReportsPolling();
     _hotspotDebounce?.cancel();
+    _mapInitRetryTimer?.cancel();
+    _mapReadyPoller?.cancel();
+    if (kIsWeb && js.context['goongAdminMapDispose'] != null) {
+      try {
+        js.context.callMethod('goongAdminMapDispose', const []);
+      } catch (_) {
+        // ignore
+      }
+    }
     super.dispose();
   }
 
-  void _onCameraMove(CameraPosition position) {
-    if (!_isHeatmapMode) return;
+  void _syncMapState() {
+    if (!kIsWeb || !_mapReady) {
+      debugPrint(
+        '[AdminMapPage._syncMapState] Early return: kIsWeb=$kIsWeb, _mapReady=$_mapReady',
+      );
+      return;
+    }
 
-    _hotspotDebounce?.cancel();
-    _hotspotDebounce = Timer(const Duration(milliseconds: 600), () {
-      _fetchHotspotsFromViewport();
-    });
-  }
-
-  Future<void> _fetchHotspotsFromViewport() async {
-    if (_mapController == null || _isLoadingHotspots || !_isHeatmapMode) return;
     try {
-      final bounds = await _mapController!.getVisibleRegion();
-      _lastVisibleBounds = bounds;
-      await _fetchHotspots(bounds);
+      final mode = _isHeatmapMode
+          ? (_showPredictedHotspots
+                ? _initialModePredicted
+                : _initialModeObserved)
+          : _initialModeReports;
+
+      debugPrint(
+        '[AdminMapPage._syncMapState] Syncing mode=$mode, _reports.length=${_reports.length}, _groupedReports.length=${_groupedReports.length}',
+      );
+      js.context.callMethod('goongAdminMapSetMode', [mode]);
+
+      if (mode == _initialModeReports) {
+        js.context.callMethod('goongAdminMapSetReports', [
+          jsonEncode(_buildReportPayload()),
+        ]);
+      } else {
+        final payload = _showPredictedHotspots
+            ? _buildHeatPayload(_predictedHeatmapPoints, predicted: true)
+            : _buildHeatPayload(_observedHeatmapPoints, predicted: false);
+        js.context.callMethod('goongAdminMapSetHeatPoints', [
+          jsonEncode(payload),
+        ]);
+      }
     } catch (e) {
-      debugPrint('Lỗi lấy visible bounds: $e');
+      debugPrint('Lỗi đồng bộ dữ liệu map: $e');
     }
   }
 
-  Future<void> _fetchHotspots([LatLngBounds? bounds]) async {
-    final LatLngBounds? targetBounds = bounds ?? _lastVisibleBounds;
-    if (targetBounds == null || _isLoadingHotspots || !_isHeatmapMode) return;
+  List<Map<String, dynamic>> _buildReportPayload() {
+    final payload = _groupedReports.map((group) {
+      final Report first = group.first;
+      // Sort reports in group by ID for stable/deterministic ordering
+      final reportsInCluster = [...group]
+        ..sort((a, b) => a.reportId.compareTo(b.reportId));
+
+      return <String, dynamic>{
+        'reportId': first.reportId,
+        'title': first.title,
+        'description': first.description,
+        'imageUrl': first.imageUrl,
+        'latitude': first.latitude,
+        'longitude': first.longitude,
+        'status': _pickClusterStatus(reportsInCluster),
+        'category': first.category,
+        'count': group.length,
+        // Include full nested reports for popup display
+        'reports': reportsInCluster
+            .map(
+              (r) => <String, dynamic>{
+                'id': r.reportId,
+                'title': r.title,
+                'description': r.description,
+                'imageUrl': r.imageUrl,
+                'latitude': r.latitude,
+                'longitude': r.longitude,
+                'status': r.status,
+              },
+            )
+            .toList(),
+      };
+    }).toList();
+    debugPrint(
+      '[AdminMapPage._buildReportPayload] Built payload with ${payload.length} items',
+    );
+    return payload;
+  }
+
+  String _pickClusterStatus(List<Report> reports) {
+    final statuses = reports.map((r) => r.status.toUpperCase()).toSet();
+    if (statuses.contains('PENDING')) return 'PENDING';
+    if (statuses.contains('VERIFIED')) return 'VERIFIED';
+    if (statuses.contains('CLEANED')) return 'CLEANED';
+    if (reports.isEmpty) return 'UNKNOWN';
+    return reports.first.status;
+  }
+
+  List<Map<String, dynamic>> _buildHeatPayload(
+    List<PredictedHeatmapPoint> points, {
+    required bool predicted,
+  }) {
+    return points
+        .map(
+          (point) => <String, dynamic>{
+            'lat': point.lat,
+            'lng': point.lng,
+            'intensity': point.intensity,
+            'predictedCount7d': point.predictedCount7d,
+            'predicted': predicted,
+          },
+        )
+        .toList();
+  }
+
+  void _setReportView() {
+    setState(() {
+      _isHeatmapMode = false;
+      _showPredictedHotspots = false;
+    });
+    _syncMapState();
+  }
+
+  void _setHeatmapView({required bool predicted}) {
+    setState(() {
+      _isHeatmapMode = true;
+      _showPredictedHotspots = predicted;
+      _mapStatus = predicted
+          ? 'Đang tải bản đồ dự đoán...'
+          : 'Đang tải bản đồ hotspot...';
+    });
+
+    _fetchHotspots();
+  }
+
+  Future<void> _fetchHotspots() async {
+    if (_isLoadingHotspots || !_isHeatmapMode) return;
 
     _isLoadingHotspots = true;
     try {
       final clusterFuture = _hotspotService.fetchAdminClusterInArea(
-        minLat: targetBounds.southwest.latitude,
-        maxLat: targetBounds.northeast.latitude,
-        minLng: targetBounds.southwest.longitude,
-        maxLng: targetBounds.northeast.longitude,
+        minLat: 8.0,
+        maxLat: 24.0,
+        minLng: 102.0,
+        maxLng: 110.0,
       );
       final predictFuture = _hotspotService.fetchAdminPredictionInArea(
-        minLat: targetBounds.southwest.latitude,
-        maxLat: targetBounds.northeast.latitude,
-        minLng: targetBounds.southwest.longitude,
-        maxLng: targetBounds.northeast.longitude,
+        minLat: 8.0,
+        maxLat: 24.0,
+        minLng: 102.0,
+        maxLng: 110.0,
       );
 
       final clusterResult = await clusterFuture;
@@ -144,25 +603,22 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
       if (!mounted) return;
 
-      // DEBUG: Log dữ liệu
-      debugPrint('Cluster hotspots: ${clusterResult.hotspots.length}');
-      debugPrint(
-        'Predicted heatmap points: ${predictResult.heatmapPoints.length}',
-      );
-
       setState(() {
         _observedHeatmapPoints = _toObservedHeatmapPoints(
           clusterResult.hotspots,
         );
         _predictedHeatmapPoints = predictResult.heatmapPoints;
 
-        // Fallback: nếu API chưa có hotspot thì dựng heatmap từ báo cáo trong vùng nhìn thấy.
         if (_observedHeatmapPoints.isEmpty && _predictedHeatmapPoints.isEmpty) {
-          _observedHeatmapPoints = _buildFallbackHeatmapFromReports(
-            targetBounds,
-          );
+          _observedHeatmapPoints = _buildFallbackHeatmapFromAllReports();
         }
+
+        _mapStatus = _showPredictedHotspots
+            ? 'Hiển thị vùng dự đoán'
+            : 'Hiển thị hotspot thực tế';
       });
+
+      _syncMapState();
     } catch (e) {
       debugPrint('Lỗi fetch hotspot: $e');
     } finally {
@@ -170,59 +626,16 @@ class _AdminMapPageState extends State<AdminMapPage> {
     }
   }
 
-  void _setReportView() {
-    setState(() {
-      _isHeatmapMode = false;
-      _showPredictedHotspots = false;
-      _observedHeatmapPoints = [];
-      _predictedHeatmapPoints = [];
-    });
-  }
+  List<PredictedHeatmapPoint> _buildFallbackHeatmapFromAllReports() {
+    final reports = _reports.where((r) => r.status != 'REJECTED').toList();
+    if (reports.isEmpty) return [];
 
-  void _setHeatmapView({required bool predicted}) {
-    setState(() {
-      _isHeatmapMode = true;
-      _showPredictedHotspots = predicted;
-      if (predicted) {
-        _observedHeatmapPoints = [];
-      } else {
-        _predictedHeatmapPoints = [];
-      }
-    });
-    _fetchHotspotsFromViewport();
-  }
-
-  Future<void> _zoomIn() async {
-    if (_mapController != null) {
-      await _mapController!.animateCamera(CameraUpdate.zoomIn());
-    }
-  }
-
-  Future<void> _zoomOut() async {
-    if (_mapController != null) {
-      await _mapController!.animateCamera(CameraUpdate.zoomOut());
-    }
-  }
-
-  List<PredictedHeatmapPoint> _buildFallbackHeatmapFromReports(
-    LatLngBounds bounds,
-  ) {
-    final reportsInView = _reports.where((r) {
-      if (r.status == 'REJECTED') return false;
-      return r.latitude >= bounds.southwest.latitude &&
-          r.latitude <= bounds.northeast.latitude &&
-          r.longitude >= bounds.southwest.longitude &&
-          r.longitude <= bounds.northeast.longitude;
-    }).toList();
-
-    if (reportsInView.isEmpty) return [];
-
-    const double cellSize = 0.0035; // ~350-400m
+    const double cellSize = 0.0035;
     final Map<String, int> counts = {};
     final Map<String, double> sumLat = {};
     final Map<String, double> sumLng = {};
 
-    for (final r in reportsInView) {
+    for (final r in reports) {
       final int latCell = (r.latitude / cellSize).floor();
       final int lngCell = (r.longitude / cellSize).floor();
       final key = '$latCell:$lngCell';
@@ -232,10 +645,10 @@ class _AdminMapPageState extends State<AdminMapPage> {
       sumLng[key] = (sumLng[key] ?? 0) + r.longitude;
     }
 
-    final int maxCount = counts.values.fold(1, (a, b) => b > a ? b : a);
-    return counts.entries.map((e) {
-      final key = e.key;
-      final count = e.value;
+    final int maxCount = counts.values.fold<int>(1, (a, b) => b > a ? b : a);
+    return counts.entries.map((entry) {
+      final key = entry.key;
+      final count = entry.value;
       return PredictedHeatmapPoint(
         lat: (sumLat[key] ?? 0) / count,
         lng: (sumLng[key] ?? 0) / count,
@@ -256,423 +669,178 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
     return zones
         .map(
-          (z) => PredictedHeatmapPoint(
-            lat: z.centerLat,
-            lng: z.centerLng,
-            intensity: (z.reportCount / maxCount).clamp(0.0, 1.0),
-            predictedCount7d: z.reportCount,
+          (zone) => PredictedHeatmapPoint(
+            lat: zone.centerLat,
+            lng: zone.centerLng,
+            intensity: (zone.reportCount / maxCount).clamp(0.0, 1.0),
+            predictedCount7d: zone.reportCount,
           ),
         )
         .toList();
   }
 
-  Color _heatColor(double intensity, {required bool predicted}) {
-    final double t = intensity.clamp(0.0, 1.0);
-    if (predicted) {
-      if (t >= 0.85) return Colors.red;
-      if (t >= 0.6) return Colors.deepOrange;
-      if (t >= 0.35) return Colors.orangeAccent;
-      return Colors.amber;
+  Future<void> _zoomIn() async {
+    if (!kIsWeb || !_mapReady) return;
+    js.context.callMethod('goongAdminMapZoomIn', const []);
+  }
+
+  Future<void> _zoomOut() async {
+    if (!kIsWeb || !_mapReady) return;
+    js.context.callMethod('goongAdminMapZoomOut', const []);
+  }
+
+  Widget _buildMapStatusBanner() {
+    final String mapKey = dotenv.env['GOONG_MAP_KEY'] ?? '';
+    if (mapKey.isNotEmpty && _mapReady) {
+      return const SizedBox.shrink();
     }
 
-    if (t >= 0.85) return Colors.deepOrange;
-    if (t >= 0.6) return Colors.orange;
-    if (t >= 0.35) return Colors.amber;
-    return Colors.yellow;
-  }
-
-  Set<Circle> _buildHeatCircles(
-    List<PredictedHeatmapPoint> points, {
-    required bool predicted,
-  }) {
-    final Set<Circle> circles = {};
-    for (final point in points) {
-      final double t = point.intensity.clamp(0.0, 1.0);
-      final Color base = _heatColor(t, predicted: predicted);
-
-      // Layer 1: Large outer heatmap layer - visible from far away
-      circles.add(
-        Circle(
-          circleId: CircleId('${predicted}_${point.lat}_${point.lng}_outer'),
-          center: LatLng(point.lat, point.lng),
-          radius: 400 + (t * 400),
-          fillColor: base.withOpacity(
-            predicted ? 0.15 + (t * 0.25) : 0.12 + (t * 0.23),
-          ),
-          strokeWidth: 0,
+    return Positioned(
+      top: 12,
+      left: 12,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red.shade200),
         ),
-      );
-      // Layer 2: Medium layer - mid-range visibility
-      circles.add(
-        Circle(
-          circleId: CircleId('${predicted}_${point.lat}_${point.lng}_mid'),
-          center: LatLng(point.lat, point.lng),
-          radius: 240 + (t * 260),
-          fillColor: base.withOpacity(
-            predicted ? 0.25 + (t * 0.30) : 0.22 + (t * 0.28),
-          ),
-          strokeWidth: 0,
-        ),
-      );
-      // Layer 3: Core layer - most visible
-      circles.add(
-        Circle(
-          circleId: CircleId('${predicted}_${point.lat}_${point.lng}_core'),
-          center: LatLng(point.lat, point.lng),
-          radius: 120 + (t * 200),
-          fillColor: base.withOpacity(
-            predicted ? 0.40 + (t * 0.35) : 0.38 + (t * 0.37),
-          ),
-          strokeWidth: 0,
-        ),
-      );
-    }
-    return circles;
-  }
-
-  Set<Marker> _buildReportMarkers() {
-    if (_isHeatmapMode) return {};
-
-    return _groupedReports.asMap().entries.map((entry) {
-      final int idx = entry.key;
-      final List<Report> group = entry.value;
-      final Report first = group.first;
-
-      return Marker(
-        markerId: MarkerId('report_group_${first.reportId}_$idx'),
-        position: LatLng(first.latitude, first.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(
-          _statusToMarkerHue(first.status),
-        ),
-        infoWindow: group.length > 1
-            ? InfoWindow(
-                title: first.title,
-                snippet: '${group.length} báo cáo gần nhau',
-              )
-            : InfoWindow(title: first.title),
-        onTap: () {
-          if (group.length == 1) {
-            _showReportDetail(context, first);
-          } else {
-            _showGroupedAdminReports(context, group);
-          }
-        },
-      );
-    }).toSet();
-  }
-
-  double _statusToMarkerHue(String status) {
-    switch (status) {
-      case 'PENDING':
-        return BitmapDescriptor.hueRed;
-      case 'VERIFIED':
-        return BitmapDescriptor.hueOrange;
-      case 'CLEANED':
-        return BitmapDescriptor.hueGreen;
-      case 'REJECTED':
-        return BitmapDescriptor.hueAzure;
-      default:
-        return BitmapDescriptor.hueRose;
-    }
-  }
-
-  String _buildImageUrl(String? path) {
-    if (path == null || path.isEmpty) return "";
-    if (path.startsWith("http")) return path;
-
-    final String baseUrl =
-        dotenv.env['API_BASE_URL'] ?? "http://192.168.1.89:8080";
-    return "$baseUrl$path";
-  }
-
-  void _showReportDetail(BuildContext context, Report report) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: 400,
-          padding: const EdgeInsets.all(0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(16),
-                    ),
-                    child: Image.network(
-                      _buildImageUrl(report.imageUrl),
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 200,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.broken_image, size: 50),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 8,
-                    top: 8,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        onPressed: () => Navigator.pop(ctx),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStatusBadge(report.status),
-                        Text(
-                          DateFormat(
-                            'dd/MM/yyyy HH:mm',
-                          ).format(report.createdAt),
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      report.title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text("Loại rác: ${report.category}"),
-                    const SizedBox(height: 12),
-                    Text(report.description),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        child: Text(
+          _mapStatus,
+          style: const TextStyle(fontSize: 12, color: Colors.red),
         ),
       ),
     );
   }
 
-  // ================== [THÊM MỚI] ==================
-  void _showGroupedAdminReports(BuildContext context, List<Report> reports) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
-        child: Column(
+  @override
+  Widget build(BuildContext context) {
+    final bool hasGoongKey = (dotenv.env['GOONG_MAP_KEY'] ?? '').isNotEmpty;
+
+    return Scaffold(
+      body: Container(
+        color: const Color(0xFFeef4ef),
+        width: double.infinity,
+        height: double.infinity,
+        child: Stack(
           children: [
-            const SizedBox(height: 10),
-            Container(
-              height: 5,
-              width: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(10),
+            Positioned.fill(
+              child: HtmlElementView(
+                viewType: _viewType,
+                onPlatformViewCreated: _onPlatformViewCreated,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              "Có ${reports.length} báo cáo gần nhau",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: reports.length,
-                itemBuilder: (_, index) {
-                  final r = reports[index];
-                  return ListTile(
-                    leading: Icon(
-                      Icons.location_pin,
-                      color: _getStatusColor(r.status),
+            Positioned(top: 5, right: 12, child: _buildMapLegend()),
+            Positioned(
+              right: 4,
+              bottom: 50,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  FloatingActionButton(
+                    heroTag: 'admin_zoom_in',
+                    mini: true,
+                    onPressed: _zoomIn,
+                    backgroundColor: const Color(0xFF2E7D32),
+                    child: const Icon(Icons.add, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton(
+                    heroTag: 'admin_zoom_out',
+                    mini: true,
+                    onPressed: _zoomOut,
+                    backgroundColor: const Color(0xFF2E7D32),
+                    child: const Icon(Icons.remove, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton(
+                    heroTag: 'admin_mode_reports',
+                    mini: true,
+                    onPressed: _setReportView,
+                    backgroundColor: !_isHeatmapMode
+                        ? Colors.blue
+                        : Colors.grey,
+                    child: const Icon(Icons.list, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton(
+                    heroTag: 'admin_mode_hotspots',
+                    mini: true,
+                    onPressed: () => _setHeatmapView(predicted: false),
+                    backgroundColor: _isHeatmapMode && !_showPredictedHotspots
+                        ? Colors.orange
+                        : Colors.grey,
+                    child: const Icon(
+                      Icons.local_fire_department,
+                      color: Colors.white,
                     ),
-                    title: Text(r.title),
-                    subtitle: Text(
-                      "${r.latitude}, ${r.longitude}",
-                      maxLines: 1,
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _showReportDetail(context, r);
-                    },
-                  );
-                },
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton(
+                    heroTag: 'admin_mode_prediction',
+                    mini: true,
+                    onPressed: () => _setHeatmapView(predicted: true),
+                    backgroundColor: _isHeatmapMode && _showPredictedHotspots
+                        ? Colors.deepOrange
+                        : Colors.grey,
+                    child: const Icon(Icons.show_chart, color: Colors.white),
+                  ),
+                ],
               ),
             ),
+            if (_isLoadingReports)
+              const Positioned(
+                top: 20,
+                left: 12,
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            if (_isLoadingHotspots)
+              const Positioned(
+                top: 20,
+                right: 12,
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            _buildMapStatusBanner(),
+            if (!hasGoongKey)
+              Positioned(
+                left: 12,
+                bottom: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: const Text(
+                    'Thiếu GOONG_MAP_KEY trong .env',
+                    style: TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     );
-  }
-  // =================================================
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            onMapCreated: (controller) {
-              _mapController = controller;
-              if (_isHeatmapMode) {
-                _fetchHotspotsFromViewport();
-              }
-            },
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(16.0471, 108.2068),
-              zoom: 12.0,
-            ),
-            onCameraMove: _onCameraMove,
-            onCameraIdle: () {
-              if (_isHeatmapMode) {
-                _fetchHotspotsFromViewport();
-              }
-            },
-            circles: {
-              if (_isHeatmapMode && !_showPredictedHotspots)
-                ..._buildHeatCircles(_observedHeatmapPoints, predicted: false),
-              if (_isHeatmapMode && _showPredictedHotspots)
-                ..._buildHeatCircles(_predictedHeatmapPoints, predicted: true),
-            },
-            markers: _buildReportMarkers(),
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-            mapType: MapType.normal,
-          ),
-          Positioned(top: 50, right: 12, child: _buildMapLegend()),
-          Positioned(
-            right: 4,
-            bottom: 50,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                FloatingActionButton(
-                  heroTag: 'admin_zoom_in',
-                  mini: true,
-                  onPressed: _zoomIn,
-                  backgroundColor: const Color(0xFF2E7D32),
-                  child: const Icon(Icons.add, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  heroTag: 'admin_zoom_out',
-                  mini: true,
-                  onPressed: _zoomOut,
-                  backgroundColor: const Color(0xFF2E7D32),
-                  child: const Icon(Icons.remove, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  heroTag: 'admin_mode_reports',
-                  mini: true,
-                  onPressed: _setReportView,
-                  backgroundColor: !_isHeatmapMode ? Colors.blue : Colors.grey,
-                  child: const Icon(Icons.list, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  heroTag: 'admin_mode_hotspots',
-                  mini: true,
-                  onPressed: () => _setHeatmapView(predicted: false),
-                  backgroundColor: _isHeatmapMode && !_showPredictedHotspots
-                      ? Colors.orange
-                      : Colors.grey,
-                  child: const Icon(
-                    Icons.local_fire_department,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton(
-                  heroTag: 'admin_mode_prediction',
-                  mini: true,
-                  onPressed: () => _setHeatmapView(predicted: true),
-                  backgroundColor: _isHeatmapMode && _showPredictedHotspots
-                      ? Colors.deepOrange
-                      : Colors.grey,
-                  child: const Icon(Icons.show_chart, color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          if (_isLoadingHotspots && _isHeatmapMode)
-            const Positioned(
-              top: 20,
-              left: 12,
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    final color = _getStatusColor(status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'PENDING':
-        return const Color.fromARGB(255, 196, 30, 30);
-      case 'VERIFIED':
-        return const Color.fromARGB(255, 224, 149, 10);
-      case 'CLEANED':
-        return Colors.green;
-      case 'REJECTED':
-        return const Color.fromARGB(255, 155, 154, 154);
-      default:
-        return Colors.grey;
-    }
   }
 
   Widget _buildMapLegend() {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
+        color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
@@ -683,25 +851,25 @@ class _AdminMapPageState extends State<AdminMapPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            "Chú thích",
+            'Chú thích',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 8),
           if (_isHeatmapMode) ...[
             if (_showPredictedHotspots) ...[
-              _legendItem("Dự đoán thấp", Colors.yellow),
-              _legendItem("Dự đoán trung bình", Colors.orange),
-              _legendItem("Dự đoán cao", Colors.red),
+              _legendItem('Dự đoán thấp', Colors.yellow),
+              _legendItem('Dự đoán trung bình', Colors.orange),
+              _legendItem('Dự đoán cao', Colors.red),
             ] else ...[
-              _legendItem("Nhiệt thấp", Colors.yellow),
-              _legendItem("Nhiệt trung bình", Colors.orange),
-              _legendItem("Nhiệt cao / nguy cơ cao", Colors.red),
+              _legendItem('Nhiệt thấp', Colors.yellow),
+              _legendItem('Nhiệt trung bình', Colors.orange),
+              _legendItem('Nhiệt cao / nguy cơ cao', Colors.red),
             ],
           ] else ...[
-            _legendItem("Chờ duyệt", _getStatusColor("PENDING")),
-            _legendItem("Đã xác Thực", _getStatusColor("VERIFIED")),
-            _legendItem("Đã dọn dẹp", _getStatusColor("CLEANED")),
-            _legendItem("Bị Từ Chối", _getStatusColor("REJECTED")),
+            _legendItem('Chờ duyệt', _getStatusColor('PENDING')),
+            _legendItem('Đã xác Thực', _getStatusColor('VERIFIED')),
+            _legendItem('Đã dọn dẹp', _getStatusColor('CLEANED')),
+            _legendItem('Bị Từ Chối', _getStatusColor('REJECTED')),
           ],
         ],
       ),
@@ -724,5 +892,20 @@ class _AdminMapPageState extends State<AdminMapPage> {
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'PENDING':
+        return const Color.fromARGB(255, 196, 30, 30);
+      case 'VERIFIED':
+        return const Color.fromARGB(255, 224, 149, 10);
+      case 'CLEANED':
+        return Colors.green;
+      case 'REJECTED':
+        return const Color.fromARGB(255, 155, 154, 154);
+      default:
+        return Colors.grey;
+    }
   }
 }

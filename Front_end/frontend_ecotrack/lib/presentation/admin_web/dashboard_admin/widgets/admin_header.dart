@@ -74,6 +74,10 @@ class _AdminHeaderState extends State<AdminHeader> {
     final String fullImageUrl = _userService.apiClient.buildImageUrl(
       _profile?.avatarUrl,
     );
+    final double width = MediaQuery.of(context).size.width;
+    final bool compactHeader = width < 1200;
+    final bool hideSearch = width < 980;
+    final bool veryCompact = width < 760;
 
     return Container(
       height: 70,
@@ -82,29 +86,50 @@ class _AdminHeaderState extends State<AdminHeader> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          _buildLogoSection(),
-          const Spacer(),
-          _buildSearchBox(),
-          const Spacer(),
-          _buildNotificationBell(),
-          const SizedBox(width: 24),
-          _buildProfileSection(fullImageUrl),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) => SizedBox(
+          width: constraints.maxWidth,
+          child: Row(
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [_buildLogoSection(veryCompact)],
+              ),
+              if (!hideSearch)
+                Expanded(
+                  child: Center(
+                    child: _buildSearchBox(maxWidth: compactHeader ? 240 : 360),
+                  ),
+                )
+              else
+                const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildNotificationBell(),
+                  const SizedBox(width: 12),
+                  _buildProfileSection(
+                    fullImageUrl,
+                    compactHeader || veryCompact,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildSearchBox() {
+  Widget _buildSearchBox({required double maxWidth}) {
     return SizedBox(
-      width: 400,
+      width: maxWidth,
       child: Container(
         height: 40,
         alignment: Alignment.center,
@@ -132,30 +157,41 @@ class _AdminHeaderState extends State<AdminHeader> {
     );
   }
 
-  Widget _buildProfileSection(String fullImageUrl) {
-    if (_isLoadingProfile)
+  Widget _buildProfileSection(String fullImageUrl, bool compact) {
+    if (_isLoadingProfile) {
       return const SizedBox(
         width: 20,
         height: 20,
         child: CircularProgressIndicator(strokeWidth: 2),
       );
+    }
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              _profile?.fullName ?? "Admin",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        if (!compact)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 180),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _profile?.fullName ?? "Admin",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  "Quản trị viên",
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
             ),
-            Text(
-              "Quản trị viên",
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        const SizedBox(width: 12),
+          ),
+        if (!compact) const SizedBox(width: 12),
         CircleAvatar(
           radius: 18,
           backgroundImage: (_profile?.avatarUrl != null)
@@ -169,12 +205,12 @@ class _AdminHeaderState extends State<AdminHeader> {
     );
   }
 
-  Widget _buildLogoSection() {
+  Widget _buildLogoSection(bool compact) {
     return Row(
       children: [
         Container(
-          width: 35,
-          height: 35,
+          width: compact ? 30 : 35,
+          height: compact ? 30 : 35,
           decoration: BoxDecoration(
             color: const Color(0xFF5EAC24),
             borderRadius: BorderRadius.circular(8),
@@ -182,7 +218,7 @@ class _AdminHeaderState extends State<AdminHeader> {
           child: Center(
             child: SvgPicture.asset(
               'assets/images/Logo.svg',
-              width: 20,
+              width: compact ? 18 : 20,
               colorFilter: const ColorFilter.mode(
                 Colors.white,
                 BlendMode.srcIn,
@@ -190,11 +226,13 @@ class _AdminHeaderState extends State<AdminHeader> {
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        const Text(
-          'EcoTrack',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        if (!compact) const SizedBox(width: 8),
+        if (!compact)
+          const Text(
+            'EcoTrack',
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
       ],
     );
   }
@@ -313,7 +351,7 @@ class _AdminHeaderState extends State<AdminHeader> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isUnread
-              ? const Color(0xFF5EAC24).withOpacity(0.04)
+              ? const Color(0xFF5EAC24).withValues(alpha: 0.04)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -324,7 +362,7 @@ class _AdminHeaderState extends State<AdminHeader> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: _getColor(item.type).withOpacity(0.12),
+                color: _getColor(item.type).withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(

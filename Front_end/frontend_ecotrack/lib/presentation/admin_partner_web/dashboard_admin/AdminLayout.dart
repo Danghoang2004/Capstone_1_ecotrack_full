@@ -10,6 +10,7 @@ import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_ma
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_header.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_sidebar.dart';
 import '../notification_manage_admin/AdminNotificationPage.dart';
+
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
 
@@ -19,6 +20,43 @@ class AdminLayout extends StatefulWidget {
 
 class _AdminLayoutState extends State<AdminLayout> {
   String _selectedMenu = 'dashboard';
+  late final List<String> _menuOrder;
+  late final List<Widget> _pages;
+
+  int _selectedIndex = 0;
+
+  static const Map<String, int> _menuIndex = {
+    'dashboard': 0,
+    'users': 1,
+    'reports': 2,
+    'map': 3,
+    'campaign': 4,
+    'quiz': 5,
+    'notifications': 6,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _menuOrder = const [
+      'dashboard',
+      'users',
+      'reports',
+      'map',
+      'campaign',
+      'quiz',
+      'notifications',
+    ];
+    _pages = const [
+      AdminDashboardDataScreen(),
+      UserManagementScreen(),
+      AdminReportPage(),
+      AdminMapPage(),
+      AdminCampaignPage(),
+      AdminQuizPage(),
+      AdminNotificationPage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +75,7 @@ class _AdminLayoutState extends State<AdminLayout> {
                   onNavigate: (menu) {
                     setState(() {
                       _selectedMenu = menu;
+                      _selectedIndex = _menuIndex[menu] ?? 0;
                     });
                   },
                   onLogout: () async {
@@ -54,9 +93,9 @@ class _AdminLayoutState extends State<AdminLayout> {
                     width: double.infinity,
                     height: double.infinity,
                     color: const Color(0xFFF5F7FA),
-                    child: KeyedSubtree(
-                      key: ValueKey(_selectedMenu),
-                      child: _buildContent(),
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: _pages,
                     ),
                   ),
                 ),
@@ -66,27 +105,5 @@ class _AdminLayoutState extends State<AdminLayout> {
         ],
       ),
     );
-  }
-
-  Widget _buildContent() {
-    switch (_selectedMenu) {
-      case "dashboard":
-        return const AdminDashboardDataScreen();
-      case "users":
-        return const UserManagementScreen();
-      case "reports":
-        return const AdminReportPage();
-      case "map":
-        return const AdminMapPage();
-      case "campaign":
-        return const AdminCampaignPage();
-      case "quiz":
-        return const AdminQuizPage();
-      case "notifications":
-        return const AdminNotificationPage();
-      // ----------------------------
-      default:
-        return const Center(child: Text("Chức năng đang phát triển"));
-    }
   }
 }
