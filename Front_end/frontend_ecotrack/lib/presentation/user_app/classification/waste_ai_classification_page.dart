@@ -4,7 +4,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/ai_classification/ai_waste_classification_service.dart';
+import 'package:frontend_ecotrack/core/services/ai_classification/recycle_suggestion_service.dart';
 import 'package:frontend_ecotrack/data/models/ai_classification/ai_waste_classification_models.dart';
+import 'package:frontend_ecotrack/presentation/user_app/classification/classification_history_list_page.dart';
+import 'package:frontend_ecotrack/presentation/user_app/classification/recycle_suggestion_list_page.dart';
 import 'package:image_picker/image_picker.dart';
 
 class WasteAiClassificationPage extends StatefulWidget {
@@ -17,11 +20,14 @@ class WasteAiClassificationPage extends StatefulWidget {
 
 class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
   final AiWasteClassificationService _service = AiWasteClassificationService();
+  final RecycleSuggestionService _recycleSuggestionService =
+      RecycleSuggestionService();
   final ImagePicker _picker = ImagePicker();
 
   Uint8List? _selectedImageBytes;
   String _selectedFileName = 'waste_image.jpg';
   bool _isClassifying = false;
+  bool _isLoadingSuggestions = false;
   String? _errorMessage;
   AiWasteClassificationData? _result;
 
@@ -78,6 +84,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
 
     setState(() {
       _isClassifying = true;
+      _isLoadingSuggestions = false;
       _errorMessage = null;
       _result = null;
     });
@@ -99,12 +106,113 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
     });
   }
 
+  Future<void> _loadRecycleSuggestions() async {
+    if (_result == null) {
+      setState(() {
+        _errorMessage = 'Chưa có kết quả phân loại để lấy gợi ý tái chế.';
+      });
+      return;
+    }
+
+    final groupedCounts = _buildGroupedCounts(_result!);
+    final wasteTypes = groupedCounts.keys
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    if (wasteTypes.isEmpty) {
+      setState(() {
+        _errorMessage = 'Không có loại rác hợp lệ để truy vấn gợi ý tái chế.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    final response = await _recycleSuggestionService.querySuggestions(
+      wasteTypes: wasteTypes,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoadingSuggestions = false;
+    });
+
+    if (!response.success) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(response.message)));
+      return;
+    }
+
+    if (response.data.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Chưa có gợi ý tái chế phù hợp cho kết quả phân loại này.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecycleSuggestionListPage(suggestions: response.data),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Phân Lọai Rác'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('AI Phân Lọai Rác'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Lịch sử phân loại',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ClassificationHistoryListPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: _result == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.only(bottom: 40),
+              child: FloatingActionButton.extended(
+                onPressed: (_isClassifying || _isLoadingSuggestions)
+                    ? null
+                    : _loadRecycleSuggestions,
+                icon: _isLoadingSuggestions
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.recycling),
+                label: Text(
+                  _isLoadingSuggestions
+                      ? 'Đang tải gợi ý...'
+                      : 'Xem gợi ý tái chế',
+                ),
+              ),
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
