@@ -351,6 +351,23 @@ CREATE TABLE campaign_comments (
 );
 
 -- ================================================================
+-- RECYCLING_SUGGESTIONS (US05 - Hiển thị danh sách gợi ý tái chế)
+-- ================================================================
+CREATE TABLE recycling_suggestions (
+    suggestion_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    waste_category VARCHAR(50) NOT NULL COMMENT 'Mapping với cột category trong waste_reports (NHUA, HUU_CO, KIM_LOAI, XAY_DUNG, KHAC)',
+    title VARCHAR(255) NOT NULL COMMENT 'Tên gợi ý tái chế',
+    description TEXT NOT NULL COMMENT 'Mô tả chi tiết gợi ý tái chế',
+    image_url VARCHAR(255) COMMENT 'Hình ảnh minh họa gợi ý',
+    suggestion_order INT DEFAULT 0 COMMENT 'Thứ tự hiển thị (US7 - nhiều gợi ý cho 1 loại rác)',
+    is_active BOOLEAN DEFAULT TRUE COMMENT 'Kích hoạt/vô hiệu hóa gợi ý',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_waste_category (waste_category),
+    INDEX idx_suggestion_order (waste_category, suggestion_order)
+);
+
+-- ================================================================
 -- NOTIFICATIONS
 -- ================================================================
 CREATE TABLE notifications (
@@ -862,4 +879,37 @@ SELECT
     DATE_SUB(NOW(), INTERVAL s.n MINUTE)
 FROM tmp_seed20 s
 JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
+
+-- 30) recycling_suggestions: Dữ liệu mẫu cho US05 (Hiển thị danh sách gợi ý tái chế)
+INSERT INTO recycling_suggestions (waste_category, title, description, image_url, suggestion_order, is_active, created_at)
+VALUES
+-- NHUA (Nhựa)
+('NHUA', 'Phân loại nhựa đúng cách', 'Tách nhựa trong suốt và nhựa đục, loại bỏ chất lỏng trước khi tái chế. Nhựa có thể được tái chế thành sợi quần áo hoặc vật liệu xây dựng.', 'suggestions/nhua_1.jpg', 1, TRUE, NOW()),
+('NHUA', 'Rửa sạch vật liệu nhựa', 'Rửa sạch bất kỳ chất dư lại nào trên nhựa để tăng khả năng tái chế. Nhựa sạch có thể được xử lý hiệu quả hơn.', 'suggestions/nhua_2.jpg', 2, TRUE, NOW()),
+('NHUA', 'Nén nhựa để tiết kiệm không gian', 'Nén chai nhựa và bao nhựa để tiết kiệm không gian trong thùng tái chế, giúp hạn chế khí thải từ vận chuyển.', 'suggestions/nhua_3.jpg', 3, TRUE, NOW()),
+('NHUA', 'Sử dụng lại túi nhựa', 'Tái sử dụng túi nhựa nhiều lần thay vì vứt bỏ. Túi vải có thể được dùng làm túi đi chợ thay thế.', 'suggestions/nhua_4.jpg', 4, TRUE, NOW()),
+
+-- HUU_CO (Hữu cơ)
+('HUU_CO', 'Thực hiện ủ rác hữu cơ', 'Ủ rác thực phẩm và lá cây để tạo phân hữu cơ cho vườn. Quá trình này mất khoảng 3-6 tháng.', 'suggestions/huuoc_1.jpg', 1, TRUE, NOW()),
+('HUU_CO', 'Tách rác hữu cơ khỏi rác khác', 'Tục tặng rác hữu cơ như xương, vỏ trứng, lá cây riêng biệt để tiện xử lý và tái tạo dinh dưỡng.', 'suggestions/huuoc_2.jpg', 2, TRUE, NOW()),
+('HUU_CO', 'Sử dụng rác hữu cơ làm phân bón', 'Rác hữu cơ được chế biến thành phân bón tự nhiên, an toàn cho cây trồng và đất canh tác.', 'suggestions/huuoc_3.jpg', 3, TRUE, NOW()),
+('HUU_CO', 'Ủ rác với lá cây khô', 'Trộn rác thực phẩm với lá cây khô hoặc giấy để tăng tốc độ phân hủy trong quá trình ủ.', 'suggestions/huuoc_4.jpg', 4, TRUE, NOW()),
+
+-- KIM_LOAI (Kim loại)
+('KIM_LOAI', 'Bóc gỡ nhãn trước khi tái chế', 'Gỡ bỏ nhãn, lót giấy trước khi tái chế kim loại để nâng cao chất lượng của tài nguyên tái chế.', 'suggestions/kimloai_1.jpg', 1, TRUE, NOW()),
+('KIM_LOAI', 'Phân loại kim loại: sắt, nhôm, đồng', 'Kim loại khác nhau có giá trị tái chế khác nhau. Phân loại sắt, nhôm, đồng riêng để tối ưu hóa.', 'suggestions/kimloai_2.jpg', 2, TRUE, NOW()),
+('KIM_LOAI', 'Tái chế lon nhôm vì giá trị cao', 'Lon nhôm có thể tái chế 100% mà không mất chất lượng. Tái chế 1 tấn nhôm tiết kiệm 95% năng lượng.', 'suggestions/kimloai_3.jpg', 3, TRUE, NOW()),
+('KIM_LOAI', 'Giữ các vật kim loại khô', 'Tránh ướt vật kim loại để phòng chống gỉ sét. Sắt gỉ sét khó xử lý hơn sắt sạch.', 'suggestions/kimloai_4.jpg', 4, TRUE, NOW()),
+
+-- XAY_DUNG (Xây dựng)
+('XAY_DUNG', 'Tái sử dụng gạch và đá', 'Gạch và đá có thể được phá vỡ để tái sử dụng trong các công trình xây dựng mới hoặc đương xá.', 'suggestions/xaydung_1.jpg', 1, TRUE, NOW()),
+('XAY_DUNG', 'Phân loại rác xây dựng', 'Tách gạch, đất, sắt, gỗ riêng biệt để hỗ trợ xử lý và tái chế hiệu quả hơn.', 'suggestions/xaydung_2.jpg', 2, TRUE, NOW()),
+('XAY_DUNG', 'Tái sử dụng gỗ từ công trình cũ', 'Gỗ từ công trình cũ có thể được phục hồi để làm nội thất, sàn nhà hoặc khung.', 'suggestions/xaydung_3.jpg', 3, TRUE, NOW()),
+('XAY_DUNG', 'Amiăng phải xử lý đặc biệt', 'Amiăng là chất độc hại, cần được xử lý bởi các cơ sở chuyên nghiệp, không xử lý ở nhà.', 'suggestions/xaydung_4.jpg', 4, TRUE, NOW()),
+
+-- KHAC (Khác)
+('KHAC', 'Phân loại rác khác đúng cách', 'Phân loại rác khác theo từng loại để xác định phương pháp xử lý phù hợp.', 'suggestions/khac_1.jpg', 1, TRUE, NOW()),
+('KHAC', 'Thu gom rác điện tử an toàn', 'Rác điện tử chứa chất độc hại, cần được gửi đến những điểm thu gom chuyên ngành.', 'suggestions/khac_2.jpg', 2, TRUE, NOW()),
+('KHAC', 'Tái sử dụng đồ cũ trong gia đình', 'Trước khi vứt bỏ, hãy cân nhắc tái sử dụng hoặc tặng cho những người khác cần đồ.', 'suggestions/khac_3.jpg', 3, TRUE, NOW()),
+('KHAC', 'Liên hệ địa phương về rác nguy hiểm', 'Với rác nguy hiểm như pin, dầu, hóa chất, cần hỏi chính quyền địa phương về cách xử lý.', 'suggestions/khac_4.jpg', 4, TRUE, NOW());
 
