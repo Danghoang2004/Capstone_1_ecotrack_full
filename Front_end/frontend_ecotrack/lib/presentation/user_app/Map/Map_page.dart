@@ -438,16 +438,6 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  void _zoomIn() {
-    final double nextZoom = (_currentZoom + 1).clamp(3.0, 19.0);
-    _mapController.move(_center, nextZoom);
-  }
-
-  void _zoomOut() {
-    final double nextZoom = (_currentZoom - 1).clamp(3.0, 19.0);
-    _mapController.move(_center, nextZoom);
-  }
-
   void _groupReportsByDistance(List<Report> reports) {
     const double clusterRadius = 40; // mét
     Map<String, List<Report>> clusters = {};
