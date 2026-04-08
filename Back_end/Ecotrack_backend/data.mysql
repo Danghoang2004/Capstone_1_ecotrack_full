@@ -226,6 +226,153 @@ CREATE TABLE report_verifications (
 );
 
 -- ================================================================
+-- AI_WASTE_CLASSIFICATION_HISTORY
+-- ================================================================
+CREATE TABLE ai_waste_classification_history (
+    history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NULL,
+    trash_detected BOOLEAN NOT NULL DEFAULT FALSE,
+    overall_confidence DOUBLE NOT NULL DEFAULT 0,
+    total_objects_detected INT NOT NULL DEFAULT 0,
+    waste_types_json LONGTEXT NULL,
+    detections_json LONGTEXT NULL,
+    raw_result_json LONGTEXT NULL,
+    original_image_url VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    INDEX idx_ai_history_user_created_at (user_id, created_at)
+);
+
+-- ================================================================
+-- RECYCLE_SUGGESTIONS
+-- ================================================================
+CREATE TABLE recycle_suggestions (
+    suggestion_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    waste_type_key VARCHAR(100) NOT NULL,
+    waste_type_label VARCHAR(150) NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    short_description VARCHAR(500),
+    recycle_image_url VARCHAR(500) NOT NULL,
+    difficulty_level VARCHAR(50),
+    estimated_time_minutes INT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_recycle_suggestions_type_active (waste_type_key, is_active)
+);
+
+CREATE TABLE recycle_suggestion_steps (
+    step_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    suggestion_id BIGINT NOT NULL,
+    step_order INT NOT NULL,
+    step_title VARCHAR(200) NOT NULL,
+    step_description TEXT NOT NULL,
+    FOREIGN KEY (suggestion_id) REFERENCES recycle_suggestions(suggestion_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_recycle_step_order (suggestion_id, step_order)
+);
+
+INSERT INTO recycle_suggestions (
+    waste_type_key,
+    waste_type_label,
+    title,
+    short_description,
+    recycle_image_url,
+    difficulty_level,
+    estimated_time_minutes,
+    is_active
+) VALUES
+('nhua', 'Nhựa', 'Chậu cây mini từ chai nhựa', 'Tận dụng chai nhựa để làm chậu trồng cây để bàn.', 'https://images.unsplash.com/photo-1483794344563-d27a8d18014e', 'Dễ', 25, TRUE),
+('nhua', 'Nhựa', 'Ống đựng bút từ hộp nhựa', 'Tạo ống đựng bút gọn gàng từ hộp nhựa cũ.', 'https://images.unsplash.com/photo-1455390582262-044cdead277a', 'Dễ', 20, TRUE),
+('giay', 'Giấy', 'Giỏ đựng đồ từ bìa carton', 'Gấp và dán bìa carton thành giỏ lưu trữ đa năng.', 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4', 'Trung bình', 40, TRUE),
+('giay', 'Giấy', 'Khung ảnh handmade từ giấy', 'Làm khung ảnh trang trí từ giấy bìa và giấy màu.', 'https://images.unsplash.com/photo-1510936111840-65e151ad71bb', 'Dễ', 30, TRUE),
+('kim loai', 'Kim loại', 'Đèn nến từ lon nước', 'Biến lon nước thành đèn nến trang trí an toàn.', 'https://images.unsplash.com/photo-1463320726281-696a485928c7', 'Trung bình', 35, TRUE),
+('thuy tinh', 'Thủy tinh', 'Bình hoa từ chai thủy tinh', 'Trang trí chai thủy tinh cũ thành bình hoa.', 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad6', 'Dễ', 30, TRUE),
+('huu co', 'Rác hữu cơ', 'Phân compost tại nhà', 'Ủ rác hữu cơ thành phân bón cho cây.', 'https://images.unsplash.com/photo-1464226184884-fa280b87c399', 'Trung bình', 120, TRUE);
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Làm sạch nguyên liệu', 'Rửa sạch và để khô nguyên liệu trước khi thao tác.'
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Cắt tạo hình', 'Cắt thân chai theo chiều ngang để tạo phần thân chậu.'
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Hoàn thiện', 'Đục lỗ thoát nước, thêm đất và trồng cây nhỏ.'
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Chuẩn bị hộp nhựa', 'Chọn hộp nhựa cứng, vệ sinh sạch và để khô.'
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Trang trí bề mặt', 'Dán giấy màu hoặc sơn để tạo thẩm mỹ.'
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Sắp xếp sử dụng', 'Đặt lên bàn học và phân loại bút theo nhóm.'
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Cắt bìa carton', 'Cắt bìa theo kích thước đáy và thành giỏ.'
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Dán cố định', 'Dùng keo nến dán các mặt lại chắc chắn.'
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Bọc ngoài', 'Bọc giấy màu hoặc vải để tăng độ bền và đẹp mắt.'
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Cắt khung giấy', 'Cắt 2 lớp bìa theo kích thước ảnh mong muốn.'
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Dán và cố định ảnh', 'Dán lớp nền và tạo khe để thay ảnh khi cần.'
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Trang trí hoàn thiện', 'Trang trí thêm sticker hoặc họa tiết tự vẽ.'
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Làm sạch lon', 'Rửa sạch lon kim loại và bóc nhãn cũ.'
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Đục họa tiết', 'Đục lỗ họa tiết nhỏ xung quanh lon theo mẫu.'
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Lắp nến', 'Đặt nến tealight vào trong lon và kiểm tra an toàn.'
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Rửa chai', 'Làm sạch chai thủy tinh và loại bỏ nắp cũ.'
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Trang trí thân chai', 'Sơn hoặc quấn dây thừng trang trí bên ngoài.'
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Cắm hoa', 'Thêm nước và cắm hoa tươi hoặc hoa khô.'
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 1, 'Chuẩn bị thùng ủ', 'Chuẩn bị thùng có lỗ thoáng và nắp đậy.'
+FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 2, 'Phân lớp rác hữu cơ', 'Xếp xen kẽ rác hữu cơ và vật liệu khô như lá khô.'
+FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
+SELECT suggestion_id, 3, 'Theo dõi độ ẩm', 'Đảo đều định kỳ và giữ độ ẩm vừa phải đến khi hoai mục.'
+FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
+
+-- ================================================================
 -- PARTNERS
 -- ================================================================
 CREATE TABLE partners (
