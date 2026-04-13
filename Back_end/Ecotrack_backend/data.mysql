@@ -226,6 +226,33 @@ CREATE TABLE report_verifications (
 );
 
 -- ================================================================
+-- ENVIRONMENT_CLEANUP_TASKS
+-- ================================================================
+CREATE TABLE environment_cleanup_tasks (
+    task_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    report_id BIGINT NOT NULL,
+    team_lead_user_id BIGINT NOT NULL,
+    status ENUM('ASSIGNED','CLEANED_PENDING_CONFIRM','RESOLVED') NOT NULL DEFAULT 'ASSIGNED',
+    assignment_note TEXT NULL,
+    planned_start_at DATETIME NULL,
+    planned_end_at DATETIME NULL,
+    due_at DATETIME NULL,
+    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_note TEXT NULL,
+    after_image_url VARCHAR(500) NULL,
+    completed_gps_lat DECIMAL(10,6) NULL,
+    completed_gps_long DECIMAL(10,6) NULL,
+    completed_at DATETIME NULL,
+    resolved_by_admin_id BIGINT NULL,
+    resolved_at DATETIME NULL,
+    FOREIGN KEY (report_id) REFERENCES waste_reports(report_id) ON DELETE CASCADE,
+    FOREIGN KEY (team_lead_user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (resolved_by_admin_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    INDEX idx_env_tasks_team_status (team_lead_user_id, status),
+    INDEX idx_env_tasks_report (report_id)
+);
+
+-- ================================================================
 -- AI_WASTE_CLASSIFICATION_HISTORY
 -- ================================================================
 CREATE TABLE ai_waste_classification_history (
@@ -545,7 +572,8 @@ INSERT INTO roles (role_name)
 VALUES
 ('ROLE_USER'),
 ('ROLE_ADMIN'),
-('ROLE_PARTNER');
+('ROLE_PARTNER'),
+('ROLE_ENVIRONMENT');
 
 -- ================================================================
 -- SEED DỮ LIỆU: MỖI BẢNG 20 DÒNG, waste_reports 100 DÒNG
@@ -585,6 +613,29 @@ INSERT IGNORE INTO roles (role_name)
 SELECT CONCAT('ROLE_EXTRA_', LPAD(n, 2, '0'))
 FROM tmp_seed20
 WHERE n <= 17;
+
+-- 1.1) users: thêm tài khoản team lead môi trường mẫu
+INSERT IGNORE INTO users
+(
+    username, password, email,
+    account_non_expired, is_enabled, account_non_locked, credentials_non_expired,
+    provider_id, is_verified, verification_code, last_credentials_update
+)
+VALUES
+(
+    'env_lead_01',
+    '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy',
+    'env_lead_01@gmail.com',
+    TRUE, TRUE, TRUE, TRUE,
+    NULL, TRUE, NULL, NULL
+);
+
+-- 1.2) user_role: gán ROLE_ENVIRONMENT cho tài khoản team lead môi trường
+INSERT IGNORE INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u
+JOIN roles r ON r.role_name = 'ROLE_ENVIRONMENT'
+WHERE u.username = 'env_lead_01';
 
 -- 2) users: 20 dòng
 INSERT IGNORE INTO users
@@ -659,6 +710,33 @@ SELECT
     s.n * 120
 FROM tmp_seed20 s
 JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
+
+-- 1 cau lenh tao bang day du thuoc tinh (cho DB cu)
+CREATE TABLE IF NOT EXISTS environment_cleanup_tasks (
+    task_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    report_id BIGINT NOT NULL,
+    team_lead_user_id BIGINT NOT NULL,
+    status ENUM('ASSIGNED','CLEANED_PENDING_CONFIRM','RESOLVED') NOT NULL DEFAULT 'ASSIGNED',
+    assignment_note TEXT NULL,
+    planned_start_at DATETIME NULL,
+    planned_end_at DATETIME NULL,
+    due_at DATETIME NULL,
+    assigned_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_note TEXT NULL,
+    after_image_url VARCHAR(500) NULL,
+    completed_gps_lat DECIMAL(10,6) NULL,
+    completed_gps_long DECIMAL(10,6) NULL,
+    completed_at DATETIME NULL,
+    resolved_by_admin_id BIGINT NULL,
+    resolved_at DATETIME NULL,
+    FOREIGN KEY (report_id) REFERENCES waste_reports(report_id) ON DELETE CASCADE,
+    FOREIGN KEY (team_lead_user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    FOREIGN KEY (resolved_by_admin_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    INDEX idx_env_tasks_team_status (team_lead_user_id, status),
+    INDEX idx_env_tasks_report (report_id)
+);
+
+
 
 -- 7) point_transactions: 20 dòng
 INSERT INTO point_transactions (user_id, action_type, points, description, created_at)

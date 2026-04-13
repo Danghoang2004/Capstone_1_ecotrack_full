@@ -4,6 +4,7 @@ import 'package:frontend_ecotrack/presentation/admin_partner_web/admin_question/
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/AdminCampainPage.dart';
 
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDarhboard_data.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminEnvironmentTaskPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminMapPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminReportPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_management/screens/user_management_screen.dart';
@@ -20,7 +21,6 @@ class AdminLayout extends StatefulWidget {
 
 class _AdminLayoutState extends State<AdminLayout> {
   String _selectedMenu = 'dashboard';
-  late final List<String> _menuOrder;
   late final List<Widget> _pages;
 
   int _selectedIndex = 0;
@@ -29,28 +29,21 @@ class _AdminLayoutState extends State<AdminLayout> {
     'dashboard': 0,
     'users': 1,
     'reports': 2,
-    'map': 3,
-    'campaign': 4,
-    'quiz': 5,
-    'notifications': 6,
+    'environment_tasks': 3,
+    'map': 4,
+    'campaign': 5,
+    'quiz': 6,
+    'notifications': 7,
   };
 
   @override
   void initState() {
     super.initState();
-    _menuOrder = const [
-      'dashboard',
-      'users',
-      'reports',
-      'map',
-      'campaign',
-      'quiz',
-      'notifications',
-    ];
     _pages = const [
       AdminDashboardDataScreen(),
       UserManagementScreen(),
       AdminReportPage(),
+      AdminEnvironmentTaskPage(),
       AdminMapPage(),
       AdminCampaignPage(),
       AdminQuizPage(),

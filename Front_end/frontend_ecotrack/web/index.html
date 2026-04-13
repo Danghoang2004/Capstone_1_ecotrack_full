@@ -58,6 +58,13 @@
       position: absolute;
       inset: 0;
     }
+
+    .goong-report-popup {
+      max-height: 56vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 2px;
+    }
   </style>
 
   <script>
@@ -199,33 +206,53 @@
           const title = escapeHtml(item.title || 'Không có tiêu đề');
           const category = escapeHtml(item.category || 'Khác');
           const count = Number(item.count || 1);
+          const overflowCount = Number(item.overflowCount || 0);
+          const statusSummary = item.statusSummary || {};
+          const pendingCount = Number(statusSummary.PENDING || 0);
+          const verifiedCount = Number(statusSummary.VERIFIED || 0);
+          const cleanedCount = Number(statusSummary.CLEANED || 0);
+          const rejectedCount = Number(statusSummary.REJECTED || 0);
 
           // Build summary header
           let popupHtml = `
-            <div style="min-width: 260px; font-family: Arial, sans-serif; line-height: 1.5;">
+            <div class="goong-report-popup" style="min-width: 280px; font-family: Arial, sans-serif; line-height: 1.45;">
               <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px; color: #1f2937;">${title}</div>
-              <div style="font-size: 12px; color: #2563eb; margin-bottom: 4px; font-weight: 600;">Trạng thái: ${status}</div>
+              <div style="font-size: 12px; color: #2563eb; margin-bottom: 4px; font-weight: 600;">Trạng thái cụm: ${status}</div>
               <div style="font-size: 12px; color: #374151; margin-bottom: 2px;">Loại rác: ${category}</div>
-              <div style="font-size: 12px; color: #6b7280;">Tổng báo cáo: ${count}</div>`;
+              <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">Tổng báo cáo: ${count}</div>
+              <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:#fee2e2; color:#991b1b;">Chờ duyệt: ${pendingCount}</span>
+                <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:#ffedd5; color:#9a3412;">Đã xác thực: ${verifiedCount}</span>
+                <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:#dcfce7; color:#166534;">Đã dọn dẹp: ${cleanedCount}</span>
+                <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151;">Bị từ chối: ${rejectedCount}</span>
+              </div>`;
 
-          // Add detailed list if multiple reports in cluster
+          // Add detailed list when cluster has multiple reports.
           if (item.reports && item.reports.length > 1) {
             popupHtml += `
               <div style="margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
                 <div style="font-weight: 600; font-size: 12px; color: #1f2937; margin-bottom: 8px;">Chi tiết báo cáo:</div>`;
 
+            popupHtml += `<div style="max-height: 160px; overflow-y: auto; padding-right: 4px;">`;
+
             for (let i = 0; i < item.reports.length; i++) {
               const r = item.reports[i];
               const rStatus = escapeHtml(r.status || 'UNKNOWN');
               const rTitle = escapeHtml(r.title || 'Không có tiêu đề');
-              const rDesc = escapeHtml((r.description || '').substring(0, 50));
+              const rDesc = escapeHtml(r.description || '');
 
               popupHtml += `
                 <div style="margin-bottom: 8px; padding: 6px; background: #f3f4f6; border-radius: 4px; border-left: 3px solid ${statusColor(rStatus)};">
                   <div style="font-weight: 600; font-size: 11px; color: #1f2937;">${i + 1}. ${rTitle}</div>
                   <div style="font-size: 11px; color: #6b7280;">Trạng thái: <span style="color: ${statusColor(rStatus)}; font-weight: 600;">${rStatus}</span></div>
-                  ${rDesc ? `<div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Mô tả: ${rDesc}...</div>` : ''}
+                  ${rDesc ? `<div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Mô tả: ${rDesc}</div>` : ''}
                 </div>`;
+            }
+
+            popupHtml += `</div>`;
+
+            if (overflowCount > 0) {
+              popupHtml += `<div style="font-size: 11px; color: #4b5563; margin-top: 4px; font-style: italic;">Còn ${overflowCount} báo cáo khác. Vui lòng zoom-in để xem chi tiết hơn.</div>`;
             }
 
             popupHtml += `</div>`;
@@ -288,7 +315,7 @@
                 offset: 18,
                 closeButton: true,
                 closeOnClick: true,
-                maxWidth: '350px',
+                maxWidth: '420px',
               })
                 .setLngLat(feature.geometry.coordinates)
                 .setHTML(properties.popupHtml || 'Không có dữ liệu')

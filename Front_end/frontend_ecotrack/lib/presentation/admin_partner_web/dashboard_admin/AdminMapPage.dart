@@ -30,6 +30,8 @@ class _AdminMapPageState extends State<AdminMapPage> {
   static const double _initialLat = 16.0471;
   static const double _initialLng = 108.2068;
   static const double _initialZoom = 16.2;
+  static const int _popupDetailLimit = 5;
+  static const int _popupDescriptionLimit = 60;
 
   final ReportServiceAdmin _reportService = ReportServiceAdmin();
   final HotspotService _hotspotService = HotspotService();
@@ -500,7 +502,19 @@ class _AdminMapPageState extends State<AdminMapPage> {
       final Report first = group.first;
       // Sort reports in group by ID for stable/deterministic ordering
       final reportsInCluster = [...group]
-        ..sort((a, b) => a.reportId.compareTo(b.reportId));
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      final visibleReports = reportsInCluster.take(_popupDetailLimit).toList();
+      final statusSummary = <String, int>{
+        'PENDING': 0,
+        'VERIFIED': 0,
+        'CLEANED': 0,
+        'REJECTED': 0,
+      };
+      for (final report in reportsInCluster) {
+        final key = report.status.toUpperCase();
+        statusSummary[key] = (statusSummary[key] ?? 0) + 1;
+      }
 
       return <String, dynamic>{
         'reportId': first.reportId,
@@ -512,13 +526,16 @@ class _AdminMapPageState extends State<AdminMapPage> {
         'status': _pickClusterStatus(reportsInCluster),
         'category': first.category,
         'count': group.length,
-        // Include full nested reports for popup display
-        'reports': reportsInCluster
+        'overflowCount': reportsInCluster.length - visibleReports.length,
+        'statusSummary': statusSummary,
+        'reports': visibleReports
             .map(
               (r) => <String, dynamic>{
                 'id': r.reportId,
                 'title': r.title,
-                'description': r.description,
+                'description': r.description.length > _popupDescriptionLimit
+                    ? '${r.description.substring(0, _popupDescriptionLimit)}...'
+                    : r.description,
                 'imageUrl': r.imageUrl,
                 'latitude': r.latitude,
                 'longitude': r.longitude,

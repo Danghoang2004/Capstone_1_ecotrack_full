@@ -288,6 +288,19 @@ class AuthService {
     return false;
   }
 
+  Future<bool> isEnvironment() async {
+    final rolesJson = await _storage.read(key: 'user_roles');
+    if (rolesJson != null) {
+      try {
+        final roles = jsonDecode(rolesJson);
+        return roles.contains("ROLE_ENVIRONMENT");
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  }
+
   // Thêm hàm lấy Roles
   Future<List<String>> getRoles() async {
     final rolesJson = await _storage.read(key: 'user_roles');

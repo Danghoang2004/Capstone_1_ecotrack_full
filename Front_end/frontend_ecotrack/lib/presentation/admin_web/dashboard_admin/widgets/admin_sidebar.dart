@@ -80,6 +80,14 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   onTap: widget.onNavigate,
                 ),
                 _MenuItem(
+                  icon: Icons.groups_outlined,
+                  label: 'Phân Công Môi Trường',
+                  keyName: 'environment_tasks',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
+                _MenuItem(
                   icon: Icons.map_outlined,
                   label: 'Bản Đồ Rác Thải',
                   keyName: 'map',
@@ -104,9 +112,11 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   onTap: widget.onNavigate,
                 ),
                 _MenuItem(
-                  icon: Icons.notifications_active_outlined, // Em có thể đổi icon khác nếu muốn
+                  icon: Icons
+                      .notifications_active_outlined, // Em có thể đổi icon khác nếu muốn
                   label: 'Quản Lý Thông Báo',
-                  keyName: 'notifications', // Key này dùng để nhận diện route/tab
+                  keyName:
+                      'notifications', // Key này dùng để nhận diện route/tab
                   selectedMenu: widget.selectedMenu,
                   isCollapsed: isCollapsed,
                   onTap: widget.onNavigate,

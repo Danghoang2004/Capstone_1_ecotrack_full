@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
+import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/environment_dashboard_screen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/auth_combined_screen.dart';
 import 'package:frontend_ecotrack/presentation/auth_user/otp_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignListScreen.dart';
@@ -70,6 +71,10 @@ class AppRouter {
       case '/partner_dashboard':
         return MaterialPageRoute(
           builder: (_) => const PartnerDashboardScreen(),
+        );
+      case '/environment_dashboard':
+        return MaterialPageRoute(
+          builder: (_) => const EnvironmentDashboardScreen(),
         );
       case '/minigame':
         // chỉ cần userId, quizId sẽ chọn ở màn overview

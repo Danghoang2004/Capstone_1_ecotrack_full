@@ -23,10 +23,7 @@ const Color _kInputIconColor = Color(0xFF8C9A90);
 class AuthCombinedScreen extends StatefulWidget {
   final bool initialIsLogin;
 
-  const AuthCombinedScreen({
-    super.key,
-    this.initialIsLogin = true,
-  });
+  const AuthCombinedScreen({super.key, this.initialIsLogin = true});
 
   @override
   State<AuthCombinedScreen> createState() => _AuthCombinedScreenState();
@@ -67,8 +64,11 @@ class _AuthCombinedScreenState extends State<AuthCombinedScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Icon(Icons.eco_rounded,
-                              color: _kPrimaryGreen, size: 26),
+                          Icon(
+                            Icons.eco_rounded,
+                            color: _kPrimaryGreen,
+                            size: 26,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             "EcoTrack",
@@ -93,10 +93,7 @@ class _AuthCombinedScreenState extends State<AuthCombinedScreen> {
                       const SizedBox(height: 8),
                       const Text(
                         'Cùng nhau bảo vệ môi trường và xây dựng lối sống xanh',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _kTextGray,
-                        ),
+                        style: TextStyle(fontSize: 12, color: _kTextGray),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
@@ -122,10 +119,7 @@ class _AuthCombinedScreenState extends State<AuthCombinedScreen> {
                       SizedBox(
                         height: 520,
                         child: const TabBarView(
-                          children: [
-                            _LoginForm(),
-                            _RegisterForm(),
-                          ],
+                          children: [_LoginForm(), _RegisterForm()],
                         ),
                       ),
                     ],
@@ -186,7 +180,20 @@ class _LoginFormState extends State<_LoginForm> {
         return;
       }
 
-      _showSuccessDialog();
+      if (roles.contains("ROLE_ENVIRONMENT")) {
+        _showSuccessDialog('/environment_dashboard');
+        return;
+      }
+
+      if (roles.contains("ROLE_USER")) {
+        _showSuccessDialog('/user_app');
+        return;
+      }
+
+      await _authService.logout();
+      setState(() {
+        _error = 'Tài khoản chưa được cấp quyền hợp lệ';
+      });
     } else {
       setState(() {
         _error = result['message'];
@@ -194,7 +201,7 @@ class _LoginFormState extends State<_LoginForm> {
     }
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog(String destinationRoute) {
     showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -264,7 +271,7 @@ class _LoginFormState extends State<_LoginForm> {
       },
     ).then((_) {
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/user_app');
+      Navigator.pushReplacementNamed(context, destinationRoute);
     });
 
     Future.delayed(const Duration(seconds: 4), () {
@@ -311,9 +318,7 @@ class _LoginFormState extends State<_LoginForm> {
                 icon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
                     color: _kInputIconColor,
                   ),
                   onPressed: () {
@@ -331,20 +336,14 @@ class _LoginFormState extends State<_LoginForm> {
               alignment: Alignment.centerRight,
               child: Text(
                 "Quên mật khẩu?",
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: _kTextGray,
-                ),
+                style: const TextStyle(fontSize: 13, color: _kTextGray),
               ),
             ),
             const SizedBox(height: 12),
             if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: Colors.red),
-                ),
+                child: Text(_error!, style: const TextStyle(color: Colors.red)),
               ),
             GestureDetector(
               onTap: _loading ? null : _login,
@@ -397,10 +396,7 @@ class _LoginFormState extends State<_LoginForm> {
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Text(
                     'HOẶC',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: _kTextGray,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: _kTextGray),
                   ),
                 ),
                 const Expanded(
@@ -447,8 +443,7 @@ class _LoginFormState extends State<_LoginForm> {
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
-                          final controller =
-                              DefaultTabController.of(context);
+                          final controller = DefaultTabController.of(context);
                           controller.animateTo(1);
                         },
                     ),
@@ -460,10 +455,7 @@ class _LoginFormState extends State<_LoginForm> {
             const Text(
               "2025 EcoTrack. Cùng nhau bảo vệ môi trường và xây dựng lối sống xanh.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                color: _kTextLight,
-              ),
+              style: TextStyle(fontSize: 11, color: _kTextLight),
             ),
           ],
         ),
@@ -526,7 +518,9 @@ class _RegisterFormState extends State<_RegisterForm> {
         Navigator.pushNamed(context, "/otp", arguments: email);
       } else {
         final msg =
-            data["message"] ?? data["error"] ?? "Đăng ký thất bại, vui lòng thử lại.";
+            data["message"] ??
+            data["error"] ??
+            "Đăng ký thất bại, vui lòng thử lại.";
 
         setState(() => _errorMessage = msg);
       }
@@ -576,8 +570,7 @@ class _RegisterFormState extends State<_RegisterForm> {
               validator: (v) {
                 if (v == null || v.isEmpty) return "Vui lòng nhập email";
                 // Sử dụng regex chuẩn cho email (chú ý: dùng raw string nên KHÔNG double escape)
-                final regex =
-                    RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+                final regex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
                 if (!regex.hasMatch(v.trim())) return "Email không hợp lệ";
                 return null;
               },
@@ -591,9 +584,7 @@ class _RegisterFormState extends State<_RegisterForm> {
                 icon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _showPassword
-                        ? Icons.visibility
-                        : Icons.visibility_off,
+                    _showPassword ? Icons.visibility : Icons.visibility_off,
                     color: _kInputIconColor,
                   ),
                   onPressed: () {
@@ -620,9 +611,7 @@ class _RegisterFormState extends State<_RegisterForm> {
                 icon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _showConfirm
-                        ? Icons.visibility
-                        : Icons.visibility_off,
+                    _showConfirm ? Icons.visibility : Icons.visibility_off,
                     color: _kInputIconColor,
                   ),
                   onPressed: () {
@@ -704,10 +693,7 @@ class _RegisterFormState extends State<_RegisterForm> {
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Text(
                     'HOẶC',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: _kTextGray,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: _kTextGray),
                   ),
                 ),
                 const Expanded(
@@ -754,8 +740,7 @@ class _RegisterFormState extends State<_RegisterForm> {
                       ),
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
-                          final controller =
-                              DefaultTabController.of(context);
+                          final controller = DefaultTabController.of(context);
                           controller.animateTo(0);
                         },
                     ),
@@ -767,10 +752,7 @@ class _RegisterFormState extends State<_RegisterForm> {
             const Text(
               "2025 EcoTrack. Cùng nhau bảo vệ môi trường và xây dựng lối sống xanh.",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                color: _kTextLight,
-              ),
+              style: TextStyle(fontSize: 11, color: _kTextLight),
             ),
           ],
         ),
@@ -788,10 +770,7 @@ InputDecoration _buildInputDecoration({
     filled: true,
     fillColor: _kInputBg,
     hintText: hint,
-    hintStyle: const TextStyle(
-      fontSize: 14,
-      color: _kTextLight,
-    ),
+    hintStyle: const TextStyle(fontSize: 14, color: _kTextLight),
     prefixIcon: Icon(icon, color: _kInputIconColor),
     suffixIcon: suffixIcon,
     contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -858,10 +837,7 @@ class _SocialButton extends StatelessWidget {
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: _kTextDark,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: _kTextDark),
                 ),
               ),
             ],
@@ -871,4 +847,3 @@ class _SocialButton extends StatelessWidget {
     );
   }
 }
-
