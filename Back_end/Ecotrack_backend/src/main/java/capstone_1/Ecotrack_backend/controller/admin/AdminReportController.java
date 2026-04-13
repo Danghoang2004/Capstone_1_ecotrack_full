@@ -3,6 +3,7 @@ package capstone_1.Ecotrack_backend.controller.admin;
 import capstone_1.Ecotrack_backend.model.WasteReport;
 import capstone_1.Ecotrack_backend.service.WasteReportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/reports") // URL dành riêng cho Admin
 @CrossOrigin
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AdminReportController {
 
     private final WasteReportService reportService;
