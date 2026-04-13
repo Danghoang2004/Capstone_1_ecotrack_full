@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/NotificationModelAdmin.dart';
@@ -26,6 +25,19 @@ class NotificationService {
     if (res.statusCode != 200) {
       throw Exception("Không đánh dấu đã đọc được");
     }
+  }
+
+  Future<int> getUnreadCount() async {
+    final res = await apiClient.get('/api/notifications/unread');
+    if (res.statusCode != 200) {
+      throw Exception('Không tải được số thông báo chưa đọc');
+    }
+
+    final body = apiClient.decodeUtf8Json(res);
+    if (body is List) {
+      return body.length;
+    }
+    return 0;
   }
 
   Future<List<NotificationModel>> getAdminNotifications() async {

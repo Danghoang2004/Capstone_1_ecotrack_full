@@ -18,7 +18,7 @@ class EnvironmentTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmit = task.status == 'ASSIGNED' && onSubmitCompletion != null;
+    final canSubmit = task.status == 'ASSIGNED' && task.canSubmitCompletion;
 
     final statusColor = switch (task.status) {
       'ASSIGNED' => const Color(0xFFF59E0B),
@@ -115,7 +115,7 @@ class EnvironmentTaskCard extends StatelessWidget {
                 icon: const Icon(Icons.near_me_outlined),
                 label: const Text('Chỉ đường'),
               ),
-              if (canSubmit) ...[
+              if (canSubmit && onSubmitCompletion != null) ...[
                 ElevatedButton.icon(
                   onPressed: onSubmitCompletion,
                   icon: const Icon(Icons.check_circle_outline),

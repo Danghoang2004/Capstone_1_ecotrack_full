@@ -3,14 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:frontend_ecotrack/core/services/environment_task_service.dart';
+import 'package:frontend_ecotrack/core/services/notification_service.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
 import 'package:frontend_ecotrack/data/models/environment_cleanup_task_model.dart';
+import 'package:frontend_ecotrack/data/models/environment_my_team_info_model.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/screens/environment_task_detail_screen.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/screens/environment_task_navigation_map_screen.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/screens/environment_task_report_screen.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_overview_tab.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_profile_tab.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_tasks_tab.dart';
+import 'package:frontend_ecotrack/presentation/user_app/notification/notification_screen.dart';
 
 class EnvironmentDashboardScreen extends StatefulWidget {
   const EnvironmentDashboardScreen({super.key});
@@ -25,6 +28,7 @@ class _EnvironmentDashboardScreenState
   final AuthService _authService = AuthService();
   final EnvironmentTaskService _taskService = EnvironmentTaskService();
   final UserService _userService = UserService();
+  final NotificationService _notificationService = NotificationService();
 
   List<EnvironmentCleanupTask> _tasks = [];
   bool _isLoading = true;
@@ -33,12 +37,16 @@ class _EnvironmentDashboardScreenState
   String _username = 'Đội môi trường';
   String _roleLabel = 'ROLE_ENVIRONMENT';
   String _avatarImageUrl = '';
+  EnvironmentMyTeamInfo? _myTeamInfo;
+  int _unreadNotificationCount = 0;
   Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadMyTeamInfo();
+    _loadUnreadNotificationCount();
     _loadTasks();
     _startRealtimePolling();
   }
@@ -64,10 +72,12 @@ class _EnvironmentDashboardScreenState
 
     try {
       final tasks = await _taskService.fetchMyTasks();
+      final unreadCount = await _notificationService.getUnreadCount();
       if (!mounted) return;
       tasks.sort((a, b) => b.assignedAt.compareTo(a.assignedAt));
       setState(() {
         _tasks = tasks;
+        _unreadNotificationCount = unreadCount;
         _isLoading = false;
       });
     } catch (e) {
@@ -82,6 +92,24 @@ class _EnvironmentDashboardScreenState
         );
       }
     }
+  }
+
+  Future<void> _loadUnreadNotificationCount() async {
+    try {
+      final unreadCount = await _notificationService.getUnreadCount();
+      if (!mounted) return;
+      setState(() => _unreadNotificationCount = unreadCount);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _unreadNotificationCount = 0);
+    }
+  }
+
+  Future<void> _openNotificationPage() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const NotificationScreen()));
+    await _loadUnreadNotificationCount();
   }
 
   Future<void> _loadProfile() async {
@@ -104,6 +132,12 @@ class _EnvironmentDashboardScreenState
       _roleLabel = roles.isEmpty ? 'ROLE_ENVIRONMENT' : roles.first;
       _avatarImageUrl = avatarImageUrl;
     });
+  }
+
+  Future<void> _loadMyTeamInfo() async {
+    final teamInfo = await _taskService.fetchMyTeamInfo();
+    if (!mounted) return;
+    setState(() => _myTeamInfo = teamInfo);
   }
 
   String _initials(String name) {
@@ -216,6 +250,7 @@ class _EnvironmentDashboardScreenState
         userName: _username,
         userRole: _roleLabel,
         avatarImageUrl: _avatarImageUrl,
+        myTeamInfo: _myTeamInfo,
         onLogout: _logout,
         isLoggingOut: _isLoggingOut,
       ),
@@ -250,6 +285,46 @@ class _EnvironmentDashboardScreenState
           ],
         ),
         actions: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                tooltip: 'Thông báo',
+                onPressed: _openNotificationPage,
+                icon: const Icon(
+                  Icons.notifications_none_rounded,
+                  color: Color(0xFF1F2D1D),
+                ),
+              ),
+              if (_unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      _unreadNotificationCount > 99
+                          ? '99+'
+                          : '$_unreadNotificationCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             tooltip: 'Tài khoản',
             onPressed: () => setState(() => _selectedTab = 2),

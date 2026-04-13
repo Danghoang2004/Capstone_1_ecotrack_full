@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/data/models/environment_my_team_info_model.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/widgets/environment_profile_row.dart';
 
 class EnvironmentProfileTab extends StatelessWidget {
   final String userName;
   final String userRole;
   final String avatarImageUrl;
+  final EnvironmentMyTeamInfo? myTeamInfo;
   final VoidCallback onLogout;
   final bool isLoggingOut;
 
@@ -13,6 +15,7 @@ class EnvironmentProfileTab extends StatelessWidget {
     required this.userName,
     required this.userRole,
     required this.avatarImageUrl,
+    required this.myTeamInfo,
     required this.onLogout,
     required this.isLoggingOut,
   });
@@ -39,6 +42,17 @@ class EnvironmentProfileTab extends StatelessWidget {
     final first = parts.first.isEmpty ? 'E' : parts.first[0].toUpperCase();
     final last = parts.last.isEmpty ? 'T' : parts.last[0].toUpperCase();
     return '$first$last';
+  }
+
+  String _teamRoleTitle(String role) {
+    switch (role) {
+      case 'LEAD':
+        return 'Đội trưởng';
+      case 'MEMBER':
+        return 'Thành viên';
+      default:
+        return role;
+    }
   }
 
   @override
@@ -165,6 +179,67 @@ class EnvironmentProfileTab extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE8EFE5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Thông tin đội nhóm',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1F2D1D),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (myTeamInfo == null)
+                  const Text(
+                    'Bạn chưa thuộc đội môi trường nào.',
+                    style: TextStyle(color: Color(0xFF64748B)),
+                  )
+                else ...[
+                  EnvironmentProfileRow(
+                    icon: Icons.groups_outlined,
+                    label: 'Tên đội',
+                    value: myTeamInfo!.teamName,
+                  ),
+                  const SizedBox(height: 8),
+                  EnvironmentProfileRow(
+                    icon: Icons.badge_outlined,
+                    label: 'Vai trò trong đội',
+                    value: _teamRoleTitle(myTeamInfo!.myRoleInTeam),
+                  ),
+                  const SizedBox(height: 8),
+                  EnvironmentProfileRow(
+                    icon: Icons.person_pin_circle_outlined,
+                    label: 'Team lead',
+                    value: myTeamInfo!.leadFullName,
+                  ),
+                  const SizedBox(height: 8),
+                  EnvironmentProfileRow(
+                    icon: Icons.group_outlined,
+                    label: 'Số thành viên',
+                    value: '${myTeamInfo!.memberCount} người',
+                  ),
+                  if (myTeamInfo!.teamDescription.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    EnvironmentProfileRow(
+                      icon: Icons.notes_outlined,
+                      label: 'Mô tả đội',
+                      value: myTeamInfo!.teamDescription,
+                    ),
+                  ],
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Container(

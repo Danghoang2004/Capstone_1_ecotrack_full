@@ -12,7 +12,8 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canSubmitCompletion = task.status == 'ASSIGNED';
+    final canSubmitCompletion =
+        task.status == 'ASSIGNED' && task.canSubmitCompletion;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F3),

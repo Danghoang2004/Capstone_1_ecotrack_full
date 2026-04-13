@@ -5,6 +5,7 @@ import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage
 
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDarhboard_data.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminEnvironmentTaskPage.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminEnvironmentTeamPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminMapPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminReportPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_management/screens/user_management_screen.dart';
@@ -21,7 +22,8 @@ class AdminLayout extends StatefulWidget {
 
 class _AdminLayoutState extends State<AdminLayout> {
   String _selectedMenu = 'dashboard';
-  late final List<Widget> _pages;
+  int _environmentTasksPageVersion = 0;
+  int _environmentTeamsPageVersion = 0;
 
   int _selectedIndex = 0;
 
@@ -30,24 +32,28 @@ class _AdminLayoutState extends State<AdminLayout> {
     'users': 1,
     'reports': 2,
     'environment_tasks': 3,
-    'map': 4,
-    'campaign': 5,
-    'quiz': 6,
-    'notifications': 7,
+    'environment_teams': 4,
+    'map': 5,
+    'campaign': 6,
+    'quiz': 7,
+    'notifications': 8,
   };
 
-  @override
-  void initState() {
-    super.initState();
-    _pages = const [
-      AdminDashboardDataScreen(),
-      UserManagementScreen(),
-      AdminReportPage(),
-      AdminEnvironmentTaskPage(),
-      AdminMapPage(),
-      AdminCampaignPage(),
-      AdminQuizPage(),
-      AdminNotificationPage(),
+  List<Widget> _buildPages() {
+    return [
+      const AdminDashboardDataScreen(),
+      const UserManagementScreen(),
+      const AdminReportPage(),
+      AdminEnvironmentTaskPage(
+        key: ValueKey('environment_tasks_$_environmentTasksPageVersion'),
+      ),
+      AdminEnvironmentTeamPage(
+        key: ValueKey('environment_teams_$_environmentTeamsPageVersion'),
+      ),
+      const AdminMapPage(),
+      const AdminCampaignPage(),
+      const AdminQuizPage(),
+      const AdminNotificationPage(),
     ];
   }
 
@@ -69,6 +75,13 @@ class _AdminLayoutState extends State<AdminLayout> {
                     setState(() {
                       _selectedMenu = menu;
                       _selectedIndex = _menuIndex[menu] ?? 0;
+
+                      if (menu == 'environment_tasks') {
+                        _environmentTasksPageVersion++;
+                      }
+                      if (menu == 'environment_teams') {
+                        _environmentTeamsPageVersion++;
+                      }
                     });
                   },
                   onLogout: () async {
@@ -88,7 +101,7 @@ class _AdminLayoutState extends State<AdminLayout> {
                     color: const Color(0xFFF5F7FA),
                     child: IndexedStack(
                       index: _selectedIndex,
-                      children: _pages,
+                      children: _buildPages(),
                     ),
                   ),
                 ),

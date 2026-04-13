@@ -88,6 +88,14 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   onTap: widget.onNavigate,
                 ),
                 _MenuItem(
+                  icon: Icons.diversity_3_outlined,
+                  label: 'Đội & KPI',
+                  keyName: 'environment_teams',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
+                _MenuItem(
                   icon: Icons.map_outlined,
                   label: 'Bản Đồ Rác Thải',
                   keyName: 'map',

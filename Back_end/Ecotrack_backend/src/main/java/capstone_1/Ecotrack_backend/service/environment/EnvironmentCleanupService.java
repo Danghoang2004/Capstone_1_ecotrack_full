@@ -8,11 +8,15 @@ import capstone_1.Ecotrack_backend.exception.ForbiddenOperationException;
 import capstone_1.Ecotrack_backend.exception.InvalidTaskStateException;
 import capstone_1.Ecotrack_backend.exception.ResourceNotFoundException;
 import capstone_1.Ecotrack_backend.model.EnvironmentCleanupTask;
+import capstone_1.Ecotrack_backend.model.EnvironmentTeamMember;
+import capstone_1.Ecotrack_backend.model.NotificationType;
 import capstone_1.Ecotrack_backend.model.User;
 import capstone_1.Ecotrack_backend.model.WasteReport;
 import capstone_1.Ecotrack_backend.repository.EnvironmentCleanupTaskRepository;
+import capstone_1.Ecotrack_backend.repository.EnvironmentTeamMemberRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
 import capstone_1.Ecotrack_backend.repository.WasteReportRepository;
+import capstone_1.Ecotrack_backend.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class EnvironmentCleanupService {
@@ -29,13 +35,19 @@ public class EnvironmentCleanupService {
     private final EnvironmentCleanupTaskRepository taskRepository;
     private final WasteReportRepository wasteReportRepository;
     private final UserRepository userRepository;
+    private final EnvironmentTeamMemberRepository environmentTeamMemberRepository;
+    private final NotificationService notificationService;
 
     public EnvironmentCleanupService(EnvironmentCleanupTaskRepository taskRepository,
             WasteReportRepository wasteReportRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            EnvironmentTeamMemberRepository environmentTeamMemberRepository,
+            NotificationService notificationService) {
         this.taskRepository = taskRepository;
         this.wasteReportRepository = wasteReportRepository;
         this.userRepository = userRepository;
+        this.environmentTeamMemberRepository = environmentTeamMemberRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -59,6 +71,15 @@ public class EnvironmentCleanupService {
 
         validateNearbyDuplicateTask(report, activeStatuses);
 
+        boolean isActiveLead = environmentTeamMemberRepository
+                .existsByUserIdAndRoleAndIsActiveTrueAndTeamIsActiveTrue(
+                        request.getTeamLeadUserId(),
+                        EnvironmentTeamMember.TeamRole.LEAD);
+
+        if (!isActiveLead) {
+            throw new InvalidTaskStateException("Người được phân công phải là team lead đang hoạt động.");
+        }
+
         EnvironmentCleanupTask task = new EnvironmentCleanupTask();
         task.setReportId(request.getReportId());
         task.setTeamLeadUserId(request.getTeamLeadUserId());
@@ -76,7 +97,47 @@ public class EnvironmentCleanupService {
         task.setDueAt(plannedEndAt);
 
         EnvironmentCleanupTask saved = taskRepository.save(task);
+        notifyTeamMembersAboutNewTask(saved, report);
         return toResponse(saved, report);
+    }
+
+    private void notifyTeamMembersAboutNewTask(EnvironmentCleanupTask task, WasteReport report) {
+        EnvironmentTeamMember leadMembership = environmentTeamMemberRepository
+                .findByUserIdAndIsActiveTrue(task.getTeamLeadUserId()).stream()
+                .filter(member -> member.getRole() == EnvironmentTeamMember.TeamRole.LEAD)
+                .filter(member -> member.getTeam() != null && Boolean.TRUE.equals(member.getTeam().getIsActive()))
+                .findFirst()
+                .orElse(null);
+
+        if (leadMembership == null || leadMembership.getTeam() == null) {
+            return;
+        }
+
+        Long teamId = leadMembership.getTeam().getTeamId();
+        String teamName = leadMembership.getTeam().getTeamName();
+        List<Long> teamMemberUserIds = environmentTeamMemberRepository.findByTeamTeamIdAndIsActiveTrue(teamId)
+                .stream()
+                .map(EnvironmentTeamMember::getUserId)
+                .distinct()
+                .toList();
+
+        if (teamMemberUserIds.isEmpty()) {
+            return;
+        }
+
+        String reportTitle = report.getTitle() == null || report.getTitle().isBlank()
+                ? ("Báo cáo #" + report.getReportId())
+                : report.getTitle();
+
+        for (Long memberUserId : teamMemberUserIds) {
+            notificationService.createNotification(
+                    memberUserId,
+                    NotificationType.SYSTEM,
+                    "Task mới cho đội " + teamName,
+                    "Đội của bạn vừa được giao task mới: " + reportTitle,
+                    "ENVIRONMENT_TASK",
+                    task.getTaskId());
+        }
     }
 
     private void validateNearbyDuplicateTask(WasteReport candidateReport,
@@ -178,14 +239,44 @@ public class EnvironmentCleanupService {
     }
 
     public List<EnvironmentCleanupTaskResponse> getMyTasks(Long currentUserId) {
-        return taskRepository.findByTeamLeadUserIdOrderByAssignedAtDesc(currentUserId).stream()
+        List<Long> activeTeamIds = environmentTeamMemberRepository.findByUserIdAndIsActiveTrue(currentUserId).stream()
+                .map(member -> member.getTeam().getTeamId())
+                .distinct()
+                .toList();
+
+        if (activeTeamIds.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> leadUserIds = environmentTeamMemberRepository
+                .findByTeamTeamIdInAndRoleAndIsActiveTrue(activeTeamIds, EnvironmentTeamMember.TeamRole.LEAD)
+                .stream()
+                .map(EnvironmentTeamMember::getUserId)
+                .collect(Collectors.toSet());
+
+        if (leadUserIds.isEmpty()) {
+            return List.of();
+        }
+
+        return taskRepository.findByTeamLeadUserIdInOrderByAssignedAtDesc(new ArrayList<>(leadUserIds)).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     public List<EnvironmentTeamLeadResponse> getEnvironmentTeamLeads() {
-        return userRepository.findAll().stream()
-                .filter(this::hasEnvironmentRole)
+        List<Long> activeLeadIds = environmentTeamMemberRepository.findByRoleAndIsActiveTrue(
+                EnvironmentTeamMember.TeamRole.LEAD)
+                .stream()
+                .filter(member -> member.getTeam() != null && Boolean.TRUE.equals(member.getTeam().getIsActive()))
+                .map(EnvironmentTeamMember::getUserId)
+                .distinct()
+                .toList();
+
+        if (activeLeadIds.isEmpty()) {
+            return List.of();
+        }
+
+        return userRepository.findAllById(activeLeadIds).stream()
                 .map(user -> new EnvironmentTeamLeadResponse(
                         user.getId(),
                         user.getUserProfile() != null && user.getUserProfile().getFullName() != null
@@ -225,6 +316,7 @@ public class EnvironmentCleanupService {
         response.setCompletedNote(task.getCompletedNote());
         response.setCompletedAt(task.getCompletedAt());
         response.setResolvedAt(task.getResolvedAt());
+        response.setCanSubmitCompletion(EnvironmentCleanupTask.TaskStatus.ASSIGNED == task.getStatus());
         return response;
     }
 

@@ -37,6 +37,23 @@ class _EnvironmentTaskReportScreenState
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.task.canSubmitCompletion) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Chỉ team lead mới được báo cáo hoàn tất task.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.of(context).pop(false);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _noteController.dispose();
     super.dispose();
@@ -114,6 +131,11 @@ class _EnvironmentTaskReportScreenState
 
   Future<void> _submit() async {
     if (_isSubmitting) return;
+
+    if (!widget.task.canSubmitCompletion) {
+      setState(() => _inlineError = 'Chỉ team lead mới được báo cáo task này.');
+      return;
+    }
 
     if (_selectedImage == null) {
       setState(

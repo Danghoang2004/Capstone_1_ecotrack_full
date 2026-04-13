@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/environment_cleanup_task_model.dart';
+import 'package:frontend_ecotrack/data/models/environment_my_team_info_model.dart';
 import 'package:http/http.dart' as http;
 
 class TaskDestinationCoordinate {
@@ -30,6 +31,20 @@ class EnvironmentTaskService {
               EnvironmentCleanupTask.fromJson(item as Map<String, dynamic>),
         )
         .toList();
+  }
+
+  Future<EnvironmentMyTeamInfo?> fetchMyTeamInfo() async {
+    final response = await apiClient.get('/api/environment/tasks/my-team');
+    if (response.statusCode != 200) {
+      return null;
+    }
+
+    final decoded = apiClient.decodeUtf8Json(response);
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+
+    return EnvironmentMyTeamInfo.fromJson(decoded);
   }
 
   Future<TaskDestinationCoordinate?> fetchTaskDestinationByReportId(

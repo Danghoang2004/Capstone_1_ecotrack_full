@@ -3,7 +3,9 @@ package capstone_1.Ecotrack_backend.controller.environment;
 import capstone_1.Ecotrack_backend.cloudinaryconfig.CloudinaryService;
 import capstone_1.Ecotrack_backend.dto.request.environment.EnvironmentTaskCompletionRequest;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentCleanupTaskResponse;
+import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentMyTeamInfoResponse;
 import capstone_1.Ecotrack_backend.service.environment.EnvironmentCleanupService;
+import capstone_1.Ecotrack_backend.service.environment.EnvironmentTeamManagementService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,11 +24,14 @@ import java.util.Map;
 public class EnvironmentCleanupController {
 
     private final EnvironmentCleanupService environmentCleanupService;
+    private final EnvironmentTeamManagementService environmentTeamManagementService;
     private final CloudinaryService cloudinaryService;
 
     public EnvironmentCleanupController(EnvironmentCleanupService environmentCleanupService,
+            EnvironmentTeamManagementService environmentTeamManagementService,
             CloudinaryService cloudinaryService) {
         this.environmentCleanupService = environmentCleanupService;
+        this.environmentTeamManagementService = environmentTeamManagementService;
         this.cloudinaryService = cloudinaryService;
     }
 
@@ -34,6 +39,12 @@ public class EnvironmentCleanupController {
     public List<EnvironmentCleanupTaskResponse> getMyTasks(HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         return environmentCleanupService.getMyTasks(userId);
+    }
+
+    @GetMapping("/my-team")
+    public EnvironmentMyTeamInfoResponse getMyTeamInfo(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return environmentTeamManagementService.getMyTeamInfo(userId);
     }
 
     @PutMapping("/{taskId}/complete")

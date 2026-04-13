@@ -20,6 +20,7 @@ public class EnvironmentCleanupTaskResponse {
     private String completedNote;
     private LocalDateTime completedAt;
     private LocalDateTime resolvedAt;
+    private Boolean canSubmitCompletion;
 
     public Long getTaskId() {
         return taskId;
@@ -155,5 +156,13 @@ public class EnvironmentCleanupTaskResponse {
 
     public void setResolvedAt(LocalDateTime resolvedAt) {
         this.resolvedAt = resolvedAt;
+    }
+
+    public Boolean getCanSubmitCompletion() {
+        return canSubmitCompletion;
+    }
+
+    public void setCanSubmitCompletion(Boolean canSubmitCompletion) {
+        this.canSubmitCompletion = canSubmitCompletion;
     }
 }
