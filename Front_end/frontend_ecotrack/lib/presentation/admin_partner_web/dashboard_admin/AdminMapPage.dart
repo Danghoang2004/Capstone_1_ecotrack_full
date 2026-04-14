@@ -32,6 +32,17 @@ class _AdminMapPageState extends State<AdminMapPage> {
   static const double _initialZoom = 16.2;
   static const int _popupDetailLimit = 5;
   static const int _popupDescriptionLimit = 60;
+  static const Set<String> _mapVisibleReportStatuses = {'VERIFIED', 'CLEANED'};
+  static const Color _reportPendingColor = Color(0xFFF44336);
+  static const Color _reportVerifiedColor = Color(0xFFFB8C00);
+  static const Color _reportCleanedColor = Color(0xFF2E7D32);
+  static const Color _reportRejectedColor = Color(0xFF9CA3AF);
+  static const Color _heatObservedLowColor = Color(0xFF22C55E);
+  static const Color _heatObservedMediumColor = Color(0xFFF59E0B);
+  static const Color _heatObservedHighColor = Color(0xFFEF4444);
+  static const Color _heatPredictedLowColor = Color(0xFF06B6D4);
+  static const Color _heatPredictedMediumColor = Color(0xFF8B5CF6);
+  static const Color _heatPredictedHighColor = Color(0xFFEF4444);
 
   final ReportServiceAdmin _reportService = ReportServiceAdmin();
   final HotspotService _hotspotService = HotspotService();
@@ -534,53 +545,65 @@ class _AdminMapPageState extends State<AdminMapPage> {
   }
 
   List<Map<String, dynamic>> _buildReportPayload() {
-    final payload = _groupedReports.map((group) {
-      final Report first = group.first;
-      // Sort reports in group by ID for stable/deterministic ordering
-      final reportsInCluster = [...group]
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final payload = _groupedReports
+        .map((group) {
+          // Keep only statuses that should be displayed on the map.
+          final reportsInCluster =
+              group
+                  .where(
+                    (r) => _mapVisibleReportStatuses.contains(
+                      r.status.toUpperCase(),
+                    ),
+                  )
+                  .toList()
+                ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-      final visibleReports = reportsInCluster.take(_popupDetailLimit).toList();
-      final statusSummary = <String, int>{
-        'PENDING': 0,
-        'VERIFIED': 0,
-        'CLEANED': 0,
-        'REJECTED': 0,
-      };
-      for (final report in reportsInCluster) {
-        final key = report.status.toUpperCase();
-        statusSummary[key] = (statusSummary[key] ?? 0) + 1;
-      }
+          if (reportsInCluster.isEmpty) {
+            return null;
+          }
 
-      return <String, dynamic>{
-        'reportId': first.reportId,
-        'title': first.title,
-        'description': first.description,
-        'imageUrl': first.imageUrl,
-        'latitude': first.latitude,
-        'longitude': first.longitude,
-        'status': _pickClusterStatus(reportsInCluster),
-        'category': first.category,
-        'count': group.length,
-        'overflowCount': reportsInCluster.length - visibleReports.length,
-        'statusSummary': statusSummary,
-        'reports': visibleReports
-            .map(
-              (r) => <String, dynamic>{
-                'id': r.reportId,
-                'title': r.title,
-                'description': r.description.length > _popupDescriptionLimit
-                    ? '${r.description.substring(0, _popupDescriptionLimit)}...'
-                    : r.description,
-                'imageUrl': r.imageUrl,
-                'latitude': r.latitude,
-                'longitude': r.longitude,
-                'status': r.status,
-              },
-            )
-            .toList(),
-      };
-    }).toList();
+          final Report first = reportsInCluster.first;
+
+          final visibleReports = reportsInCluster
+              .take(_popupDetailLimit)
+              .toList();
+          final statusSummary = <String, int>{'VERIFIED': 0, 'CLEANED': 0};
+          for (final report in reportsInCluster) {
+            final key = report.status.toUpperCase();
+            statusSummary[key] = (statusSummary[key] ?? 0) + 1;
+          }
+
+          return <String, dynamic>{
+            'reportId': first.reportId,
+            'title': first.title,
+            'description': first.description,
+            'imageUrl': first.imageUrl,
+            'latitude': first.latitude,
+            'longitude': first.longitude,
+            'status': _pickClusterStatus(reportsInCluster),
+            'category': first.category,
+            'count': reportsInCluster.length,
+            'overflowCount': reportsInCluster.length - visibleReports.length,
+            'statusSummary': statusSummary,
+            'reports': visibleReports
+                .map(
+                  (r) => <String, dynamic>{
+                    'id': r.reportId,
+                    'title': r.title,
+                    'description': r.description.length > _popupDescriptionLimit
+                        ? '${r.description.substring(0, _popupDescriptionLimit)}...'
+                        : r.description,
+                    'imageUrl': r.imageUrl,
+                    'latitude': r.latitude,
+                    'longitude': r.longitude,
+                    'status': r.status,
+                  },
+                )
+                .toList(),
+          };
+        })
+        .whereType<Map<String, dynamic>>()
+        .toList();
     debugPrint(
       '[AdminMapPage._buildReportPayload] Built payload with ${payload.length} items',
     );
@@ -1031,19 +1054,17 @@ class _AdminMapPageState extends State<AdminMapPage> {
           const SizedBox(height: 8),
           if (_isHeatmapMode) ...[
             if (_showPredictedHotspots) ...[
-              _legendItem('Dự đoán thấp', Colors.yellow),
-              _legendItem('Dự đoán trung bình', Colors.orange),
-              _legendItem('Dự đoán cao', Colors.red),
+              _legendItem('Dự đoán thấp', _heatPredictedLowColor),
+              _legendItem('Dự đoán trung bình', _heatPredictedMediumColor),
+              _legendItem('Dự đoán cao', _heatPredictedHighColor),
             ] else ...[
-              _legendItem('Nhiệt thấp', Colors.yellow),
-              _legendItem('Nhiệt trung bình', Colors.orange),
-              _legendItem('Nhiệt cao / nguy cơ cao', Colors.red),
+              _legendItem('Nhiệt thấp', _heatObservedLowColor),
+              _legendItem('Nhiệt trung bình', _heatObservedMediumColor),
+              _legendItem('Nhiệt cao / nguy cơ cao', _heatObservedHighColor),
             ],
           ] else ...[
-            _legendItem('Chờ duyệt', _getStatusColor('PENDING')),
-            _legendItem('Đã xác Thực', _getStatusColor('VERIFIED')),
+            _legendItem('Đã xác thực', _getStatusColor('VERIFIED')),
             _legendItem('Đã dọn dẹp', _getStatusColor('CLEANED')),
-            _legendItem('Bị Từ Chối', _getStatusColor('REJECTED')),
           ],
         ],
       ),
@@ -1071,13 +1092,13 @@ class _AdminMapPageState extends State<AdminMapPage> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'PENDING':
-        return const Color.fromARGB(255, 196, 30, 30);
+        return _reportPendingColor;
       case 'VERIFIED':
-        return const Color.fromARGB(255, 224, 149, 10);
+        return _reportVerifiedColor;
       case 'CLEANED':
-        return Colors.green;
+        return _reportCleanedColor;
       case 'REJECTED':
-        return const Color.fromARGB(255, 155, 154, 154);
+        return _reportRejectedColor;
       default:
         return Colors.grey;
     }

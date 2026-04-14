@@ -76,6 +76,7 @@
         mode: 'reports',
         reports: [],
         heatPoints: [],
+        heatPointsMode: null,
         ready: false,
         lastError: null,
         lastStage: 'boot',
@@ -168,6 +169,8 @@
             return '#fb8c00';
           case 'CLEANED':
             return '#2e7d32';
+          case 'REJECTED':
+            return '#9ca3af';
           default:
             return '#3874c7';
         }
@@ -353,6 +356,7 @@
                   'PENDING', '#f44336',
                   'VERIFIED', '#fb8c00',
                   'CLEANED', '#2e7d32',
+                  'REJECTED', '#9ca3af',
                   '#3874c7',
                 ],
                 'circle-radius': [
@@ -391,19 +395,45 @@
 
           logStage('renderClusters', `rendering ${state.heatPoints.length} heat points in mode=${state.mode}`);
 
-          const features = state.heatPoints.map((cluster) => {
+          const rankedPoints = state.heatPoints
+            .map((cluster, index) => ({
+              index,
+              count: Number(cluster.count || cluster.reportCount || cluster.predictedCount7d || 0),
+              intensity: Number(cluster.intensity || 0),
+            }))
+            .sort((a, b) => {
+              if (b.count !== a.count) return b.count - a.count;
+              return b.intensity - a.intensity;
+            });
+
+          const rankTierByIndex = new Map();
+          const totalPoints = rankedPoints.length;
+          rankedPoints.forEach((item, rank) => {
+            // Split by rank so admins can visually distinguish low/medium/high clearly.
+            const percentile = (rank + 1) / Math.max(totalPoints, 1);
+            let tier = 'low';
+            if (percentile <= 1 / 3) tier = 'high';
+            else if (percentile <= 2 / 3) tier = 'medium';
+            rankTierByIndex.set(item.index, tier);
+          });
+
+          const features = state.heatPoints.map((cluster, index) => {
             const count = Number(cluster.count || cluster.reportCount || cluster.predictedCount7d || 0);
             const intensity = Number(cluster.intensity || 0);
 
+            const tier = totalPoints >= 3
+              ? rankTierByIndex.get(index)
+              : (intensity >= 0.67 ? 'high' : intensity >= 0.33 ? 'medium' : 'low');
+
             let clusterColor = '#f59e0b';
             if (state.mode === 'heat_predicted') {
-              if (intensity >= 0.67) clusterColor = '#dc2626';
-              else if (intensity >= 0.33) clusterColor = '#fb7185';
-              else clusterColor = '#991b1b';
+              if (tier === 'high') clusterColor = '#ef4444';
+              else if (tier === 'medium') clusterColor = '#8b5cf6';
+              else clusterColor = '#06b6d4';
             } else {
-              if (intensity >= 0.67) clusterColor = '#ea580c';
-              else if (intensity >= 0.33) clusterColor = '#f59e0b';
-              else clusterColor = '#fcd34d';
+              if (tier === 'high') clusterColor = '#ef4444';
+              else if (tier === 'medium') clusterColor = '#f59e0b';
+              else clusterColor = '#22c55e';
             }
 
             return {
@@ -886,13 +916,13 @@
           state.mode = mode;
           const hasRenderableData =
             (mode === 'reports' && state.reports.length > 0) ||
-            (mode !== 'reports' && state.heatPoints.length > 0);
+            (mode !== 'reports' && state.heatPoints.length > 0 && state.heatPointsMode === mode);
 
           if (hasRenderableData) {
             render();
             logStage('setMode', `✓ mode set to '${state.mode}', render() called`);
           } else {
-            logStage('setMode', `✓ mode set to '${state.mode}', waiting for dataset before render`);
+            logStage('setMode', `✓ mode set to '${state.mode}', waiting for matching dataset before render`);
           }
         } catch (error) {
           logError('setMode', `Failed to switch mode to ${mode}`, error);
@@ -915,15 +945,23 @@
           logStage('setHeatPoints', `received JSON length=${(json || '').length}, parsed ${parsed.length} points`);
 
           if (parsed.length === 0) {
+            state.heatPointsMode = null;
             logStage('setHeatPoints', 'empty heatPoints array, clearing render');
           } else {
-            logStage('setHeatPoints', `first point: lat=${parsed[0]?.lat}, lng=${parsed[0]?.lng}, intensity=${parsed[0]?.intensity}, count=${parsed[0]?.count}`);
+            const predicted = parsed[0]?.predicted === true;
+            state.heatPointsMode = predicted ? 'heat_predicted' : 'heat_observed';
+            logStage('setHeatPoints', `first point: lat=${parsed[0]?.lat}, lng=${parsed[0]?.lng}, intensity=${parsed[0]?.intensity}, count=${parsed[0]?.count}, dataMode=${state.heatPointsMode}`);
           }
 
           state.heatPoints = parsed;
-          render();
+          if (state.mode === 'reports' || state.heatPointsMode === state.mode || parsed.length === 0) {
+            render();
+          } else {
+            logStage('setHeatPoints', `data ready for ${state.heatPointsMode}, current mode=${state.mode}, skip render until mode matches`);
+          }
         } catch (error) {
           state.heatPoints = [];
+          state.heatPointsMode = null;
           logError('setHeatPoints', 'Failed to parse or render hotspot clusters', error);
           logStage('setHeatPoints', `Raw JSON received (first 200 chars): ${(json || '').substring(0, 200)}`);
         }
