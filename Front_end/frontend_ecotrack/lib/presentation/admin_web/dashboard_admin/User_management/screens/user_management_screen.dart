@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import '../controllers/user_management_controller.dart';
 import '../widgets/header/user_management_header.dart';
 import '../widgets/search/user_search_bar.dart';
@@ -151,145 +152,148 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final isTablet = screenWidth >= 768 && screenWidth < 1024;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: AppColors.adminBackground,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Center(
             child: Container(
               constraints: BoxConstraints(
-                maxWidth: isMobile ? double.infinity : 1300,
+                maxWidth: isMobile ? double.infinity : 1400,
               ),
-              padding: EdgeInsets.all(isMobile ? 16.0 : 32.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- HEADER ---
-                  UserManagementHeader(isMobile: isMobile, isTablet: isTablet),
-
-                  SizedBox(height: isMobile ? 20 : 32),
-
-                  // --- SEARCH BAR (Fixed khi cuộn) ---
-                  UserSearchBar(
-                    controller: controller.searchController,
-                    isMobile: isMobile,
-                  ),
-
-                  SizedBox(height: isMobile ? 16 : 24),
-
-                  // --- CONTENT AREA (Scrollable) ---
-                  Expanded(
-                    child: CustomScrollView(
-                      slivers: [
-                        // --- FILTER BAR (Sắp xếp + Chọn tất cả) - Không fixed ---
-                        SliverToBoxAdapter(
-                          child: UserFilterBar(
-                            sortOrder: controller.sortOrder,
-                            selectAll: controller.isAllSelected,
-                            hasSelectedUsers: controller.hasSelectedUsers,
-                            onSortChanged: (order) {
-                              setState(() {
-                                controller.setSortOrder(order);
-                              });
-                            },
-                            onSelectAllChanged: (value) {
-                              setState(() {
-                                if (value) {
-                                  controller.selectAll();
-                                } else {
-                                  controller.deselectAll();
-                                }
-                              });
-                            },
-                            onDeleteSelected: () async {
-                              await _handleDeleteSelected();
-                            },
-                            isMobile: isMobile,
-                          ),
-                        ),
-
-                        SliverToBoxAdapter(
-                          child: SizedBox(height: isMobile ? 12 : 16),
-                        ),
-
-                        // --- USER LIST ---
-                        if (controller.isLoading)
-                          const SliverFillRemaining(
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        else if (controller.error != null)
-                          SliverFillRemaining(
-                            child: Center(
-                              child: Text(
-                                'Lỗi: ${controller.error}',
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          )
-                        else if (controller.filteredUsers.isEmpty)
-                          SliverFillRemaining(
-                            child: Center(
-                              child: Text(
-                                'Không tìm thấy người dùng',
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          SliverList(
-                            delegate: SliverChildBuilderDelegate((
-                              context,
-                              index,
-                            ) {
-                              final user = controller.filteredUsers[index];
-                              final userId = user['id'] as int;
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      index ==
-                                          controller.filteredUsers.length - 1
-                                      ? (isMobile
-                                            ? 16
-                                            : 24) // Padding bottom cho item cuối
-                                      : (isMobile ? 12 : 16),
-                                ),
-                                child: UserCard(
-                                  user: user,
-                                  isMobile: isMobile,
-                                  isTablet: isTablet,
-                                  isSelected: controller.isUserSelected(userId),
-                                  onSelectionChanged: (value) {
-                                    setState(() {
-                                      controller.toggleUserSelection(userId);
-                                    });
-                                  },
-                                  onToggleSelection: () {
-                                    setState(() {
-                                      controller.toggleUserSelection(userId);
-                                    });
-                                  },
-                                  onEdit: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => EditUserDialog(
-                                        user: user,
-                                        onUpdated: () {
-                                          _loadUsers();
-                                        },
-                                      ),
-                                    );
-                                  },
-                                  onDelete: () => _handleDeleteUser(user),
-                                ),
-                              );
-                            }, childCount: controller.filteredUsers.length),
-                          ),
-                      ],
-                    ),
+              margin: EdgeInsets.symmetric(
+                horizontal: isMobile ? 12 : 24,
+                vertical: isMobile ? 12 : 20,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.adminSurface,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: AppColors.adminBorder),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 24,
+                    offset: const Offset(0, 16),
                   ),
                 ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(isMobile ? 16.0 : 28.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    UserManagementHeader(isMobile: isMobile, isTablet: isTablet),
+                    SizedBox(height: isMobile ? 18 : 28),
+                    UserSearchBar(
+                      controller: controller.searchController,
+                      isMobile: isMobile,
+                    ),
+                    SizedBox(height: isMobile ? 14 : 20),
+                    Expanded(
+                      child: CustomScrollView(
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: UserFilterBar(
+                              sortOrder: controller.sortOrder,
+                              selectAll: controller.isAllSelected,
+                              hasSelectedUsers: controller.hasSelectedUsers,
+                              onSortChanged: (order) {
+                                setState(() {
+                                  controller.setSortOrder(order);
+                                });
+                              },
+                              onSelectAllChanged: (value) {
+                                setState(() {
+                                  if (value) {
+                                    controller.selectAll();
+                                  } else {
+                                    controller.deselectAll();
+                                  }
+                                });
+                              },
+                              onDeleteSelected: () async {
+                                await _handleDeleteSelected();
+                              },
+                              isMobile: isMobile,
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: SizedBox(height: isMobile ? 12 : 16),
+                          ),
+                          if (controller.isLoading)
+                            const SliverFillRemaining(
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (controller.error != null)
+                            SliverFillRemaining(
+                              child: Center(
+                                child: Text(
+                                  'Lỗi: ${controller.error}',
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            )
+                          else if (controller.filteredUsers.isEmpty)
+                            SliverFillRemaining(
+                              child: Center(
+                                child: Text(
+                                  'Không tìm thấy người dùng',
+                                  style: TextStyle(
+                                    color: AppColors.adminTextSecondary,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final user = controller.filteredUsers[index];
+                                final userId = user['id'] as int;
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom: index == controller.filteredUsers.length - 1
+                                        ? (isMobile ? 16 : 24)
+                                        : (isMobile ? 12 : 16),
+                                  ),
+                                  child: UserCard(
+                                    user: user,
+                                    isMobile: isMobile,
+                                    isTablet: isTablet,
+                                    isSelected: controller.isUserSelected(userId),
+                                    onSelectionChanged: (value) {
+                                      setState(() {
+                                        controller.toggleUserSelection(userId);
+                                      });
+                                    },
+                                    onToggleSelection: () {
+                                      setState(() {
+                                        controller.toggleUserSelection(userId);
+                                      });
+                                    },
+                                    onEdit: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => EditUserDialog(
+                                          user: user,
+                                          onUpdated: () {
+                                            _loadUsers();
+                                          },
+                                        ),
+                                      );
+                                    },
+                                    onDelete: () => _handleDeleteUser(user),
+                                  ),
+                                );
+                              }, childCount: controller.filteredUsers.length),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

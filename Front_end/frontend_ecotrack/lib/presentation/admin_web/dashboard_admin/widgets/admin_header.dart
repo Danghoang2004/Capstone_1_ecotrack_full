@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/core/services/notification_service.dart';
 import 'package:frontend_ecotrack/core/services/user_service.dart';
 import 'package:frontend_ecotrack/data/models/NotificationModelAdmin.dart';
@@ -36,13 +37,16 @@ class _AdminHeaderState extends State<AdminHeader> {
   Future<void> _loadUserProfile() async {
     try {
       final p = await _userService.getProfileView();
+      if (!mounted) return;
       setState(() {
         _profile = p;
         _isLoadingProfile = false;
       });
     } catch (e) {
       debugPrint("Lỗi tải profile: $e");
-      setState(() => _isLoadingProfile = false);
+      if (mounted) {
+        setState(() => _isLoadingProfile = false);
+      }
     }
   }
 
@@ -51,6 +55,7 @@ class _AdminHeaderState extends State<AdminHeader> {
       // Giả sử bạn đã thêm hàm này vào UserService gọi tới API /api/admin/notifications
       final List<NotificationModel> list = await _notification
           .getAdminNotifications();
+      if (!mounted) return;
       setState(() {
         _notifications = list;
         _unreadCount = list.where((n) => !n.isRead).length;
@@ -70,6 +75,12 @@ class _AdminHeaderState extends State<AdminHeader> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final String fullImageUrl = _userService.apiClient.buildImageUrl(
       _profile?.avatarUrl,
@@ -80,15 +91,17 @@ class _AdminHeaderState extends State<AdminHeader> {
     final bool veryCompact = width < 760;
 
     return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      height: 86,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.adminSurface.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.adminBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -97,10 +110,8 @@ class _AdminHeaderState extends State<AdminHeader> {
           width: constraints.maxWidth,
           child: Row(
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [_buildLogoSection(veryCompact)],
-              ),
+              _buildLogoSection(veryCompact),
+              const SizedBox(width: 16),
               if (!hideSearch)
                 Expanded(
                   child: Center(
@@ -131,22 +142,22 @@ class _AdminHeaderState extends State<AdminHeader> {
     return SizedBox(
       width: maxWidth,
       child: Container(
-        height: 40,
+        height: 46,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade200),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: AppColors.adminBorder),
         ),
         child: TextField(
           controller: _searchController,
           textAlignVertical: TextAlignVertical.center,
-          style: const TextStyle(fontSize: 14),
+          style: const TextStyle(fontSize: 14, color: AppColors.adminTextPrimary),
           decoration: const InputDecoration(
             hintText: 'Tìm kiếm mọi thứ...',
-            hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-            prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey),
-            prefixIconConstraints: BoxConstraints(minWidth: 45, minHeight: 40),
+            hintStyle: TextStyle(color: AppColors.adminTextSecondary, fontSize: 14),
+            prefixIcon: Icon(Icons.search, size: 20, color: AppColors.adminTextSecondary),
+            prefixIconConstraints: BoxConstraints(minWidth: 48, minHeight: 48),
 
             border: InputBorder.none,
             isCollapsed: true,
@@ -169,37 +180,61 @@ class _AdminHeaderState extends State<AdminHeader> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (!compact)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 180),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _profile?.fullName ?? "Admin",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.adminSurfaceMuted,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: AppColors.adminBorder),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 180),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _profile?.fullName ?? "Admin",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      color: AppColors.adminTextPrimary,
+                    ),
                   ),
-                ),
-                Text(
-                  "Quản trị viên",
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
+                  Text(
+                    "Quản trị viên",
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
           ),
         if (!compact) const SizedBox(width: 12),
-        CircleAvatar(
-          radius: 18,
-          backgroundImage: (_profile?.avatarUrl != null)
-              ? NetworkImage(fullImageUrl)
-              : null,
-          child: (_profile?.avatarUrl == null)
-              ? const Icon(Icons.person)
-              : null,
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.adminBorder, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.adminAccentSoft,
+            backgroundImage: (_profile?.avatarUrl != null)
+                ? NetworkImage(fullImageUrl)
+                : null,
+            child: (_profile?.avatarUrl == null)
+                ? const Icon(Icons.person, color: AppColors.adminAccentDeep)
+                : null,
+          ),
         ),
       ],
     );
@@ -209,11 +244,18 @@ class _AdminHeaderState extends State<AdminHeader> {
     return Row(
       children: [
         Container(
-          width: compact ? 30 : 35,
-          height: compact ? 30 : 35,
+              width: compact ? 36 : 42,
+              height: compact ? 36 : 42,
           decoration: BoxDecoration(
-            color: const Color(0xFF5EAC24),
-            borderRadius: BorderRadius.circular(8),
+            gradient: AppColors.adminHeroGradient,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.adminAccent.withOpacity(0.28),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Center(
             child: SvgPicture.asset(
@@ -226,13 +268,32 @@ class _AdminHeaderState extends State<AdminHeader> {
             ),
           ),
         ),
-        if (!compact) const SizedBox(width: 8),
-        if (!compact)
-          const Text(
-            'EcoTrack',
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        if (!compact) ...[
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Text(
+                'EcoTrack',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.adminTextPrimary,
+                ),
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Admin Console',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColors.adminTextSecondary,
+                ),
+              ),
+            ],
           ),
+        ],
       ],
     );
   }
@@ -248,15 +309,16 @@ class _AdminHeaderState extends State<AdminHeader> {
         clipBehavior: Clip.none,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(9),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: AppColors.adminSurfaceMuted,
               shape: BoxShape.circle,
+              border: Border.all(color: AppColors.adminBorder),
             ),
             child: const Icon(
               Icons.notifications_none_rounded,
-              color: Color(0xFF4A4A4A),
-              size: 24,
+              color: AppColors.adminTextPrimary,
+              size: 22,
             ),
           ),
           if (_unreadCount > 0)
@@ -295,7 +357,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
-                        color: Color(0xFF2D3142),
+                        color: AppColors.adminTextPrimary,
                         letterSpacing: -0.5,
                       ),
                     ),
@@ -306,7 +368,7 @@ class _AdminHeaderState extends State<AdminHeader> {
                       child: const Text(
                         "Đọc tất cả",
                         style: TextStyle(
-                          color: Color(0xFF5EAC24),
+                          color: AppColors.adminAccent,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -351,7 +413,7 @@ class _AdminHeaderState extends State<AdminHeader> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isUnread
-              ? const Color(0xFF5EAC24).withValues(alpha: 0.04)
+              ? AppColors.adminAccentSoft.withOpacity(0.28)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/AdminCampainPage.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/campaign_panel.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/campaign_detail_view.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/create_campaign_form.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/edit_campaign_form.dart';

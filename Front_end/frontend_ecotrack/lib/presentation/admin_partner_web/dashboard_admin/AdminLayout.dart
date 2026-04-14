@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/admin_question/AdminQuizPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/AdminCampainPage.dart';
@@ -60,52 +61,109 @@ class _AdminLayoutState extends State<AdminLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
+      backgroundColor: AppColors.adminBackground,
+      body: Stack(
         children: [
-          const AdminHeader(),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // A. SIDEBAR (BÊN TRÁI)
-                AdminSidebar(
-                  selectedMenu: _selectedMenu,
-                  onNavigate: (menu) {
-                    setState(() {
-                      _selectedMenu = menu;
-                      _selectedIndex = _menuIndex[menu] ?? 0;
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: AppColors.adminBackgroundGradient,
+              ),
+            ),
+          ),
+          Positioned(
+            top: -110,
+            right: -90,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.adminAccentSoft.withOpacity(0.45),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -150,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.adminAccentSoft.withOpacity(0.32),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  const AdminHeader(),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.adminSurface,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: AppColors.adminBorder),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 28,
+                            offset: const Offset(0, 16),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AdminSidebar(
+                              selectedMenu: _selectedMenu,
+                              onNavigate: (menu) {
+                                setState(() {
+                                  _selectedMenu = menu;
+                                  _selectedIndex = _menuIndex[menu] ?? 0;
 
-                      if (menu == 'environment_tasks') {
-                        _environmentTasksPageVersion++;
-                      }
-                      if (menu == 'environment_teams') {
-                        _environmentTeamsPageVersion++;
-                      }
-                    });
-                  },
-                  onLogout: () async {
-                    final authService = AuthService();
-                    await authService.logout();
-                    if (mounted) {
-                      Navigator.of(
-                        context,
-                      ).pushReplacementNamed('/admin_login');
-                    }
-                  },
-                ),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    color: const Color(0xFFF5F7FA),
-                    child: IndexedStack(
-                      index: _selectedIndex,
-                      children: _buildPages(),
+                                  if (menu == 'environment_tasks') {
+                                    _environmentTasksPageVersion++;
+                                  }
+                                  if (menu == 'environment_teams') {
+                                    _environmentTeamsPageVersion++;
+                                  }
+                                });
+                              },
+                              onLogout: () async {
+                                final authService = AuthService();
+                                await authService.logout();
+                                if (mounted) {
+                                  Navigator.of(
+                                    context,
+                                  ).pushReplacementNamed('/admin_login');
+                                }
+                              },
+                            ),
+                            Expanded(
+                              child: Container(
+                                width: double.infinity,
+                                height: double.infinity,
+                                color: AppColors.adminSurfaceSoft,
+                                child: IndexedStack(
+                                  index: _selectedIndex,
+                                  children: _buildPages(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
