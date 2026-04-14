@@ -15,23 +15,40 @@ class EnvironmentProfileRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F7F3),
+        color: const Color(0xFFF8FBF6),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFEDEFEA), width: 0.5),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF5EAC24)),
+          Icon(icon, color: const Color(0xFF5EAC24), size: 20),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFF1F2D1D),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
-          Text(value, style: TextStyle(color: Colors.grey.shade700)),
         ],
       ),
     );

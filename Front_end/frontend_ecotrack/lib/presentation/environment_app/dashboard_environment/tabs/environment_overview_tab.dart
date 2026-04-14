@@ -36,15 +36,15 @@ class EnvironmentOverviewTab extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF6DBB3B), Color(0xFF2F6F3E)],
               ),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF2F6F3E).withOpacity(0.16),
+                  color: const Color(0xFF2F6F3E).withOpacity(0.18),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -55,32 +55,35 @@ class EnvironmentOverviewTab extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.14),
-                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(
                     Icons.eco_outlined,
                     color: Colors.white,
-                    size: 30,
+                    size: 32,
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Giữ thành phố sạch hơn mỗi ngày',
+                      const Text(
+                        'Giữ thành phố sạch hơn',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
-                        'Xử lý nhanh, ghi nhận rõ, báo cáo chính xác.',
-                        style: TextStyle(color: Colors.white70),
+                        'Xử lý nhanh, báo cáo chính xác',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.85),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -88,7 +91,7 @@ class EnvironmentOverviewTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
@@ -132,14 +135,16 @@ class EnvironmentOverviewTab extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Text(
             'Việc gần nhất',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              color: const Color(0xFF1F2D1D),
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           if (isLoading)
             const Padding(
               padding: EdgeInsets.only(top: 24),

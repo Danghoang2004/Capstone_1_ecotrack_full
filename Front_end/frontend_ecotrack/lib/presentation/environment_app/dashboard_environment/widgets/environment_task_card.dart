@@ -38,12 +38,12 @@ class EnvironmentTaskCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -51,81 +51,123 @@ class EnvironmentTaskCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  task.reportTitle,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      task.reportTitle,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2D1D),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Mã báo cáo: #${task.reportId}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: 10),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
+                  horizontal: 11,
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(99),
+                  color: statusColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   statusLabel,
                   style: TextStyle(
                     color: statusColor,
                     fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          _infoLine(Icons.tag_outlined, 'Mã báo cáo', '#${task.reportId}'),
-          _infoLine(
-            Icons.access_time,
-            'Giao lúc',
-            DateFormat('HH:mm dd/MM/yyyy').format(task.assignedAt),
-          ),
-          _infoLine(
-            Icons.event_outlined,
-            'Lịch xử lý',
-            _plannedRangeText(task),
-          ),
-          if (task.assignmentNote.isNotEmpty)
-            _infoLine(
-              Icons.notes_outlined,
-              'Ghi chú',
-              task.assignmentNote,
-              maxLines: 2,
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF4F7F3),
+              borderRadius: BorderRadius.circular(12),
             ),
+            child: Column(
+              children: [
+                _infoLine(Icons.access_time, 'Giao lúc',
+                    DateFormat('HH:mm dd/MM/yyyy').format(task.assignedAt)),
+                const SizedBox(height: 8),
+                _infoLine(Icons.event_outlined, 'Lịch xử lý',
+                    _plannedRangeText(task)),
+              ],
+            ),
+          ),
+          if (task.assignmentNote.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            _infoLine(Icons.notes_outlined, 'Ghi chú', task.assignmentNote,
+                maxLines: 2),
+          ],
           const SizedBox(height: 12),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               OutlinedButton.icon(
                 onPressed: onViewDetails,
-                icon: const Icon(Icons.open_in_new_outlined),
+                icon: const Icon(Icons.open_in_new_outlined, size: 16),
                 label: const Text('Xem đầy đủ'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  side: const BorderSide(color: Color(0xFFD7E7D1)),
+                  foregroundColor: Colors.black,
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: onNavigateToTask,
-                icon: const Icon(Icons.near_me_outlined),
+                icon: const Icon(Icons.near_me_outlined, size: 16),
                 label: const Text('Chỉ đường'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  side: const BorderSide(color: Color(0xFFD7E7D1)),
+                  foregroundColor: Colors.black,
+                ),
               ),
-              if (canSubmit && onSubmitCompletion != null) ...[
+              if (canSubmit && onSubmitCompletion != null)
                 ElevatedButton.icon(
                   onPressed: onSubmitCompletion,
-                  icon: const Icon(Icons.check_circle_outline),
+                  icon: const Icon(Icons.check_circle_outline, size: 16),
                   label: const Text('Báo cáo'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5EAC24),
                     foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
-              ],
             ],
           ),
         ],
@@ -144,7 +186,7 @@ class EnvironmentTaskCard extends StatelessWidget {
     final end = task.plannedEndAt == null
         ? '--'
         : DateFormat('HH:mm dd/MM').format(task.plannedEndAt!);
-    return '$start -> $end';
+    return '$start → $end';
   }
 
   Widget _infoLine(
@@ -153,33 +195,35 @@ class EnvironmentTaskCard extends StatelessWidget {
     String value, {
     int maxLines = 1,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: Colors.grey.shade600),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w600,
-              ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF5EAC24)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-              maxLines: maxLines,
-              overflow: TextOverflow.ellipsis,
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              color: Color(0xFF1F2D1D),
             ),
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

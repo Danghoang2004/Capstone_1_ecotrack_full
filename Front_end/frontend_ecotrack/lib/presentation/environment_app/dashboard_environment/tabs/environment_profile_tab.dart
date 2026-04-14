@@ -70,6 +70,7 @@ class EnvironmentProfileTab extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // Profile Header Card
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
@@ -92,13 +93,13 @@ class EnvironmentProfileTab extends StatelessWidget {
               children: [
                 Stack(
                   children: [
-                    _buildAvatar(size: 72),
+                    _buildAvatar(size: 70),
                     Positioned(
-                      right: 2,
-                      bottom: 2,
+                      right: 0,
+                      bottom: 0,
                       child: Container(
-                        width: 14,
-                        height: 14,
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           color: const Color(0xFFB7F34D),
                           shape: BoxShape.circle,
@@ -108,17 +109,17 @@ class EnvironmentProfileTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Hồ sơ tài khoản',
+                        'Hồ sơ của bạn',
                         style: TextStyle(
                           color: Colors.white70,
                           fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontSize: 12,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -127,7 +128,7 @@ class EnvironmentProfileTab extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
-                          fontSize: 22,
+                          fontSize: 20,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -136,21 +137,38 @@ class EnvironmentProfileTab extends StatelessWidget {
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                          fontSize: 13,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _MiniBadge(
-                            icon: Icons.verified_user_outlined,
-                            text: 'Đang hoạt động',
-                            background: Colors.white.withOpacity(0.16),
-                            foreground: Colors.white,
-                          ),
-                        ],
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.16),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.verified_user_outlined,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Đang hoạt động',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -158,7 +176,8 @@ class EnvironmentProfileTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
+          // Stats Cards
           Row(
             children: [
               Expanded(
@@ -180,30 +199,62 @@ class EnvironmentProfileTab extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 18),
+          // Team Info Section
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE8EFE5)),
+              border: Border.all(color: const Color(0xFFE8EFE5), width: 0.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Thông tin đội nhóm',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1F2D1D),
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5EAC24).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.groups_outlined,
+                        color: Color(0xFF5EAC24),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Thông tin đội nhóm',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2D1D),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 if (myTeamInfo == null)
-                  const Text(
-                    'Bạn chưa thuộc đội môi trường nào.',
-                    style: TextStyle(color: Color(0xFF64748B)),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F4F7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Bạn chưa thuộc đội môi trường nào.',
+                      style: TextStyle(color: Color(0xFF999999), fontSize: 13),
+                    ),
                   )
                 else ...[
                   EnvironmentProfileRow(
@@ -241,26 +292,51 @@ class EnvironmentProfileTab extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          // Account Info Section
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE8EFE5)),
+              border: Border.all(color: const Color(0xFFE8EFE5), width: 0.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Thông tin tài khoản',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1F2D1D),
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5EAC24).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.verified_user_outlined,
+                        color: Color(0xFF5EAC24),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Thông tin tài khoản',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2D1D),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 EnvironmentProfileRow(
                   icon: Icons.badge_outlined,
                   label: 'Chức năng',
@@ -270,33 +346,39 @@ class EnvironmentProfileTab extends StatelessWidget {
                 EnvironmentProfileRow(
                   icon: Icons.verified_user_outlined,
                   label: 'Quyền',
-                  value: 'Nhận việc và báo cáo hoàn tất',
+                  value: 'Nhận việc và báo cáo',
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
+          // Info Banner
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F7F3),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE2E8DD)),
+              color: const Color(0xFFEAF5E4),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFD7E7D1), width: 0.5),
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline, color: Color(0xFF5EAC24)),
+                Icon(Icons.info_outline, color: Color(0xFF5EAC24), size: 18),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Màn hình tài khoản được tối ưu cho thao tác nhanh, rõ vai trò và trạng thái hiện tại.',
-                    style: TextStyle(color: Color(0xFF49604A), height: 1.35),
+                    'Tối ưu hóa cho thao tác nhanh và quản lý dễ dàng.',
+                    style: TextStyle(
+                      color: Color(0xFF49604A),
+                      height: 1.4,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
+          // Logout Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -310,19 +392,26 @@ class EnvironmentProfileTab extends StatelessWidget {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Icon(Icons.logout),
-              label: const Text('Đăng xuất'),
+                  : const Icon(Icons.logout, size: 18),
+              label: Text(
+                isLoggingOut ? 'Đang xử lý...' : 'Đăng xuất',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF4444),
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
           ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -371,47 +460,6 @@ class EnvironmentProfileTab extends StatelessWidget {
   }
 }
 
-class _MiniBadge extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color background;
-  final Color foreground;
-
-  const _MiniBadge({
-    required this.icon,
-    required this.text,
-    required this.background,
-    required this.foreground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: foreground.withOpacity(0.12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: foreground),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-              color: foreground,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -432,38 +480,46 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE8EFE5)),
+        border: Border.all(color: const Color(0xFFE8EFE5), width: 0.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(14),
+              color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Icon(icon, color: iconColor, size: 22),
           ),
           const SizedBox(height: 12),
           Text(
             label,
             style: TextStyle(
-              color: Colors.grey.shade700,
+              color: Colors.grey.shade600,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFF1F2D1D),
               fontWeight: FontWeight.w800,
-              fontSize: 15,
+              fontSize: 16,
             ),
           ),
         ],

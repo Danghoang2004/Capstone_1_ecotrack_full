@@ -69,59 +69,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildSliverAppBar(view),
         SliverToBoxAdapter(
           child: Container(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              bottom: 5.0,
-              top: 10.0,
-            ), // Thêm chút top padding để cách ảnh bìa ra một tí xíu nếu cần
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
             color: Colors.transparent,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatsGrid(view),
+                const SizedBox(height: 1),
 
-                const SizedBox(height: 4),
-                //Khu vực Huy hiệu
                 _buildAchievementsSection(context),
-
-                const SizedBox(height: 10), // SỬA: Giảm từ 24 xuống 12
+                const SizedBox(height: 14),
 
                 _buildRecentActivitySection(view.recentActivities),
+                const SizedBox(height: 14),
 
-                const SizedBox(height: 10), // SỬA: Giảm từ 24 xuống 16
-                // Nút "Xem bảng xếp hạng"
                 SizedBox(
                   width: double.infinity,
-                  height: 48,
-                  child: OutlinedButton.icon(
+                  height: 50,
+                  child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pushNamed(context, '/ranking');
                     },
                     icon: const Icon(
                       Icons.emoji_events_outlined,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
                     label: const Text(
                       "Xem bảng xếp hạng",
                       style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: Colors.grey.shade300),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D32),
+                      elevation: 2,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(
-                  height: 70,
-                ), // Giữ nguyên khoảng trống dưới đáy để không bị lẹm thanh điều hướng
+                const SizedBox(height: 70),
               ],
             ),
           ),
@@ -172,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         : 1.0;
 
     return SliverAppBar(
-      expandedHeight: 280.0,
+      expandedHeight: 250.0,
       floating: false,
       pinned: true,
       backgroundColor: const Color(0xFF2E7D32),
@@ -253,27 +244,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   displayName,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w700,
                     shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
                   ),
                 ),
                 Container(
                   margin: const EdgeInsets.symmetric(vertical: 6),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 10,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.green.shade600,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     "Cấp độ: ${view.levelName ?? 'Thành viên mới'}",
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -288,11 +279,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(width: 4),
                     Text(
                       view.location ?? 'Chưa cập nhật địa điểm',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 11),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
@@ -303,36 +297,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const Text(
                             'Tiến độ lên cấp',
                             style: TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               color: Colors.white70,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(
                             '${view.points} / ${view.maxPoints} XP',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
                           value: percent,
                           backgroundColor: Colors.white.withOpacity(0.3),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Colors.greenAccent,
                           ),
-                          minHeight: 7,
+                          minHeight: 6,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 18),
               ],
             ),
           ],
@@ -347,9 +342,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 1.1,
       children: [
         _statCard(
           color: const Color(0xFF2E7D32),
@@ -387,28 +382,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return Card(
       color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(height: 4),
+            Icon(icon, color: Colors.white, size: 22),
+
             Text(
               title,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: 1),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -425,9 +425,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
             height: 150,
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: const Center(
               child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
@@ -449,21 +457,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final effective = realBadges.take(3).toList();
 
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Tiêu đề & Nút xem tất cả
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     'Huy hiệu thành tích',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -477,16 +496,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Text(
                         "Xem tất cả >",
                         style: TextStyle(
-                          color: Color(0xFF388E3C),
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E7D32),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
 
               // Render Grid
               if (effective.isNotEmpty) ...[
@@ -501,7 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       .toList(),
                 ),
                 if (effective.length > 3) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,7 +536,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Center(
                   child: Text(
                     "Chưa có huy hiệu nào",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ),
               ],
@@ -545,7 +564,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height: 60,
           decoration: BoxDecoration(
             color: isUnlocked ? Colors.green.shade50 : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
             child: !isUnlocked
@@ -556,24 +575,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 40,
                           height: 40,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.star, color: Colors.green),
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.star,
+                            color: Colors.green,
+                            size: 28,
+                          ),
                         )
-                      : const Icon(Icons.star, color: Colors.green, size: 30)),
+                      : const Icon(Icons.star, color: Colors.green, size: 28)),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           b.badgeName.isNotEmpty ? b.badgeName : 'Huy hiệu',
           textAlign: TextAlign.center,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 11,
+            color: Colors.black87,
+          ),
         ),
+        const SizedBox(height: 2),
         Text(
           b.description ?? (isUnlocked ? 'Thường' : 'Khóa'),
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey, fontSize: 10),
+          style: const TextStyle(color: Colors.grey, fontSize: 9),
         ),
       ],
     );
@@ -583,24 +610,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildRecentActivitySection(List<ActivityModel> activities) {
     if (activities.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Hoạt động gần đây',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
+                letterSpacing: 0.3,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 children: [
@@ -614,8 +653,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Text(
                       "Chưa có hoạt động",
                       style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         color: Colors.grey,
+                        fontSize: 13,
                       ),
                     ),
                   ),
@@ -628,10 +668,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -641,7 +688,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               const Text(
                 'Hoạt động gần đây',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                  letterSpacing: 0.3,
+                ),
               ),
               GestureDetector(
                 onTap: () {
@@ -652,34 +704,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Text(
                     "Xem tất cả >",
                     style: TextStyle(
-                      color: Color(0xFF388E3C),
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E7D32),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           ...activities.map((a) {
             final isGain = a.points >= 0;
             final pointsText = "${isGain ? '+' : ''}${a.points} điểm";
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey[100]!, width: 1),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const CircleAvatar(
-                    radius: 22,
+                    radius: 20,
                     backgroundColor: Color(0x335EAC24),
-                    child: Icon(Icons.history, color: Color(0xFF5EAC24)),
+                    child: Icon(
+                      Icons.history,
+                      color: Color(0xFF5EAC24),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -691,16 +748,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 13,
+                            color: Colors.black87,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           "${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}",
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            color: Colors.grey[600],
                             fontSize: 10,
                           ),
                         ),
@@ -710,18 +767,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
+                      horizontal: 9,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(999),
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       pointsText,
                       style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
                         color: Colors.black87,
                       ),
                     ),
@@ -729,7 +786,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             );
-          }),
+          }).toList(),
         ],
       ),
     );
