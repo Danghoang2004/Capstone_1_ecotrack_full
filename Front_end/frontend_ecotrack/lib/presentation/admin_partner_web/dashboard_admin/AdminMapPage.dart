@@ -481,19 +481,55 @@ class _AdminMapPageState extends State<AdminMapPage> {
       js.context.callMethod('goongAdminMapSetMode', [mode]);
 
       if (mode == _initialModeReports) {
+        final reportPayload = _buildReportPayload();
+        debugPrint(
+          '[AdminMapPage._syncMapState] Sending ${reportPayload.length} report clusters to JS',
+        );
         js.context.callMethod('goongAdminMapSetReports', [
-          jsonEncode(_buildReportPayload()),
+          jsonEncode(reportPayload),
         ]);
       } else {
         final payload = _showPredictedHotspots
             ? _buildHeatPayload(_predictedHeatmapPoints, predicted: true)
             : _buildHeatPayload(_observedHeatmapPoints, predicted: false);
+        debugPrint(
+          '[AdminMapPage._syncMapState] Sending ${payload.length} heat points (${_showPredictedHotspots ? "predicted" : "observed"}) to JS',
+        );
+        if (payload.isNotEmpty) {
+          debugPrint(
+            '[AdminMapPage._syncMapState] First point: lat=${payload.first['lat']}, lng=${payload.first['lng']}, intensity=${payload.first['intensity']}, count=${payload.first['count']}',
+          );
+        }
         js.context.callMethod('goongAdminMapSetHeatPoints', [
           jsonEncode(payload),
         ]);
       }
+
+      if (_hasGoongMapHostMethod('goongAdminMapLastError')) {
+        final dynamic jsError = js.context.callMethod(
+          'goongAdminMapLastError',
+          const [],
+        );
+        final String errorText = jsError?.toString() ?? '';
+        if (errorText.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _mapStatus = 'Lỗi hiển thị hotspot: $errorText';
+            });
+          } else {
+            _mapStatus = 'Lỗi hiển thị hotspot: $errorText';
+          }
+        }
+      }
     } catch (e) {
       debugPrint('Lỗi đồng bộ dữ liệu map: $e');
+      if (mounted) {
+        setState(() {
+          _mapStatus = 'Lỗi đồng bộ dữ liệu map: $e';
+        });
+      } else {
+        _mapStatus = 'Lỗi đồng bộ dữ liệu map: $e';
+      }
     }
   }
 
@@ -564,17 +600,27 @@ class _AdminMapPageState extends State<AdminMapPage> {
     List<PredictedHeatmapPoint> points, {
     required bool predicted,
   }) {
-    return points
+    final payload = points
         .map(
           (point) => <String, dynamic>{
             'lat': point.lat,
             'lng': point.lng,
             'intensity': point.intensity,
             'predictedCount7d': point.predictedCount7d,
+            'reportCount': point.reportCount,
+            'count': predicted ? point.predictedCount7d : point.reportCount,
             'predicted': predicted,
           },
         )
         .toList();
+
+    debugPrint(
+      '[AdminMapPage._buildHeatPayload] Built ${payload.length} items (predicted=$predicted)',
+    );
+    if (payload.isNotEmpty && payload.length <= 3) {
+      debugPrint('[AdminMapPage._buildHeatPayload] Payload: $payload');
+    }
+    return payload;
   }
 
   void _setReportView() {
@@ -594,6 +640,9 @@ class _AdminMapPageState extends State<AdminMapPage> {
           : 'Đang tải bản đồ hotspot...';
     });
 
+    debugPrint(
+      '[AdminMapPage._setHeatmapView] predicted=$predicted, _mapReady=$_mapReady, _mapInitialized=$_mapInitialized',
+    );
     _fetchHotspots();
   }
 
@@ -618,26 +667,68 @@ class _AdminMapPageState extends State<AdminMapPage> {
       final clusterResult = await clusterFuture;
       final predictResult = await predictFuture;
 
+      debugPrint(
+        '[AdminMapPage._fetchHotspots] cluster=${clusterResult.hotspots.length}, '
+        'predictedZones=${predictResult.predictedHotspots7Days.length}, '
+        'heatmapPoints=${predictResult.heatmapPoints.length}, '
+        'clusterSuccess=${clusterResult.success}, predictedSuccess=${predictResult.success}',
+      );
+
       if (!mounted) return;
 
       setState(() {
-        _observedHeatmapPoints = _toObservedHeatmapPoints(
+        _observedHeatmapPoints = _buildClusterDataPoints(
           clusterResult.hotspots,
+          isPredicted: false,
         );
-        _predictedHeatmapPoints = predictResult.heatmapPoints;
+        debugPrint(
+          '[AdminMapPage._fetchHotspots] Built ${_observedHeatmapPoints.length} observed heat points from ${clusterResult.hotspots.length} clusters',
+        );
 
-        if (_observedHeatmapPoints.isEmpty && _predictedHeatmapPoints.isEmpty) {
+        if (_observedHeatmapPoints.isEmpty) {
+          debugPrint(
+            '[AdminMapPage._fetchHotspots] Observed points empty, building fallback from ${_reports.length} reports',
+          );
           _observedHeatmapPoints = _buildFallbackHeatmapFromAllReports();
+          debugPrint(
+            '[AdminMapPage._fetchHotspots] Fallback generated ${_observedHeatmapPoints.length} points',
+          );
         }
 
-        _mapStatus = _showPredictedHotspots
-            ? 'Hiển thị vùng dự đoán'
-            : 'Hiển thị hotspot thực tế';
+        _predictedHeatmapPoints = predictResult.heatmapPoints.isNotEmpty
+            ? predictResult.heatmapPoints
+            : _buildClusterDataPoints(
+                predictResult.predictedHotspots7Days,
+                isPredicted: true,
+              );
+        debugPrint(
+          '[AdminMapPage._fetchHotspots] Using ${_predictedHeatmapPoints.length} predicted heat points (${predictResult.heatmapPoints.isNotEmpty ? "from heatmapPoints" : "from zones"})',
+        );
+
+        if (_showPredictedHotspots && _predictedHeatmapPoints.isEmpty) {
+          _mapStatus = 'Chưa có dữ liệu dự đoán để hiển thị';
+        } else if (!_showPredictedHotspots && _observedHeatmapPoints.isEmpty) {
+          _mapStatus = 'Chưa có hotspot thực tế trong vùng hiện tại';
+        } else {
+          _mapStatus = _showPredictedHotspots
+              ? 'Hiển thị vùng dự đoán (${_predictedHeatmapPoints.length} điểm)'
+              : 'Hiển thị hotspot thực tế (${_observedHeatmapPoints.length} điểm)';
+        }
       });
 
+      debugPrint(
+        '[AdminMapPage._fetchHotspots] Calling _syncMapState with _mapReady=$_mapReady',
+      );
       _syncMapState();
     } catch (e) {
       debugPrint('Lỗi fetch hotspot: $e');
+      if (mounted) {
+        setState(() {
+          _mapStatus = 'Lỗi tải hotspot: $e';
+        });
+      } else {
+        _mapStatus = 'Lỗi tải hotspot: $e';
+      }
     } finally {
       _isLoadingHotspots = false;
     }
@@ -675,6 +766,38 @@ class _AdminMapPageState extends State<AdminMapPage> {
     }).toList();
   }
 
+  List<PredictedHeatmapPoint> _buildClusterDataPoints(
+    List<HotspotZone> zones, {
+    required bool isPredicted,
+  }) {
+    if (zones.isEmpty) return [];
+
+    // Tính max count để normalize intensity
+    final int maxCount = zones
+        .map((z) {
+          if (isPredicted) {
+            return z.predictedCount7d ?? z.reportCount;
+          } else {
+            return z.reportCount;
+          }
+        })
+        .fold<int>(1, (acc, value) => value > acc ? value : acc);
+
+    return zones.map((zone) {
+      final int count = isPredicted
+          ? (zone.predictedCount7d ?? zone.reportCount)
+          : zone.reportCount;
+
+      return PredictedHeatmapPoint(
+        lat: zone.centerLat,
+        lng: zone.centerLng,
+        intensity: (count / maxCount).clamp(0.0, 1.0),
+        predictedCount7d: isPredicted ? count : 0,
+        reportCount: !isPredicted ? count : 0,
+      );
+    }).toList();
+  }
+
   List<PredictedHeatmapPoint> _toObservedHeatmapPoints(
     List<HotspotZone> zones,
   ) {
@@ -696,6 +819,34 @@ class _AdminMapPageState extends State<AdminMapPage> {
         .toList();
   }
 
+  List<PredictedHeatmapPoint> _toPredictedHeatmapPointsFromZones(
+    List<HotspotZone> zones,
+  ) {
+    if (zones.isEmpty) return [];
+
+    final values = zones.map((z) {
+      final predicted = z.predictedCount7d ?? 0;
+      if (predicted > 0) return predicted;
+      return z.reportCount;
+    }).toList();
+
+    final int maxCount = values.fold<int>(1, (acc, value) {
+      return value > acc ? value : acc;
+    });
+
+    return zones.map((zone) {
+      final count = zone.predictedCount7d != null && zone.predictedCount7d! > 0
+          ? zone.predictedCount7d!
+          : zone.reportCount;
+      return PredictedHeatmapPoint(
+        lat: zone.centerLat,
+        lng: zone.centerLng,
+        intensity: (count / maxCount).clamp(0.0, 1.0),
+        predictedCount7d: count,
+      );
+    }).toList();
+  }
+
   Future<void> _zoomIn() async {
     if (!kIsWeb || !_mapReady) return;
     js.context.callMethod('goongAdminMapZoomIn', const []);
@@ -708,7 +859,13 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
   Widget _buildMapStatusBanner() {
     final String mapKey = dotenv.env['GOONG_MAP_KEY'] ?? '';
-    if (mapKey.isNotEmpty && _mapReady) {
+    final bool hasVisibleError =
+        _mapStatus.startsWith('Lỗi') ||
+        _mapStatus.startsWith('Không thể') ||
+        _mapStatus.startsWith('Chưa có dữ liệu') ||
+        _mapStatus.startsWith('Chưa có hotspot');
+
+    if (mapKey.isNotEmpty && _mapReady && !hasVisibleError) {
       return const SizedBox.shrink();
     }
 
