@@ -19,15 +19,15 @@ class HotspotZone {
 
   factory HotspotZone.fromJson(Map<String, dynamic> json) {
     return HotspotZone(
-      clusterId: (json['cluster_id'] ?? 0) as int,
-      centerLat: (json['center_lat'] ?? 0.0).toDouble(),
-      centerLng: (json['center_lng'] ?? 0.0).toDouble(),
-      radiusKm: (json['radius_km'] ?? 0.0).toDouble(),
-      reportCount: (json['report_count'] ?? 0) as int,
-      riskScore: json['risk_score'] != null
-          ? (json['risk_score'] as num).toDouble()
-          : null,
-      predictedCount7d: json['predicted_count_7d'] as int?,
+      clusterId: _parseInt(json['cluster_id'] ?? json['clusterId']) ?? 0,
+      centerLat: _parseDouble(json['center_lat'] ?? json['centerLat']) ?? 0.0,
+      centerLng: _parseDouble(json['center_lng'] ?? json['centerLng']) ?? 0.0,
+      radiusKm: _parseDouble(json['radius_km'] ?? json['radiusKm']) ?? 0.0,
+      reportCount: _parseInt(json['report_count'] ?? json['reportCount']) ?? 0,
+      riskScore: _parseDouble(json['risk_score'] ?? json['riskScore']),
+      predictedCount7d: _parseInt(
+        json['predicted_count_7d'] ?? json['predictedCount7d'],
+      ),
     );
   }
 }
@@ -37,20 +37,25 @@ class PredictedHeatmapPoint {
   final double lng;
   final double intensity;
   final int predictedCount7d;
+  final int reportCount;
 
   PredictedHeatmapPoint({
     required this.lat,
     required this.lng,
     required this.intensity,
     required this.predictedCount7d,
+    this.reportCount = 0,
   });
 
   factory PredictedHeatmapPoint.fromJson(Map<String, dynamic> json) {
     return PredictedHeatmapPoint(
-      lat: (json['lat'] ?? 0.0).toDouble(),
-      lng: (json['lng'] ?? 0.0).toDouble(),
-      intensity: (json['intensity'] ?? 0.0).toDouble(),
-      predictedCount7d: (json['predicted_count_7d'] ?? 0) as int,
+      lat: _parseDouble(json['lat']) ?? 0.0,
+      lng: _parseDouble(json['lng']) ?? 0.0,
+      intensity: _parseDouble(json['intensity']) ?? 0.0,
+      predictedCount7d:
+          _parseInt(json['predicted_count_7d'] ?? json['predictedCount7d']) ??
+          0,
+      reportCount: _parseInt(json['report_count'] ?? json['reportCount']) ?? 0,
     );
   }
 }
@@ -62,9 +67,10 @@ class ClusterHotspotApiResponse {
   ClusterHotspotApiResponse({required this.success, required this.hotspots});
 
   factory ClusterHotspotApiResponse.fromJson(Map<String, dynamic> json) {
-    final List<dynamic> raw = (json['hotspots'] as List?) ?? const [];
+    final List<dynamic> raw =
+        ((json['hotspots'] ?? json['data']) as List?) ?? const [];
     return ClusterHotspotApiResponse(
-      success: (json['success'] ?? false) as bool,
+      success: _parseBool(json['success']) ?? false,
       hotspots: raw
           .whereType<Map<String, dynamic>>()
           .map(HotspotZone.fromJson)
@@ -86,12 +92,15 @@ class PredictHotspotApiResponse {
 
   factory PredictHotspotApiResponse.fromJson(Map<String, dynamic> json) {
     final List<dynamic> rawHotspots =
-        (json['predicted_hotspots_7_days'] as List?) ?? const [];
+        ((json['predicted_hotspots_7_days'] ?? json['predictedHotspots7Days'])
+            as List?) ??
+        const [];
     final List<dynamic> rawHeatmap =
-        (json['heatmap_points'] as List?) ?? const [];
+        ((json['heatmap_points'] ?? json['heatmapPoints']) as List?) ??
+        const [];
 
     return PredictHotspotApiResponse(
-      success: (json['success'] ?? false) as bool,
+      success: _parseBool(json['success']) ?? false,
       predictedHotspots7Days: rawHotspots
           .whereType<Map<String, dynamic>>()
           .map(HotspotZone.fromJson)
@@ -102,4 +111,33 @@ class PredictHotspotApiResponse {
           .toList(),
     );
   }
+}
+
+int? _parseInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String)
+    return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+  return null;
+}
+
+double? _parseDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
+bool? _parseBool(dynamic value) {
+  if (value == null) return null;
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    final normalized = value.trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1') return true;
+    if (normalized == 'false' || normalized == '0') return false;
+  }
+  return null;
 }

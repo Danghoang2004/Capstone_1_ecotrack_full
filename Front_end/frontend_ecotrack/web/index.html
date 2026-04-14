@@ -76,6 +76,7 @@
         mode: 'reports',
         reports: [],
         heatPoints: [],
+        heatPointsMode: null,
         ready: false,
         lastError: null,
         lastStage: 'boot',
@@ -85,6 +86,8 @@
         resizeTimer: null,
         lastGoodContainerSize: { width: 0, height: 0 },
         recoveryAttempts: 0,
+        reportLayersInitialized: false,
+        clusterLayersInitialized: false,
       };
 
       function pushEvent(stage, detail) {
@@ -136,7 +139,7 @@
 
       function clearHeat() {
         if (!state.map) return;
-        const layerIds = ['goong-heat-outer', 'goong-heat-mid', 'goong-heat-core'];
+        const layerIds = ['goong-heat-outer', 'goong-heat-mid', 'goong-heat-core', 'goong-clusters-circle'];
         for (const layerId of layerIds) {
           if (state.map.getLayer(layerId)) {
             state.map.removeLayer(layerId);
@@ -145,6 +148,10 @@
         if (state.map.getSource('goong-heat')) {
           state.map.removeSource('goong-heat');
         }
+        if (state.map.getSource('goong-clusters')) {
+          state.map.removeSource('goong-clusters');
+        }
+        state.clusterLayersInitialized = false;
       }
 
       function clearPopup() {
@@ -162,6 +169,8 @@
             return '#fb8c00';
           case 'CLEANED':
             return '#2e7d32';
+          case 'REJECTED':
+            return '#9ca3af';
           default:
             return '#3874c7';
         }
@@ -192,29 +201,30 @@
       }
 
       function renderReports() {
-        clearMarkers();
-        clearHeat();
-        clearPopup();
+        try {
+          clearMarkers();
+          clearHeat();
+          clearPopup();
 
-        if (!state.reports.length) {
-          state.map.getSource('goong-reports') && state.map.removeSource('goong-reports');
-          return;
-        }
+          if (!state.reports.length) {
+            state.map.getSource('goong-reports') && state.map.removeSource('goong-reports');
+            return;
+          }
 
-        const features = state.reports.map((item) => {
-          const status = escapeHtml(item.status || 'UNKNOWN');
-          const title = escapeHtml(item.title || 'Không có tiêu đề');
-          const category = escapeHtml(item.category || 'Khác');
-          const count = Number(item.count || 1);
-          const overflowCount = Number(item.overflowCount || 0);
-          const statusSummary = item.statusSummary || {};
-          const pendingCount = Number(statusSummary.PENDING || 0);
-          const verifiedCount = Number(statusSummary.VERIFIED || 0);
-          const cleanedCount = Number(statusSummary.CLEANED || 0);
-          const rejectedCount = Number(statusSummary.REJECTED || 0);
+          const features = state.reports.map((item) => {
+            const status = escapeHtml(item.status || 'UNKNOWN');
+            const title = escapeHtml(item.title || 'Không có tiêu đề');
+            const category = escapeHtml(item.category || 'Khác');
+            const count = Number(item.count || 1);
+            const overflowCount = Number(item.overflowCount || 0);
+            const statusSummary = item.statusSummary || {};
+            const pendingCount = Number(statusSummary.PENDING || 0);
+            const verifiedCount = Number(statusSummary.VERIFIED || 0);
+            const cleanedCount = Number(statusSummary.CLEANED || 0);
+            const rejectedCount = Number(statusSummary.REJECTED || 0);
 
-          // Build summary header
-          let popupHtml = `
+            // Build summary header
+            let popupHtml = `
             <div class="goong-report-popup" style="min-width: 280px; font-family: Arial, sans-serif; line-height: 1.45;">
               <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px; color: #1f2937;">${title}</div>
               <div style="font-size: 12px; color: #2563eb; margin-bottom: 4px; font-weight: 600;">Trạng thái cụm: ${status}</div>
@@ -227,249 +237,342 @@
                 <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151;">Bị từ chối: ${rejectedCount}</span>
               </div>`;
 
-          // Add detailed list when cluster has multiple reports.
-          if (item.reports && item.reports.length > 1) {
-            popupHtml += `
+            // Add detailed list when cluster has multiple reports.
+            if (item.reports && item.reports.length > 1) {
+              popupHtml += `
               <div style="margin-top: 12px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
                 <div style="font-weight: 600; font-size: 12px; color: #1f2937; margin-bottom: 8px;">Chi tiết báo cáo:</div>`;
 
-            popupHtml += `<div style="max-height: 160px; overflow-y: auto; padding-right: 4px;">`;
+              popupHtml += `<div style="max-height: 160px; overflow-y: auto; padding-right: 4px;">`;
 
-            for (let i = 0; i < item.reports.length; i++) {
-              const r = item.reports[i];
-              const rStatus = escapeHtml(r.status || 'UNKNOWN');
-              const rTitle = escapeHtml(r.title || 'Không có tiêu đề');
-              const rDesc = escapeHtml(r.description || '');
+              for (let i = 0; i < item.reports.length; i++) {
+                const r = item.reports[i];
+                const rStatus = escapeHtml(r.status || 'UNKNOWN');
+                const rTitle = escapeHtml(r.title || 'Không có tiêu đề');
+                const rDesc = escapeHtml(r.description || '');
 
-              popupHtml += `
+                popupHtml += `
                 <div style="margin-bottom: 8px; padding: 6px; background: #f3f4f6; border-radius: 4px; border-left: 3px solid ${statusColor(rStatus)};">
                   <div style="font-weight: 600; font-size: 11px; color: #1f2937;">${i + 1}. ${rTitle}</div>
                   <div style="font-size: 11px; color: #6b7280;">Trạng thái: <span style="color: ${statusColor(rStatus)}; font-weight: 600;">${rStatus}</span></div>
                   ${rDesc ? `<div style="font-size: 10px; color: #6b7280; margin-top: 2px;">Mô tả: ${rDesc}</div>` : ''}
                 </div>`;
-            }
-
-            popupHtml += `</div>`;
-
-            if (overflowCount > 0) {
-              popupHtml += `<div style="font-size: 11px; color: #4b5563; margin-top: 4px; font-style: italic;">Còn ${overflowCount} báo cáo khác. Vui lòng zoom-in để xem chi tiết hơn.</div>`;
-            }
-
-            popupHtml += `</div>`;
-          }
-
-          popupHtml += `</div>`;
-
-          return {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: [Number(item.longitude), Number(item.latitude)],
-            },
-            properties: {
-              reportId: item.reportId || '',
-              title: item.title || 'Không có tiêu đề',
-              description: item.description || '',
-              status: item.status || 'UNKNOWN',
-              category: item.category || 'Khác',
-              count,
-              popupHtml,
-            },
-          };
-        });
-
-        const reportsData = {
-          type: 'FeatureCollection',
-          features,
-        };
-
-        const existingSource = state.map.getSource('goong-reports');
-        if (existingSource && typeof existingSource.setData === 'function') {
-          existingSource.setData(reportsData);
-        } else {
-          if (state.map.getLayer('goong-reports-circle')) {
-            state.map.removeLayer('goong-reports-circle');
-          }
-          if (state.map.getSource('goong-reports')) {
-            state.map.removeSource('goong-reports');
-          }
-
-          state.map.addSource('goong-reports', {
-            type: 'geojson',
-            data: reportsData,
-          });
-
-          if (!state.reportLayersInitialized) {
-            state.reportLayersInitialized = true;
-
-            state.map.on('click', 'goong-reports-circle', (event) => {
-              if (!event.features || event.features.length === 0) {
-                return;
               }
 
+              popupHtml += `</div>`;
+
+              if (overflowCount > 0) {
+                popupHtml += `<div style="font-size: 11px; color: #4b5563; margin-top: 4px; font-style: italic;">Còn ${overflowCount} báo cáo khác. Vui lòng zoom-in để xem chi tiết hơn.</div>`;
+              }
+
+              popupHtml += `</div>`;
+            }
+
+            popupHtml += `</div>`;
+
+            return {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [Number(item.longitude), Number(item.latitude)],
+              },
+              properties: {
+                reportId: item.reportId || '',
+                title: item.title || 'Không có tiêu đề',
+                description: item.description || '',
+                status: item.status || 'UNKNOWN',
+                category: item.category || 'Khác',
+                count,
+                popupHtml,
+              },
+            };
+          });
+
+          const reportsData = {
+            type: 'FeatureCollection',
+            features,
+          };
+
+          const existingSource = state.map.getSource('goong-reports');
+          if (existingSource && typeof existingSource.setData === 'function') {
+            existingSource.setData(reportsData);
+          } else {
+            if (state.map.getLayer('goong-reports-circle')) {
+              state.map.removeLayer('goong-reports-circle');
+            }
+            if (state.map.getSource('goong-reports')) {
+              state.map.removeSource('goong-reports');
+            }
+
+            state.map.addSource('goong-reports', {
+              type: 'geojson',
+              data: reportsData,
+            });
+
+            if (!state.reportLayersInitialized) {
+              state.reportLayersInitialized = true;
+
+              state.map.on('click', 'goong-reports-circle', (event) => {
+                if (!event.features || event.features.length === 0) {
+                  return;
+                }
+
+                const feature = event.features[0];
+                const properties = feature.properties || {};
+
+                clearPopup();
+                state.popup = new maplibregl.Popup({
+                  offset: 18,
+                  closeButton: true,
+                  closeOnClick: true,
+                  maxWidth: '420px',
+                })
+                  .setLngLat(feature.geometry.coordinates)
+                  .setHTML(properties.popupHtml || 'Không có dữ liệu')
+                  .addTo(state.map);
+              });
+
+              state.map.on('mouseenter', 'goong-reports-circle', () => {
+                state.map.getCanvas().style.cursor = 'pointer';
+              });
+
+              state.map.on('mouseleave', 'goong-reports-circle', () => {
+                state.map.getCanvas().style.cursor = '';
+              });
+
+              logStage('renderReports', 'initialized event handlers for report layer');
+            }
+          }
+
+          if (!state.map.getLayer('goong-reports-circle')) {
+            state.map.addLayer({
+              id: 'goong-reports-circle',
+              type: 'circle',
+              source: 'goong-reports',
+              paint: {
+                'circle-color': [
+                  'match',
+                  ['upcase', ['coalesce', ['get', 'status'], 'UNKNOWN']],
+                  'PENDING', '#f44336',
+                  'VERIFIED', '#fb8c00',
+                  'CLEANED', '#2e7d32',
+                  'REJECTED', '#9ca3af',
+                  '#3874c7',
+                ],
+                'circle-radius': [
+                  'interpolate',
+                  ['linear'],
+                  ['coalesce', ['get', 'count'], 1],
+                  1, 9,
+                  3, 12,
+                  10, 16,
+                ],
+                'circle-opacity': 0.92,
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff',
+              },
+            });
+          }
+
+          state.map.setLayoutProperty('goong-reports-circle', 'visibility', 'visible');
+
+          logStage('renderReports', `rendered ${features.length} report clusters as circle layer`);
+        } catch (error) {
+          logError('renderReports', 'Failed to render report clusters', error);
+        }
+      }
+
+      function renderClusters() {
+        try {
+          clearMarkers();
+          clearPopup();
+
+          if (!state.heatPoints.length) {
+            clearHeat();
+            logStage('renderClusters', 'no heat points, clearing layers');
+            return;
+          }
+
+          logStage('renderClusters', `rendering ${state.heatPoints.length} heat points in mode=${state.mode}`);
+
+          const rankedPoints = state.heatPoints
+            .map((cluster, index) => ({
+              index,
+              count: Number(cluster.count || cluster.reportCount || cluster.predictedCount7d || 0),
+              intensity: Number(cluster.intensity || 0),
+            }))
+            .sort((a, b) => {
+              if (b.count !== a.count) return b.count - a.count;
+              return b.intensity - a.intensity;
+            });
+
+          const rankTierByIndex = new Map();
+          const totalPoints = rankedPoints.length;
+          rankedPoints.forEach((item, rank) => {
+            // Split by rank so admins can visually distinguish low/medium/high clearly.
+            const percentile = (rank + 1) / Math.max(totalPoints, 1);
+            let tier = 'low';
+            if (percentile <= 1 / 3) tier = 'high';
+            else if (percentile <= 2 / 3) tier = 'medium';
+            rankTierByIndex.set(item.index, tier);
+          });
+
+          const features = state.heatPoints.map((cluster, index) => {
+            const count = Number(cluster.count || cluster.reportCount || cluster.predictedCount7d || 0);
+            const intensity = Number(cluster.intensity || 0);
+
+            const tier = totalPoints >= 3
+              ? rankTierByIndex.get(index)
+              : (intensity >= 0.67 ? 'high' : intensity >= 0.33 ? 'medium' : 'low');
+
+            let clusterColor = '#f59e0b';
+            if (state.mode === 'heat_predicted') {
+              if (tier === 'high') clusterColor = '#ef4444';
+              else if (tier === 'medium') clusterColor = '#8b5cf6';
+              else clusterColor = '#06b6d4';
+            } else {
+              if (tier === 'high') clusterColor = '#ef4444';
+              else if (tier === 'medium') clusterColor = '#f59e0b';
+              else clusterColor = '#22c55e';
+            }
+
+            return {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [Number(cluster.lng), Number(cluster.lat)],
+              },
+              properties: {
+                clusterId: cluster.clusterId || 0,
+                count: count,
+                intensity: intensity,
+                color: clusterColor,
+                label: String(count),
+              },
+            };
+          });
+
+          const clusterData = {
+            type: 'FeatureCollection',
+            features,
+          };
+
+          const existingSource = state.map.getSource('goong-clusters');
+          if (existingSource && typeof existingSource.setData === 'function') {
+            existingSource.setData(clusterData);
+          } else {
+            clearHeat();
+            state.map.addSource('goong-clusters', {
+              type: 'geojson',
+              data: clusterData,
+            });
+          }
+
+          if (!state.map.getLayer('goong-clusters-circle')) {
+            state.map.addLayer({
+              id: 'goong-clusters-circle',
+              type: 'circle',
+              source: 'goong-clusters',
+              paint: {
+                'circle-color': ['get', 'color'],
+                'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 16, 1, 32],
+                'circle-opacity': 0.72,
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-opacity': 0.9,
+              },
+            });
+            logStage('renderClusters', 'created goong-clusters-circle layer');
+          }
+
+          // Ensure visibility is set every time we render
+          state.map.setLayoutProperty('goong-clusters-circle', 'visibility', 'visible');
+
+          if (!state.clusterLayersInitialized) {
+            state.clusterLayersInitialized = true;
+
+            state.map.on('click', 'goong-clusters-circle', (event) => {
+              if (!event.features || event.features.length === 0) return;
               const feature = event.features[0];
-              const properties = feature.properties || {};
+              const props = feature.properties || {};
 
               clearPopup();
               state.popup = new maplibregl.Popup({
                 offset: 18,
                 closeButton: true,
                 closeOnClick: true,
-                maxWidth: '420px',
+                maxWidth: '380px',
               })
                 .setLngLat(feature.geometry.coordinates)
-                .setHTML(properties.popupHtml || 'Không có dữ liệu')
+                .setHTML(`
+                <div style="padding: 10px; font-family: Arial, sans-serif;">
+                  <div style="font-weight: 700; font-size: 14px; color: #1f2937; margin-bottom: 6px;">
+                    ${state.mode === 'heat_predicted' ? 'Vùng Dự Báo' : 'Vùng Hotspot'}
+                  </div>
+                  <div style="font-size: 12px; color: #6b7280;">
+                    ${state.mode === 'heat_predicted' ? 'Dự báo báo cáo 7 ngày' : 'Tổng số báo cáo'}: <strong>${props.count}</strong>
+                  </div>
+                  <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                    Mức độ rủi ro: ${(Number(props.intensity) * 100).toFixed(0)}%
+                  </div>
+                  <div style="margin-top: 8px; font-size: 11px; color: #9ca3af; font-style: italic;">
+                    Nhấn để xem chi tiết hoặc thu phóng để xem báo cáo riêng
+                  </div>
+                </div>
+              `)
                 .addTo(state.map);
             });
 
-            state.map.on('mouseenter', 'goong-reports-circle', () => {
+            state.map.on('mouseenter', 'goong-clusters-circle', () => {
               state.map.getCanvas().style.cursor = 'pointer';
             });
 
-            state.map.on('mouseleave', 'goong-reports-circle', () => {
+            state.map.on('mouseleave', 'goong-clusters-circle', () => {
               state.map.getCanvas().style.cursor = '';
             });
 
-            logStage('renderReports', 'initialized event handlers for report layer');
+            logStage('renderClusters', 'initialized event handlers for cluster layer');
           }
+
+          state.map.setLayoutProperty('goong-clusters-circle', 'visibility', 'visible');
+          logStage('renderClusters', `✓ rendered ${features.length} clusters with intensity-based coloring (mode=${state.mode})`);
+        } catch (error) {
+          logError('renderClusters', 'Failed to render hotspot clusters', error);
         }
-
-        if (!state.map.getLayer('goong-reports-circle')) {
-          state.map.addLayer({
-            id: 'goong-reports-circle',
-            type: 'circle',
-            source: 'goong-reports',
-            paint: {
-              'circle-color': [
-                'match',
-                ['upcase', ['coalesce', ['get', 'status'], 'UNKNOWN']],
-                'PENDING', '#f44336',
-                'VERIFIED', '#fb8c00',
-                'CLEANED', '#2e7d32',
-                '#3874c7',
-              ],
-              'circle-radius': [
-                'interpolate',
-                ['linear'],
-                ['coalesce', ['get', 'count'], 1],
-                1, 9,
-                3, 12,
-                10, 16,
-              ],
-              'circle-opacity': 0.92,
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff',
-            },
-          });
-        }
-
-        state.map.setLayoutProperty('goong-reports-circle', 'visibility', 'visible');
-
-        logStage('renderReports', `rendered ${features.length} report clusters as circle layer`);
-      }
-
-      function renderHeat() {
-        clearMarkers();
-        clearPopup();
-
-        if (!state.heatPoints.length) {
-          clearHeat();
-          return;
-        }
-
-        const features = state.heatPoints.map((point) => ({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [Number(point.lng), Number(point.lat)],
-          },
-          properties: {
-            intensity: Number(point.intensity || 0),
-            label: Number(point.predictedCount7d || 0),
-          },
-        }));
-
-        const heatData = {
-          type: 'FeatureCollection',
-          features,
-        };
-
-        const existingSource = state.map.getSource('goong-heat');
-        if (existingSource && typeof existingSource.setData === 'function') {
-          existingSource.setData(heatData);
-        } else {
-          clearHeat();
-          state.map.addSource('goong-heat', {
-            type: 'geojson',
-            data: heatData,
-          });
-        }
-
-        const colorOuter = state.mode === 'heat_predicted' ? '#dc2626' : '#f59e0b';
-        const colorMid = state.mode === 'heat_predicted' ? '#fb7185' : '#fb923c';
-        const colorCore = state.mode === 'heat_predicted' ? '#991b1b' : '#d97706';
-
-        if (!state.map.getLayer('goong-heat-outer')) {
-          state.map.addLayer({
-            id: 'goong-heat-outer',
-            type: 'circle',
-            source: 'goong-heat',
-            paint: {
-              'circle-color': colorOuter,
-              'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 12, 1, 36],
-              'circle-opacity': 0.16,
-              'circle-blur': 0.7,
-            },
-          });
-        }
-
-        if (!state.map.getLayer('goong-heat-mid')) {
-          state.map.addLayer({
-            id: 'goong-heat-mid',
-            type: 'circle',
-            source: 'goong-heat',
-            paint: {
-              'circle-color': colorMid,
-              'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 8, 1, 24],
-              'circle-opacity': 0.28,
-              'circle-blur': 0.45,
-            },
-          });
-        }
-
-        if (!state.map.getLayer('goong-heat-core')) {
-          state.map.addLayer({
-            id: 'goong-heat-core',
-            type: 'circle',
-            source: 'goong-heat',
-            paint: {
-              'circle-color': colorCore,
-              'circle-radius': ['interpolate', ['linear'], ['get', 'intensity'], 0, 4, 1, 12],
-              'circle-opacity': 0.55,
-              'circle-blur': 0.1,
-            },
-          });
-        }
-
-        state.map.setPaintProperty('goong-heat-outer', 'circle-color', colorOuter);
-        state.map.setPaintProperty('goong-heat-mid', 'circle-color', colorMid);
-        state.map.setPaintProperty('goong-heat-core', 'circle-color', colorCore);
       }
 
       function render() {
-        if (!state.map || !state.map.isStyleLoaded()) {
-          return;
-        }
+        try {
+          if (!state.map || !state.map.isStyleLoaded()) {
+            return;
+          }
 
-        if (!state.ready) {
-          state.ready = true;
-          state.lastError = null;
-        }
+          if (!state.ready) {
+            state.ready = true;
+            state.lastError = null;
+          }
 
-        if (state.mode === 'reports') {
-          renderReports();
-        } else {
-          renderHeat();
+          logStage('render', `rendering mode=${state.mode} with ${state.reports?.length || 0} reports and ${state.heatPoints?.length || 0} heatPoints`);
+
+          if (state.mode === 'reports') {
+            // Mode: Reports - show report markers, hide clusters
+            renderReports();
+            // Hide cluster layers if they exist
+            if (state.map.getLayer('goong-clusters-circle')) {
+              state.map.setLayoutProperty('goong-clusters-circle', 'visibility', 'none');
+            }
+            logStage('render', 'showing report clusters, hiding heat clusters');
+          } else {
+            // Mode: Heat (observed or predicted) - show clusters, hide reports
+            renderClusters();
+            // Hide report layer if it exists
+            if (state.map.getLayer('goong-reports-circle')) {
+              state.map.setLayoutProperty('goong-reports-circle', 'visibility', 'none');
+            }
+            logStage('render', 'showing heat clusters, hiding report clusters');
+          }
+        } catch (error) {
+          logError('render', 'Unexpected render failure', error);
         }
       }
 
@@ -808,26 +911,60 @@
       };
 
       window.goongAdminMapSetMode = function (mode) {
-        state.mode = mode;
-        render();
+        try {
+          logStage('setMode', `changing mode from '${state.mode}' to '${mode}'`);
+          state.mode = mode;
+          const hasRenderableData =
+            (mode === 'reports' && state.reports.length > 0) ||
+            (mode !== 'reports' && state.heatPoints.length > 0 && state.heatPointsMode === mode);
+
+          if (hasRenderableData) {
+            render();
+            logStage('setMode', `✓ mode set to '${state.mode}', render() called`);
+          } else {
+            logStage('setMode', `✓ mode set to '${state.mode}', waiting for matching dataset before render`);
+          }
+        } catch (error) {
+          logError('setMode', `Failed to switch mode to ${mode}`, error);
+        }
       };
 
       window.goongAdminMapSetReports = function (json) {
         try {
           state.reports = JSON.parse(json || '[]');
-        } catch (e) {
+          render();
+        } catch (error) {
           state.reports = [];
+          logError('setReports', 'Failed to parse or render report clusters', error);
         }
-        render();
       };
 
       window.goongAdminMapSetHeatPoints = function (json) {
         try {
-          state.heatPoints = JSON.parse(json || '[]');
-        } catch (e) {
+          const parsed = JSON.parse(json || '[]');
+          logStage('setHeatPoints', `received JSON length=${(json || '').length}, parsed ${parsed.length} points`);
+
+          if (parsed.length === 0) {
+            state.heatPointsMode = null;
+            logStage('setHeatPoints', 'empty heatPoints array, clearing render');
+          } else {
+            const predicted = parsed[0]?.predicted === true;
+            state.heatPointsMode = predicted ? 'heat_predicted' : 'heat_observed';
+            logStage('setHeatPoints', `first point: lat=${parsed[0]?.lat}, lng=${parsed[0]?.lng}, intensity=${parsed[0]?.intensity}, count=${parsed[0]?.count}, dataMode=${state.heatPointsMode}`);
+          }
+
+          state.heatPoints = parsed;
+          if (state.mode === 'reports' || state.heatPointsMode === state.mode || parsed.length === 0) {
+            render();
+          } else {
+            logStage('setHeatPoints', `data ready for ${state.heatPointsMode}, current mode=${state.mode}, skip render until mode matches`);
+          }
+        } catch (error) {
           state.heatPoints = [];
+          state.heatPointsMode = null;
+          logError('setHeatPoints', 'Failed to parse or render hotspot clusters', error);
+          logStage('setHeatPoints', `Raw JSON received (first 200 chars): ${(json || '').substring(0, 200)}`);
         }
-        render();
       };
 
       window.goongAdminMapZoomIn = function () {
