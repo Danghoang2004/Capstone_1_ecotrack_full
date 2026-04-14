@@ -197,15 +197,23 @@ class _EnvironmentTaskReportScreenState
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Text('Báo cáo task #${task.taskId}'),
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,18 +223,30 @@ class _EnvironmentTaskReportScreenState
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 17,
+                    color: Color(0xFF1F2D1D),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text('Loại rác: ${task.reportCategory}'),
-                Text(
-                  'Giao lúc: ${DateFormat('HH:mm dd/MM/yyyy').format(task.assignedAt)}',
+                const SizedBox(height: 12),
+                _detailItem('Loại rác', task.reportCategory),
+                _detailItem(
+                  'Giao lúc',
+                  DateFormat('HH:mm dd/MM/yyyy').format(task.assignedAt),
                 ),
-                Text(
-                  'Bắt đầu thực hiện: ${task.plannedStartAt == null ? 'Chưa đặt' : DateFormat('HH:mm dd/MM/yyyy').format(task.plannedStartAt!)}',
+                _detailItem(
+                  'Bắt đầu',
+                  task.plannedStartAt == null
+                      ? 'Chưa đặt'
+                      : DateFormat(
+                          'HH:mm dd/MM/yyyy',
+                        ).format(task.plannedStartAt!),
                 ),
-                Text(
-                  'Kết thúc task: ${task.plannedEndAt == null ? 'Chưa đặt' : DateFormat('HH:mm dd/MM/yyyy').format(task.plannedEndAt!)}',
+                _detailItem(
+                  'Kết thúc',
+                  task.plannedEndAt == null
+                      ? 'Chưa đặt'
+                      : DateFormat(
+                          'HH:mm dd/MM/yyyy',
+                        ).format(task.plannedEndAt!),
                 ),
               ],
             ),
@@ -235,50 +255,90 @@ class _EnvironmentTaskReportScreenState
           if (_inlineError != null)
             Container(
               margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(
                 color: const Color(0xFFFEE2E2),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFFCACA0), width: 0.5),
               ),
-              child: Text(
-                _inlineError!,
-                style: const TextStyle(color: Color(0xFFB91C1C)),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Color(0xFFB91C1C),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _inlineError!,
+                      style: const TextStyle(
+                        color: Color(0xFFB91C1C),
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Ảnh hiện trường sau xử lý',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Color(0xFF1F2D1D),
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 if (_selectedBytes != null)
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: Image.memory(
                       _selectedBytes!,
-                      height: 180,
+                      height: 200,
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
                   )
                 else
                   Container(
-                    height: 140,
+                    height: 160,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF2F4F7),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                        width: 1,
+                      ),
                     ),
-                    child: const Center(child: Text('Chưa có ảnh được chọn')),
+                    child: const Center(
+                      child: Text(
+                        'Chưa có ảnh được chọn',
+                        style: TextStyle(
+                          color: Color(0xFF999999),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                   ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
@@ -286,8 +346,14 @@ class _EnvironmentTaskReportScreenState
                         onPressed: _isSubmitting
                             ? null
                             : () => _pickImage(ImageSource.camera),
-                        icon: const Icon(Icons.camera_alt_outlined),
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
                         label: const Text('Chụp ảnh'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -296,8 +362,17 @@ class _EnvironmentTaskReportScreenState
                         onPressed: _isSubmitting
                             ? null
                             : () => _pickImage(ImageSource.gallery),
-                        icon: const Icon(Icons.photo_library_outlined),
+                        icon: const Icon(
+                          Icons.photo_library_outlined,
+                          size: 18,
+                        ),
                         label: const Text('Chọn ảnh'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -307,19 +382,30 @@ class _EnvironmentTaskReportScreenState
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Vị trí GPS tự động',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Color(0xFF1F2D1D),
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 if (_loadingGps)
                   const Row(
                     children: [
@@ -333,26 +419,59 @@ class _EnvironmentTaskReportScreenState
                     ],
                   )
                 else if (_position != null)
-                  Text(
-                    'Lat: ${_position!.latitude.toStringAsFixed(7)} | Long: ${_position!.longitude.toStringAsFixed(7)}',
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: Color(0xFF5EAC24),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Lat: ${_position!.latitude.toStringAsFixed(5)} | Long: ${_position!.longitude.toStringAsFixed(5)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                            color: Color(0xFF1F2D1D),
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 else
-                  const Text('Không lấy được vị trí hiện tại.'),
-                const SizedBox(height: 8),
+                  const Text(
+                    'Không lấy được vị trí hiện tại.',
+                    style: TextStyle(color: Color(0xFF999999)),
+                  ),
+                const SizedBox(height: 10),
                 TextButton.icon(
                   onPressed: _isSubmitting ? null : _resolveLocation,
-                  icon: const Icon(Icons.my_location),
+                  icon: const Icon(Icons.my_location, size: 18),
                   label: const Text('Lấy lại GPS'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: TextField(
               controller: _noteController,
@@ -362,15 +481,30 @@ class _EnvironmentTaskReportScreenState
               decoration: InputDecoration(
                 labelText: 'Ghi chú hoàn tất',
                 hintText: 'Mô tả nhanh quá trình xử lý tại điểm này',
+                labelStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1F2D1D),
+                ),
+                hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE8EFE5)),
                 ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF5EAC24),
+                    width: 2,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.all(12),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           SizedBox(
-            height: 50,
+            height: 52,
             child: ElevatedButton.icon(
               onPressed: _isSubmitting ? null : _submit,
               icon: _isSubmitting
@@ -382,13 +516,54 @@ class _EnvironmentTaskReportScreenState
                         strokeWidth: 2,
                       ),
                     )
-                  : const Icon(Icons.send_outlined),
+                  : const Icon(Icons.send_outlined, size: 18),
               label: Text(
                 _isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo hoàn tất',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5EAC24),
                 foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: Color(0xFF1F2D1D),
               ),
             ),
           ),

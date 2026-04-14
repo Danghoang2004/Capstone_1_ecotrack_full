@@ -260,7 +260,7 @@ class _EnvironmentDashboardScreenState
       backgroundColor: const Color(0xFFF4F7F3),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.5,
         automaticallyImplyLeading: false,
         titleSpacing: 20,
         title: Column(
@@ -271,7 +271,7 @@ class _EnvironmentDashboardScreenState
               style: TextStyle(
                 color: Color(0xFF1F2D1D),
                 fontWeight: FontWeight.w800,
-                fontSize: 20,
+                fontSize: 22,
               ),
             ),
             Text(
@@ -294,6 +294,7 @@ class _EnvironmentDashboardScreenState
                 icon: const Icon(
                   Icons.notifications_none_rounded,
                   color: Color(0xFF1F2D1D),
+                  size: 24,
                 ),
               ),
               if (_unreadNotificationCount > 0)
@@ -301,7 +302,7 @@ class _EnvironmentDashboardScreenState
                   right: 8,
                   top: 8,
                   child: Container(
-                    constraints: const BoxConstraints(minWidth: 18),
+                    constraints: const BoxConstraints(minWidth: 20),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 5,
                       vertical: 2,
@@ -317,7 +318,7 @@ class _EnvironmentDashboardScreenState
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -329,8 +330,8 @@ class _EnvironmentDashboardScreenState
             tooltip: 'Tài khoản',
             onPressed: () => setState(() => _selectedTab = 2),
             icon: Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFD7E7D1), width: 1.2),
@@ -353,32 +354,47 @@ class _EnvironmentDashboardScreenState
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
         ],
       ),
       body: IndexedStack(index: _selectedTab, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedTab,
-        onDestinationSelected: (index) => setState(() => _selectedTab = index),
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFF5EAC24).withOpacity(0.14),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Tổng quan',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment),
-            label: 'Công việc',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Tài khoản',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedTab,
+          onDestinationSelected: (index) => setState(() => _selectedTab = index),
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFF5EAC24).withOpacity(0.16),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          elevation: 0,
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined, color: Colors.grey.shade700),
+              selectedIcon: const Icon(Icons.home, color: Color(0xFF5EAC24)),
+              label: 'Tổng quan',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.assignment_outlined, color: Colors.grey.shade700),
+              selectedIcon: const Icon(Icons.assignment, color: Color(0xFF5EAC24)),
+              label: 'Công việc',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline, color: Colors.grey.shade700),
+              selectedIcon: const Icon(Icons.person, color: Color(0xFF5EAC24)),
+              label: 'Tài khoản',
+            ),
+          ],
+        ),
       ),
     );
   }

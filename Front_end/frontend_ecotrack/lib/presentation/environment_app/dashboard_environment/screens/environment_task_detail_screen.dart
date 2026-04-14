@@ -18,13 +18,20 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F3),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text('Chi tiết task #${task.taskId}'),
+        titleTextStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF1F2D1D),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildSection(
+            icon: Icons.assignment_outlined,
             title: task.reportTitle,
             child: Column(
               children: [
@@ -73,8 +80,17 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.near_me_outlined),
+                    icon: const Icon(Icons.near_me_outlined, size: 16),
                     label: const Text('Chỉ đường tới điểm xử lý'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -82,6 +98,7 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildSection(
+            icon: Icons.schedule_outlined,
             title: 'Thời gian',
             child: Column(
               children: [
@@ -105,6 +122,7 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _buildSection(
+            icon: Icons.description_outlined,
             title: 'Nội dung',
             child: Column(
               children: [
@@ -126,6 +144,7 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
           if (task.afterImageUrl.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildSection(
+              icon: Icons.image_outlined,
               title: 'Ảnh sau xử lý',
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -163,11 +182,15 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
                     Navigator.of(context).pop(true);
                   }
                 },
-                icon: const Icon(Icons.check_circle_outline),
+                icon: const Icon(Icons.check_circle_outline, size: 18),
                 label: const Text('Báo cáo đã dọn xong'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5EAC24),
                   foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -177,21 +200,57 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
+  Widget _buildSection({
+    required String title,
+    required Widget child,
+    IconData? icon,
+  }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5EAC24).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF5EAC24),
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1F2D1D),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           child,
         ],
       ),
@@ -200,17 +259,18 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
 
   Widget _detailRow(String label, String value, {bool multiLine = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 132,
+            width: 140,
             child: Text(
               label,
               style: TextStyle(
-                color: Colors.grey.shade700,
+                color: Colors.grey.shade600,
                 fontWeight: FontWeight.w600,
+                fontSize: 13,
               ),
             ),
           ),
@@ -218,7 +278,11 @@ class EnvironmentTaskDetailScreen extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: Color(0xFF1F2D1D),
+              ),
               maxLines: multiLine ? null : 1,
               overflow: multiLine ? null : TextOverflow.ellipsis,
             ),
