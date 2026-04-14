@@ -1,12 +1,13 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/core/services/admin_dashboard_api.dart';
 import 'package:frontend_ecotrack/data/models/dashboard_models.dart';
 
-const Color primaryGreen = Color(0xFF00B894);
-const Color sidebarBg = Colors.white;
-const Color pageBg = Color(0xFFF7F8FA);
-const Color cardBg = Colors.white;
+const Color primaryGreen = AppColors.adminAccent;
+const Color sidebarBg = AppColors.adminSurface;
+const Color pageBg = AppColors.adminBackground;
+const Color cardBg = AppColors.adminSurface;
 
 class AdminDashboardDataScreen extends StatefulWidget {
   const AdminDashboardDataScreen({super.key});
@@ -41,7 +42,12 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
         final data = snap.data!;
         return SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: _buildDashboardContent(data),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1280),
+              child: _buildDashboardContent(data),
+            ),
+          ),
         );
       },
     );
@@ -49,118 +55,290 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
 
   // ===================== MAIN CONTENT =====================
   Widget _buildDashboardContent(DashboardSummary data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Phân Tích Hệ Thống",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 1),
-        const Text(
-          "Thống kê và báo cáo tổng quan về hoạt động hệ thống EcoTrack",
-          style: TextStyle(color: Colors.grey, fontSize: 10),
-        ),
-        const SizedBox(height: 18),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double viewportWidth = constraints.maxWidth;
+        final int statsPerRow = viewportWidth >= 980
+            ? 4
+          : viewportWidth >= 760
+                    ? 2
+                    : 1;
+        final double statsGap = 16;
+        final double statsCardWidth =
+            (viewportWidth - (statsGap * (statsPerRow - 1))) / statsPerRow;
+        final bool useTwoColumns = viewportWidth >= 980;
 
-        // ===== TOP STATS CARDS =====
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 270,
-                height: 177,
-                child: _StatCard(
-                  title: "Tổng người dùng",
-                  value: data.totalUsers.toString(),
-                  subtitle:
-                      "${data.userGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                  icon: Icons.group_outlined,
-                  iconBg: const Color(0xFFE8F4FF),
-                  valueColor: Colors.black,
-                  subtitleColor: const Color(0xFF00B894),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeroBanner(data),
+            const SizedBox(height: 22),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                SizedBox(
+                  width: statsCardWidth,
+                  child: _StatCard(
+                    title: "Tổng người dùng",
+                    value: data.totalUsers.toString(),
+                    subtitle:
+                        "${data.userGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                    icon: Icons.group_outlined,
+                    iconBg: const Color(0xFFE4F2E8),
+                    cardTint: const Color(0xFFF5FBF7),
+                    valueColor: AppColors.adminTextPrimary,
+                    subtitleColor: AppColors.adminAccent,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 270,
-                height: 177,
-                child: _StatCard(
-                  title: "Báo cáo rác",
-                  value: data.totalReports.toString(),
-                  subtitle:
-                      "${data.reportGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                  icon: Icons.place_outlined,
-                  iconBg: const Color(0xFFFFEBEE),
-                  valueColor: Colors.black,
-                  subtitleColor: const Color(0xFF00B894),
+                SizedBox(
+                  width: statsCardWidth,
+                  child: _StatCard(
+                    title: "Báo cáo rác",
+                    value: data.totalReports.toString(),
+                    subtitle:
+                        "${data.reportGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                    icon: Icons.place_outlined,
+                    iconBg: const Color(0xFFFFF0E3),
+                    cardTint: const Color(0xFFFFFAF4),
+                    valueColor: AppColors.adminTextPrimary,
+                    subtitleColor: AppColors.adminAccent,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 270,
-                height: 177,
-                child: _StatCard(
-                  title: "Chiến dịch",
-                  value: data.totalCampaigns.toString(),
-                  subtitle:
-                      "${data.campaignGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                  icon: Icons.radio_button_checked_outlined,
-                  iconBg: const Color(0xFFE8F8F2),
-                  valueColor: Colors.black,
-                  subtitleColor: const Color(0xFF00B894),
+                SizedBox(
+                  width: statsCardWidth,
+                  child: _StatCard(
+                    title: "Chiến dịch",
+                    value: data.totalCampaigns.toString(),
+                    subtitle:
+                        "${data.campaignGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                    icon: Icons.radio_button_checked_outlined,
+                    iconBg: const Color(0xFFE6F4F1),
+                    cardTint: const Color(0xFFF2FAF8),
+                    valueColor: AppColors.adminTextPrimary,
+                    subtitleColor: AppColors.adminAccent,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 270,
-                height: 177,
-                child: _StatCard(
-                  title: "Điểm thưởng",
-                  value: data.totalPoints.toString(),
-                  subtitle:
-                      "${data.pointGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
-                  icon: Icons.emoji_events_outlined,
-                  iconBg: const Color(0xFFFFF8E1),
-                  valueColor: Colors.black,
-                  subtitleColor: const Color(0xFF00B894),
+                SizedBox(
+                  width: statsCardWidth,
+                  child: _StatCard(
+                    title: "Điểm thưởng",
+                    value: data.totalPoints.toString(),
+                    subtitle:
+                        "${data.pointGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                    icon: Icons.emoji_events_outlined,
+                    iconBg: const Color(0xFFFFF5D9),
+                    cardTint: const Color(0xFFFFFCEF),
+                    valueColor: AppColors.adminTextPrimary,
+                    subtitleColor: AppColors.adminAccent,
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 26),
+            if (useTwoColumns)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 6, child: _buildLineChartCard(data)),
+                  const SizedBox(width: 20),
+                  Expanded(flex: 5, child: _buildPieChart(data)),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  _buildLineChartCard(data),
+                  const SizedBox(height: 20),
+                  _buildPieChart(data),
+                ],
               ),
-            ],
+            const SizedBox(height: 26),
+            if (useTwoColumns)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 6, child: _buildCampaignParticipationCard()),
+                  const SizedBox(width: 20),
+                  Expanded(flex: 5, child: _buildUserLevelDistributionCard()),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  _buildCampaignParticipationCard(),
+                  const SizedBox(height: 20),
+                  _buildUserLevelDistributionCard(),
+                ],
+              ),
+            const SizedBox(height: 26),
+            _buildRecentActivityCard(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildHeroBanner(DashboardSummary data) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+      decoration: BoxDecoration(
+        gradient: AppColors.adminHeroGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.adminAccent.withOpacity(0.16),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool compact = constraints.maxWidth < 860;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _buildHeroChip(
+                    'Tổng quan hệ thống',
+                    const Color(0x365BF0AA),
+                    const Color(0xFFEFFFF7),
+                  ),
+                  _buildHeroChip(
+                    'Cập nhật theo thời gian thực',
+                    const Color(0x3CFFB06A),
+                    const Color(0xFFFFF5E8),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              if (compact)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Phân Tích Hệ Thống',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Thống kê và báo cáo tổng quan về hoạt động hệ thống EcoTrack',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.86),
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Phân Tích Hệ Thống',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.7,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Thống kê và báo cáo tổng quan về hoạt động hệ thống EcoTrack',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.86),
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _buildHeroMetric('Người dùng', data.totalUsers.toString()),
+                        _buildHeroMetric('Báo cáo', data.totalReports.toString()),
+                        _buildHeroMetric('Chiến dịch', data.totalCampaigns.toString()),
+                      ],
+                    ),
+                  ],
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeroChip(String label, Color color, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.22)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
 
-        const SizedBox(height: 26),
-
-        // ===== LINE + PIE CHART =====
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildLineChartCard(data)),
-            const SizedBox(width: 20),
-            Expanded(child: _buildPieChart(data)),
-          ],
-        ),
-
-        const SizedBox(height: 26),
-
-        // ===== THAM GIA CHIẾN DỊCH + PHÂN BỐ CẤP ĐỘ =====
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: _buildCampaignParticipationCard()),
-            const SizedBox(width: 20),
-            Expanded(child: _buildUserLevelDistributionCard()),
-          ],
-        ),
-
-        const SizedBox(height: 26),
-
-        // ===== HOẠT ĐỘNG GẦN ĐÂY =====
-        _buildRecentActivityCard(),
-      ],
+  Widget _buildHeroMetric(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.26)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.82),
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -289,11 +467,11 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                     ),
                     LineTooltipItem(
                       'Chiến dịch: ${m.campaigns}\n',
-                      const TextStyle(color: Colors.green, fontSize: 12),
+                      const TextStyle(color: Color(0xFF2F8DE4), fontSize: 12),
                     ),
                     LineTooltipItem(
                       'Người dùng: ${m.users}',
-                      const TextStyle(color: Colors.blue, fontSize: 12),
+                      const TextStyle(color: Color(0xFF1FA971), fontSize: 12),
                     ),
                   ];
                 },
@@ -303,21 +481,21 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
             lineBarsData: [
               LineChartBarData(
                 isCurved: true,
-                color: const Color(0xFF2962FF),
+                color: const Color(0xFF2F8C4C),
                 barWidth: 2.5,
                 spots: usersSpots,
                 dotData: FlDotData(show: false),
               ),
               LineChartBarData(
                 isCurved: true,
-                color: const Color(0xFFFF5252),
+                color: AppColors.adminAccentWarm,
                 barWidth: 2.5,
                 spots: reportsSpots,
                 dotData: FlDotData(show: false),
               ),
               LineChartBarData(
                 isCurved: true,
-                color: const Color(0xFF00C853),
+                color: AppColors.adminAccentSky,
                 barWidth: 2.5,
                 spots: campaignsSpots,
                 dotData: FlDotData(show: false),
@@ -343,10 +521,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     };
 
     final colors = {
-      "PENDING": const Color(0xFFB39DDB),
-      "VERIFIED": const Color(0xFF9575CD),
-      "CLEANED": const Color(0xFF7E57C2),
-      "REJECTED": const Color(0xFF673AB7),
+      "PENDING": const Color(0xFF90A4AE),
+      "VERIFIED": const Color(0xFF2F8C4C),
+      "CLEANED": AppColors.adminAccentSky,
+      "REJECTED": AppColors.adminAccentWarm,
     };
 
     return _CardContainer(
@@ -492,7 +670,7 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
           lineBarsData: [
             LineChartBarData(
               isCurved: true,
-              color: const Color(0xFF2962FF),
+              color: const Color(0xFF2F8C4C),
               barWidth: 2.5,
               spots: spots,
               dotData: FlDotData(show: false),
@@ -507,9 +685,9 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
   Widget _buildUserLevelDistributionCard() {
     final levels = [
       _LevelData("Bronze", const Color(0xFF8D6E63), 180),
-      _LevelData("Silver", const Color(0xFFB0BEC5), 95),
-      _LevelData("Gold", const Color(0xFFFFD54F), 45),
-      _LevelData("Platinum", const Color(0xFFE0E0E0), 12),
+      _LevelData("Silver", const Color(0xFF90A4AE), 95),
+      _LevelData("Gold", AppColors.adminAccent, 45),
+      _LevelData("Platinum", AppColors.adminAccentSky, 12),
     ];
 
     final maxCount = levels.map((e) => e.count).reduce((a, b) => a > b ? a : b);
@@ -545,7 +723,7 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                       Container(
                         height: 8,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE0E0E0),
+                          color: AppColors.adminSurfaceMuted,
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
@@ -583,22 +761,22 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
   Widget _buildRecentActivityCard() {
     final activities = [
       _ActivityItem(
-        color: const Color(0xFF00C853),
+            color: AppColors.adminAccent,
         title: "Chiến dịch \"Dọn dẹp bãi biển Vũng Tàu\" đã hoàn thành",
         time: "2 giờ trước · 120 người tham gia",
       ),
       _ActivityItem(
-        color: const Color(0xFF2962FF),
+            color: AppColors.adminAccentSky,
         title: "15 báo cáo rác mới đã được xác minh",
         time: "2 giờ trước · 120 người tham gia",
       ),
       _ActivityItem(
-        color: const Color(0xFFFFAB00),
+        color: AppColors.adminAccentWarm,
         title: "25 người dùng mới đăng ký tham gia hệ thống",
         time: "2 giờ trước · 120 người tham gia",
       ),
       _ActivityItem(
-        color: const Color(0xFF00B894),
+        color: const Color(0xFF28B89A),
         title: "Chiến dịch \"Làm sạch sông Sài Gòn\" đã được tạo",
         time: "2 giờ trước · 120 người tham gia",
       ),
@@ -713,6 +891,7 @@ class _StatCard extends StatelessWidget {
   final Color iconBg;
   final Color valueColor;
   final Color subtitleColor;
+  final Color? cardTint;
 
   const _StatCard({
     required this.title,
@@ -722,6 +901,7 @@ class _StatCard extends StatelessWidget {
     required this.iconBg,
     required this.valueColor,
     required this.subtitleColor,
+    this.cardTint,
   });
 
   @override
@@ -730,13 +910,21 @@ class _StatCard extends StatelessWidget {
       height: 120,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cardTint ?? cardBg,
+            AppColors.adminSurface,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.adminBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -747,7 +935,7 @@ class _StatCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: iconBg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, size: 22),
           ),
@@ -759,7 +947,10 @@ class _StatCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.adminTextSecondary,
+                    fontSize: 13,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -776,7 +967,7 @@ class _StatCard extends StatelessWidget {
                     const Icon(
                       Icons.trending_up,
                       size: 14,
-                      color: Color(0xFF00B894),
+                      color: AppColors.adminAccent,
                     ),
                     const SizedBox(width: 3),
                     Text(
@@ -808,22 +999,27 @@ class _CardContainer extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.adminBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: AppColors.adminTextPrimary,
+            ),
           ),
           const SizedBox(height: 12),
           Expanded(child: child),

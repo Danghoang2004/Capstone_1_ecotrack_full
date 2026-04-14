@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/CampaignApi.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/data/models/campain.dart';
 
 class CampaignList extends StatefulWidget {
   final VoidCallback onCreate;
   final Function(int) onEdit;
   final Function(int) onView;
+  final bool showHeader;
 
   const CampaignList({
     super.key,
     required this.onCreate,
     required this.onEdit,
     required this.onView,
+    this.showHeader = true,
   });
 
   @override
@@ -165,8 +168,10 @@ class _CampaignListState extends State<CampaignList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeader(),
-        const SizedBox(height: 24),
+        if (widget.showHeader) ...[
+          _buildHeader(),
+          const SizedBox(height: 24),
+        ],
         _buildSearchBar(),
         const SizedBox(height: 20),
         FutureBuilder<List<Campaign>>(
@@ -187,7 +192,12 @@ class _CampaignListState extends State<CampaignList> {
 
             return Column(
               children: snapshot.data!
-                  .map((campaign) => _buildCampaignCard(campaign))
+                  .map(
+                    (campaign) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildCampaignCard(campaign),
+                    ),
+                  )
                   .toList(),
             );
           },
@@ -199,32 +209,42 @@ class _CampaignListState extends State<CampaignList> {
   // --- Các Widget thành phần đã được tách ra cho gọn ---
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "Quản Lý Chiến Dịch",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+                color: AppColors.adminTextPrimary,
+              ),
             ),
             Text(
               "Tạo, chỉnh sửa và theo dõi các chiến dịch thực tế",
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(fontSize: 17, color: AppColors.adminTextSecondary),
             ),
           ],
         ),
-        ElevatedButton.icon(
-          onPressed: widget.onCreate,
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text("Tạo chiến dịch mới"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF00BFA5),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+        const SizedBox(height: 14),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton.icon(
+            onPressed: widget.onCreate,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text("Tạo chiến dịch mới"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.adminAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 3,
             ),
           ),
         ),
@@ -236,12 +256,20 @@ class _CampaignListState extends State<CampaignList> {
     return TextField(
       decoration: InputDecoration(
         hintText: "Tìm kiếm chiến dịch...",
-        prefixIcon: const Icon(Icons.search),
+        prefixIcon: const Icon(Icons.search_rounded),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.adminSurface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide.none,
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: AppColors.adminBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: AppColors.adminBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: AppColors.adminAccent, width: 1.4),
         ),
       ),
     );
@@ -257,12 +285,18 @@ class _CampaignListState extends State<CampaignList> {
         : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.adminSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.adminBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,21 +322,45 @@ class _CampaignListState extends State<CampaignList> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => widget.onView(c.id!),
-                    icon: const Icon(
-                      Icons.visibility_outlined,
-                      color: Colors.blueGrey,
+                    onPressed: () => widget.onView(c.id),
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.adminAccentSky.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.visibility_outlined,
+                        color: AppColors.adminAccentSky,
+                      ),
                     ),
                   ),
                   IconButton(
-                    onPressed: () => widget.onEdit(c.id!),
-                    icon: const Icon(Icons.edit_note, color: Colors.grey),
+                    onPressed: () => widget.onEdit(c.id),
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.adminSurfaceMuted,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.edit_note,
+                        color: AppColors.adminTextSecondary,
+                      ),
+                    ),
                   ),
                   IconButton(
-                    onPressed: () => _deleteCampaign(c.id!),
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.redAccent,
+                    onPressed: () => _deleteCampaign(c.id),
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.redAccent,
+                      ),
                     ),
                   ),
                 ],
@@ -312,34 +370,50 @@ class _CampaignListState extends State<CampaignList> {
           Text(
             c.description ?? "Không có mô tả",
             maxLines: 2,
-            style: const TextStyle(color: Colors.grey, fontSize: 14),
+            style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 14),
           ),
           const SizedBox(height: 12),
           _buildInfoRow(c),
           const SizedBox(height: 24),
-          Row(
+          Wrap(
+            spacing: 28,
+            runSpacing: 14,
             children: [
-              _buildStatItem(
-                "Người tham gia",
-                "${c.currentParticipants}/${c.maxParticipants}",
-                progress,
-                Colors.blue,
+              SizedBox(
+                width: 280,
+                child: _buildStatItem(
+                  "Người tham gia",
+                  "${c.currentParticipants}/${c.maxParticipants}",
+                  progress,
+                  AppColors.adminAccentSky,
+                ),
               ),
-              const SizedBox(width: 60),
-              _buildStatItem("Kinh phí", "15.000.000 đ", 0.75, Colors.green),
-              const SizedBox(width: 60),
-              _buildSimpleStat(
-                "Điểm thưởng",
-                "${c.rewardPoints} điểm",
-                Icons.stars_rounded,
-                Colors.orange,
+              SizedBox(
+                width: 280,
+                child: _buildStatItem(
+                  "Kinh phí",
+                  "15.000.000 đ",
+                  0.75,
+                  AppColors.adminAccent,
+                ),
               ),
-              const SizedBox(width: 60),
-              _buildSimpleStat(
-                "Tổ chức",
-                c.partnerName ?? "Đang cập nhật...",
-                Icons.account_balance_outlined,
-                Colors.purple,
+              SizedBox(
+                width: 160,
+                child: _buildSimpleStat(
+                  "Điểm thưởng",
+                  "${c.rewardPoints} điểm",
+                  Icons.stars_rounded,
+                  AppColors.adminAccentWarm,
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: _buildSimpleStat(
+                  "Tổ chức",
+                  c.partnerName ?? "Đang cập nhật...",
+                  Icons.account_balance_outlined,
+                  const Color(0xFF8E24AA),
+                ),
               ),
             ],
           ),
@@ -349,20 +423,45 @@ class _CampaignListState extends State<CampaignList> {
   }
 
   Widget _buildInfoRow(Campaign c) {
-    return Row(
+    return Wrap(
+      spacing: 20,
+      runSpacing: 8,
       children: [
-        const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-        const SizedBox(width: 4),
-        Text(
-          c.location,
-          style: const TextStyle(color: Colors.grey, fontSize: 13),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_on_outlined,
+              size: 16,
+              color: AppColors.adminTextSecondary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              c.location,
+              style: const TextStyle(
+                color: AppColors.adminTextSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 20),
-        const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.grey),
-        const SizedBox(width: 4),
-        Text(
-          "${c.startDate} - ${c.endDate}",
-          style: const TextStyle(color: Colors.grey, fontSize: 13),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 16,
+              color: AppColors.adminTextSecondary,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              "${c.startDate} - ${c.endDate}",
+              style: const TextStyle(
+                color: AppColors.adminTextSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ],
     );

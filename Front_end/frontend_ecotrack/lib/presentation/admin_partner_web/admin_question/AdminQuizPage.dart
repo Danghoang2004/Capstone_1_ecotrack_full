@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/AdminQuizRepository.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 
 class AdminQuizPage extends StatefulWidget {
   const AdminQuizPage({super.key});
@@ -310,184 +311,210 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1320),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Quản Lý Bộ Câu Hỏi",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF212121),
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _showAddDialog,
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text(
-                  "Thêm bộ đề mới",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 4,
-                  shadowColor: _primaryColor.withOpacity(0.4),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: _primaryColor))
-                : _quizzes.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.quiz_outlined,
-                          size: 80,
-                          color: Colors.grey.shade300,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      _AdminAccentChip(),
+                      SizedBox(height: 10),
+                      Text(
+                        "Quản Lý Bộ Câu Hỏi",
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.8,
+                          color: AppColors.adminTextPrimary,
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Chưa có bộ câu hỏi nào",
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey.shade500,
-                          ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        "Tổ chức bộ câu hỏi và điểm thưởng cho người tham gia",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.adminTextSecondary,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _showAddDialog,
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text(
+                      "Thêm bộ đề mới",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                     ),
-                  )
-                : ListView.separated(
-                    itemCount: _quizzes.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final quiz = _quizzes[index];
-                      final isPublished = quiz['status'] == 'PUBLISHED';
-                      return Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.adminAccentDeep,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 4,
+                      shadowColor: AppColors.adminAccentDeep.withValues(alpha: 0.28),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              Expanded(
+                child: _isLoading
+                    ? Center(child: CircularProgressIndicator(color: _primaryColor))
+                    : _quizzes.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.quiz_outlined,
+                              size: 80,
+                              color: Colors.grey.shade300,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "Chưa có bộ câu hỏi nào",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                           ],
-                          border: Border.all(color: Colors.grey.shade100),
                         ),
-                        child: Row(
-                          children: [
-                            // Icon đại diện
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color:
-                                    (isPublished
-                                            ? _primaryColor
-                                            : Colors.orange)
-                                        .withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.help_outline_rounded,
-                                color: isPublished
-                                    ? _primaryColor
-                                    : Colors.orange,
-                                size: 32,
-                              ),
+                      )
+                    : ListView.separated(
+                        itemCount: _quizzes.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final quiz = _quizzes[index];
+                          final isPublished = quiz['status'] == 'PUBLISHED';
+                          return Container(
+                            padding: const EdgeInsets.all(22),
+                            decoration: BoxDecoration(
+                              color: AppColors.adminSurface,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                              border: Border.all(color: AppColors.adminBorder),
                             ),
-                            const SizedBox(width: 20),
-                            // Thông tin chính
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    quiz['title'] ?? "Không tên",
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF212121),
-                                    ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: (isPublished ? _primaryColor : Colors.orange)
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Row(
+                                  child: Icon(
+                                    Icons.help_outline_rounded,
+                                    color: isPublished ? _primaryColor : Colors.orange,
+                                    size: 34,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _buildInfoChip(
-                                        Icons.stars_rounded,
-                                        "${quiz['pointsReward']} điểm",
-                                        Colors.amber,
+                                      Text(
+                                        quiz['title'] ?? "Không tên",
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.adminTextPrimary,
+                                        ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      _buildInfoChip(
-                                        isPublished
-                                            ? Icons.check_circle_outline
-                                            : Icons.edit_note,
-                                        quiz['status'] ?? "DRAFT",
-                                        isPublished
-                                            ? _primaryColor
-                                            : Colors.grey,
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 10,
+                                        children: [
+                                          _buildInfoChip(
+                                            Icons.stars_rounded,
+                                            "${quiz['pointsReward']} điểm",
+                                            Colors.amber,
+                                          ),
+                                          _buildInfoChip(
+                                            isPublished
+                                                ? Icons.check_circle_outline
+                                                : Icons.edit_note,
+                                            quiz['status'] ?? "DRAFT",
+                                            isPublished ? _primaryColor : Colors.grey,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.edit_outlined,
-                                    color: _editColor,
-                                  ),
-                                  tooltip: "Chỉnh sửa",
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          "Chức năng chỉnh sửa Quiz ID ${quiz['id']} đang phát triển",
+                                ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: _editColor.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(
+                                          Icons.edit_outlined,
+                                          color: _editColor,
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                // Nút xóa
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline,
-                                    color: _dangerColor,
-                                  ),
-                                  tooltip: "Xóa",
-                                  onPressed: () => _deleteQuiz(quiz['id']),
+                                      tooltip: "Chỉnh sửa",
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "Chức năng chỉnh sửa Quiz ID ${quiz['id']} đang phát triển",
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: _dangerColor.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(
+                                          Icons.delete_outline,
+                                          color: _dangerColor,
+                                        ),
+                                      ),
+                                      tooltip: "Xóa",
+                                      onPressed: () => _deleteQuiz(quiz['id']),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -513,6 +540,29 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AdminAccentChip extends StatelessWidget {
+  const _AdminAccentChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.adminAccentSoft,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: const Text(
+        'EcoTrack Admin',
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: AppColors.adminAccentDeep,
+        ),
       ),
     );
   }

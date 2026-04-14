@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 
 class AdminSidebar extends StatefulWidget {
   final String selectedMenu;
@@ -21,7 +22,7 @@ class _AdminSidebarState extends State<AdminSidebar> {
 
   @override
   Widget build(BuildContext context) {
-    double sidebarWidth = _isCollapsed ? 80 : 260;
+    final double sidebarWidth = _isCollapsed ? 88 : 286;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -42,19 +43,19 @@ class _AdminSidebarState extends State<AdminSidebar> {
       width: width,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(right: BorderSide(color: Colors.grey.shade200)),
+        gradient: AppColors.adminSidebarGradient,
       ),
       child: Column(
         children: [
-          // Khoảng trống phía trên thay cho User Header cũ
-          const SizedBox(height: 20),
-
-          // DANH SÁCH MENU
+          _buildBrandPanel(isCollapsed),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isCollapsed ? 10 : 14,
+                vertical: 10,
+              ),
               children: [
+                _buildSectionLabel('Tổng quan', isCollapsed),
                 _MenuItem(
                   icon: Icons.dashboard_outlined,
                   label: 'Bảng Điều Khiển',
@@ -79,6 +80,8 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   isCollapsed: isCollapsed,
                   onTap: widget.onNavigate,
                 ),
+                const SizedBox(height: 8),
+                _buildSectionLabel('Vận hành', isCollapsed),
                 _MenuItem(
                   icon: Icons.groups_outlined,
                   label: 'Phân Công Môi Trường',
@@ -103,6 +106,8 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   isCollapsed: isCollapsed,
                   onTap: widget.onNavigate,
                 ),
+                const SizedBox(height: 8),
+                _buildSectionLabel('Nội dung', isCollapsed),
                 _MenuItem(
                   icon: Icons.campaign_outlined,
                   label: 'Quản Lý Chiến Dịch',
@@ -120,11 +125,9 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   onTap: widget.onNavigate,
                 ),
                 _MenuItem(
-                  icon: Icons
-                      .notifications_active_outlined, // Em có thể đổi icon khác nếu muốn
+                  icon: Icons.notifications_active_outlined,
                   label: 'Quản Lý Thông Báo',
-                  keyName:
-                      'notifications', // Key này dùng để nhận diện route/tab
+                  keyName: 'notifications',
                   selectedMenu: widget.selectedMenu,
                   isCollapsed: isCollapsed,
                   onTap: widget.onNavigate,
@@ -132,20 +135,96 @@ class _AdminSidebarState extends State<AdminSidebar> {
               ],
             ),
           ),
-
-          // NÚT ĐĂNG XUẤT
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
             child: _MenuItemWidget(
               icon: Icons.logout,
               label: 'Đăng xuất',
               isSelected: false,
               isCollapsed: isCollapsed,
-              color: Colors.red[400],
+              color: Colors.red[100],
+              labelColor: Colors.red[50],
+              backgroundColor: Colors.white.withOpacity(0.08),
               onTap: widget.onLogout ?? () {},
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBrandPanel(bool isCollapsed) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: isCollapsed ? 12 : 16,
+        vertical: isCollapsed ? 18 : 22,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1A4636), Color(0xFF16372A)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: isCollapsed
+          ? const Column(
+              children: [
+                _BrandIcon(size: 44),
+              ],
+            )
+          : Row(
+              children: const [
+                _BrandIcon(size: 46),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'EcoTrack Admin',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Bảng điều khiển quản trị',
+                        style: TextStyle(
+                          color: Color(0xFFD9E7DC),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label, bool isCollapsed) {
+    if (isCollapsed) return const SizedBox(height: 8);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.56),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.7,
+        ),
       ),
     );
   }
@@ -159,20 +238,26 @@ class _AdminSidebarState extends State<AdminSidebar> {
         child: InkWell(
           onTap: () => setState(() => _isCollapsed = !_isCollapsed),
           child: Container(
-            width: 24,
-            height: 24,
+            width: 30,
+            height: 58,
             decoration: BoxDecoration(
               color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(999),
+              ),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Icon(
               _isCollapsed ? Icons.chevron_right : Icons.chevron_left,
-              size: 14,
-              color: Colors.grey[600],
+              size: 18,
+              color: AppColors.adminAccentDeep,
             ),
           ),
         ),
@@ -181,7 +266,29 @@ class _AdminSidebarState extends State<AdminSidebar> {
   }
 }
 
-// --- CÁC WIDGET HỖ TRỢ MENU (GIỮ NGUYÊN LOGIC CŨ) ---
+class _BrandIcon extends StatelessWidget {
+  final double size;
+
+  const _BrandIcon({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.18)),
+      ),
+      child: const Icon(
+        Icons.recycling_outlined,
+        color: Colors.white,
+        size: 24,
+      ),
+    );
+  }
+}
 
 class _MenuItem extends StatelessWidget {
   final IconData icon;
@@ -218,6 +325,8 @@ class _MenuItemWidget extends StatelessWidget {
   final bool isSelected;
   final bool isCollapsed;
   final Color? color;
+  final Color? labelColor;
+  final Color? backgroundColor;
   final VoidCallback onTap;
 
   const _MenuItemWidget({
@@ -226,6 +335,8 @@ class _MenuItemWidget extends StatelessWidget {
     required this.isSelected,
     required this.isCollapsed,
     this.color,
+    this.labelColor,
+    this.backgroundColor,
     required this.onTap,
   });
 
@@ -233,28 +344,51 @@ class _MenuItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        height: 50,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        height: 46,
         margin: const EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 0 : 16),
+        padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 0 : 14),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF5EAC24).withOpacity(0.15)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? null : backgroundColor ?? Colors.transparent,
+          gradient: isSelected ? AppColors.adminMenuSelectedGradient : null,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? Colors.white.withOpacity(0.34)
+                : Colors.transparent,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.adminAccentSky.withOpacity(0.28),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisAlignment: isCollapsed
               ? MainAxisAlignment.center
               : MainAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color:
-                  color ??
-                  (isSelected ? const Color(0xFF5EAC24) : Colors.grey[600]),
-              size: 24,
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? Colors.white.withOpacity(0.22)
+                    : Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: color ?? (isSelected ? Colors.white : Colors.white70),
+                size: 20,
+              ),
             ),
             if (!isCollapsed) ...[
               const SizedBox(width: 12),
@@ -263,14 +397,8 @@ class _MenuItemWidget extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                    color:
-                        color ??
-                        (isSelected
-                            ? const Color(0xFF5EAC24)
-                            : Colors.grey[700]),
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: labelColor ?? (isSelected ? Colors.white : Colors.white70),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
