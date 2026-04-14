@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/auth_admin/AdminLoginScreen.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminDashboardScreen.dart';
@@ -21,7 +22,43 @@ class AdminApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'EcoTrack Admin Console',
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.adminAccent,
+          surface: AppColors.adminSurface,
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: AppColors.adminBackground,
+        textTheme: Theme.of(
+          context,
+        ).textTheme.apply(bodyColor: AppColors.adminTextPrimary, displayColor: AppColors.adminTextPrimary),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.adminTextPrimary,
+          elevation: 0,
+          centerTitle: false,
+        ),
+        cardTheme: CardThemeData(
+          color: AppColors.adminSurface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.adminSurfaceMuted,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(color: AppColors.adminBorder),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(color: AppColors.adminBorder),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: const BorderSide(color: AppColors.adminAccent, width: 1.4),
+          ),
+        ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       // Bắt đầu từ màn hình chờ để kiểm tra token và vai trò

@@ -139,4 +139,40 @@ class NotificationService {
       return false;
     }
   }
+
+  Future<bool> updateAdminNotification({
+    required int id,
+    required String title,
+    required String message,
+  }) async {
+    try {
+      final payload = {
+        'title': title,
+        'message': message,
+      };
+
+      final res = await apiClient.put('/api/admin/notifications/$id', payload);
+      return res.statusCode == 200 || res.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteAdminNotification(int id) async {
+    try {
+      final res = await apiClient.delete('/api/admin/notifications/$id');
+      return res.statusCode == 200 || res.statusCode == 204;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> isAdminNotificationEditDeleteSupported() async {
+    try {
+      final res = await apiClient.get('/api/admin/notifications');
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 }

@@ -15,6 +15,7 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
   final NotificationService _notificationService = NotificationService();
   List<NotificationModel> _notifications = [];
   bool _isLoading = true;
+  bool _isMutating = false;
 
   @override
   void initState() {
@@ -34,6 +35,164 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
     } catch (e) {
       print("Lỗi lấy danh sách Admin: $e");
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _showEditDialog(NotificationModel item) async {
+    final titleController = TextEditingController(text: item.title);
+    final messageController = TextEditingController(text: item.message);
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Chỉnh sửa thông báo'),
+          content: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Tiêu đề'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Nhập tiêu đề',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Nội dung'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: messageController,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Nhập nội dung thông báo',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Lưu thay đổi'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != true) {
+      titleController.dispose();
+      messageController.dispose();
+      return;
+    }
+
+    final title = titleController.text.trim();
+    final message = messageController.text.trim();
+    titleController.dispose();
+    messageController.dispose();
+
+    if (title.isEmpty || message.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tiêu đề và nội dung không được để trống.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isMutating = true);
+    final success = await _notificationService.updateAdminNotification(
+      id: item.id,
+      title: title,
+      message: message,
+    );
+    if (mounted) {
+      setState(() => _isMutating = false);
+    }
+
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã cập nhật thông báo.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _fetchNotifications();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Không thể chỉnh sửa. Backend có thể chưa hỗ trợ endpoint cập nhật.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteNotification(NotificationModel item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Xóa thông báo'),
+          content: Text(
+            'Bạn có chắc muốn xóa thông báo "${item.title}"? Hành động này không thể hoàn tác.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isMutating = true);
+    final success = await _notificationService.deleteAdminNotification(item.id);
+    if (mounted) {
+      setState(() => _isMutating = false);
+    }
+
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đã xóa thông báo.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _fetchNotifications();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Không thể xóa. Backend có thể chưa hỗ trợ endpoint xóa.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -103,23 +262,78 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
                             ),
                           ),
                           title: Text(
-                            item.title ?? 'Không có tiêu đề',
+                            item.title,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            item.message ?? '',
+                            item.message,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          trailing: Text(
-                            item.createdAt != null
-                                ? DateFormat(
-                                    'dd/MM/yyyy',
-                                  ).format(item.createdAt!)
-                                : '',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                          subtitleTextStyle: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          isThreeLine: true,
+                          titleAlignment: ListTileTitleAlignment.top,
+                          dense: false,
+                          minVerticalPadding: 8,
+                          horizontalTitleGap: 12,
+                          trailing: SizedBox(
+                            width: 140,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  DateFormat('dd/MM/yyyy').format(item.createdAt),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                PopupMenuButton<String>(
+                                  enabled: !_isMutating,
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      await _showEditDialog(item);
+                                    }
+                                    if (value == 'delete') {
+                                      await _deleteNotification(item);
+                                    }
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_outlined, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Chỉnh sửa'),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                            color: Colors.red,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text('Xóa'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ),

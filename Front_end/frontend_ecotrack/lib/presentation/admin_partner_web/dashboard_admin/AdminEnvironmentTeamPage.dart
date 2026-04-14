@@ -548,7 +548,7 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
               Text(
                 'Quản lý đội môi trường',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1F2D1D),
                 ),

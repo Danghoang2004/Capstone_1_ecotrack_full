@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'stat_item.dart';
 import 'action_button.dart';
 import '../../../../../common/formatNumber/format_number.dart';
@@ -120,7 +121,7 @@ class UserCard extends StatelessWidget {
                           onSelectionChanged(value ?? false);
                         }
                       },
-                      activeColor: const Color(0xFF5EAC24),
+                      activeColor: AppColors.adminAccent,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),
@@ -132,7 +133,7 @@ class UserCard extends StatelessWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF5EAC24).withOpacity(0.1),
+                            color: AppColors.adminAccentSoft,
                             shape: BoxShape.circle,
                           ),
                           child:
@@ -147,7 +148,7 @@ class UserCard extends StatelessWidget {
                                           child: Text(
                                             _getInitials(user['name']),
                                             style: const TextStyle(
-                                              color: Color(0xFF5EAC24),
+                                              color: AppColors.adminAccent,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -159,7 +160,7 @@ class UserCard extends StatelessWidget {
                                   child: Text(
                                     _getInitials(user['name']),
                                     style: const TextStyle(
-                                      color: Color(0xFF5EAC24),
+                                      color: AppColors.adminAccent,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -205,7 +206,7 @@ class UserCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: isActive ? Colors.black : Colors.grey[300],
+                        color: isActive ? AppColors.adminAccentDeep : Colors.grey[300],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -348,7 +349,7 @@ class UserCard extends StatelessWidget {
                       onSelectionChanged(value ?? false);
                     }
                   },
-                  activeColor: const Color(0xFF5EAC24),
+                  activeColor: AppColors.adminAccent,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
@@ -362,7 +363,7 @@ class UserCard extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF5EAC24).withOpacity(0.1),
+                        color: AppColors.adminAccentSoft,
                         shape: BoxShape.circle,
                       ),
                       child:
@@ -377,7 +378,7 @@ class UserCard extends StatelessWidget {
                                       child: Text(
                                         _getInitials(user['name']),
                                         style: const TextStyle(
-                                          color: Color(0xFF5EAC24),
+                                          color: AppColors.adminAccent,
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -389,7 +390,7 @@ class UserCard extends StatelessWidget {
                               child: Text(
                                 _getInitials(user['name']),
                                 style: const TextStyle(
-                                  color: Color(0xFF5EAC24),
+                                  color: AppColors.adminAccent,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -483,7 +484,7 @@ class UserCard extends StatelessWidget {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: isActive ? Colors.black : Colors.grey[300],
+                        color: isActive ? AppColors.adminAccentDeep : Colors.grey[300],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/ReportService.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/data/models/report_model.dart';
 import 'package:frontend_ecotrack/data/utils/ImageUtils.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AdminReportPage extends StatefulWidget {
   const AdminReportPage({super.key});
@@ -85,69 +85,77 @@ class _AdminReportPageState extends State<AdminReportPage> {
     }
   }
 
-  String _buildImageUrl(String? path) {
-    if (path == null || path.isEmpty) return "";
-    if (path.startsWith("http")) return path;
-
-    final String baseUrl = dotenv.env['API_BASE_URL'] ?? "http://10.0.2.2:8080";
-    return "$baseUrl$path";
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF5F5F5,
-      ), // Màu nền xám nhạt giống thiết kế
+      backgroundColor: AppColors.adminBackground,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Header Tiêu đề
-            const Text(
-              "Bản Đồ Báo Cáo Rác",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Theo dõi và quản lý các điểm báo cáo rác thải từ người dùng",
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-
-            // 2. Thống kê nhanh (Dashboard Stats)
-            _buildStatCards(),
-            const SizedBox(height: 32),
-
-            // 3. Thanh công cụ (Search + Filter)
-            _buildToolbar(),
-            const SizedBox(height: 24),
-
-            // 4. Danh sách báo cáo (List Items)
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredReports.isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Text("Không tìm thấy báo cáo nào"),
-                    ),
-                  )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _filteredReports.length,
-                    separatorBuilder: (ctx, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (ctx, index) =>
-                        _buildReportItem(_filteredReports[index]),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1320),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.adminAccentSoft,
+                    borderRadius: BorderRadius.circular(999),
                   ),
-          ],
+                  child: const Text(
+                    'EcoTrack Admin',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.adminAccentDeep,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Bản Đồ Báo Cáo Rác",
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.8,
+                    color: AppColors.adminTextPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Theo dõi và quản lý các điểm báo cáo rác thải từ người dùng",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: AppColors.adminTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 26),
+                _buildStatCards(),
+                const SizedBox(height: 26),
+                _buildToolbar(),
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredReports.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: Text("Không tìm thấy báo cáo nào"),
+                        ),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _filteredReports.length,
+                        separatorBuilder: (ctx, index) =>
+                            const SizedBox(height: 16),
+                        itemBuilder: (ctx, index) =>
+                            _buildReportItem(_filteredReports[index]),
+                      ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -161,44 +169,63 @@ class _AdminReportPageState extends State<AdminReportPage> {
     int cleaned = _reports.where((r) => r.status == 'CLEANED').length;
     int total = _reports.length;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _statCard(
-            "Chờ xử lý",
-            "$pending",
-            Icons.access_time,
-            Colors.orange,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 16.0;
+        const minCardWidth = 280.0;
+        final width = constraints.maxWidth;
+        final calculatedCardWidth = (width - (spacing * 3)) / 4;
+        final cardWidth = calculatedCardWidth > minCardWidth
+            ? calculatedCardWidth
+            : minCardWidth;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              SizedBox(
+                width: cardWidth,
+                child: _statCard(
+                  "Chờ xử lý",
+                  "$pending",
+                  Icons.access_time,
+                  AppColors.adminAccentWarm,
+                ),
+              ),
+              const SizedBox(width: spacing),
+              SizedBox(
+                width: cardWidth,
+                child: _statCard(
+                  "Đã xác minh",
+                  "$verified",
+                  Icons.warning_amber_rounded,
+                  AppColors.adminAccentSky,
+                ),
+              ),
+              const SizedBox(width: spacing),
+              SizedBox(
+                width: cardWidth,
+                child: _statCard(
+                  "Đã dọn dẹp",
+                  "$cleaned",
+                  Icons.check_circle_outline,
+                  AppColors.adminAccent,
+                ),
+              ),
+              const SizedBox(width: spacing),
+              SizedBox(
+                width: cardWidth,
+                child: _statCard(
+                  "Tổng báo cáo",
+                  "$total",
+                  Icons.location_on_outlined,
+                  const Color(0xFF9C27B0),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _statCard(
-            "Đã xác minh",
-            "$verified",
-            Icons.warning_amber_rounded,
-            Colors.blue,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _statCard(
-            "Đã dọn dẹp",
-            "$cleaned",
-            Icons.check_circle_outline,
-            Colors.green,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _statCard(
-            "Tổng báo cáo",
-            "$total",
-            Icons.location_on_outlined,
-            Colors.purple,
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -206,33 +233,52 @@ class _AdminReportPageState extends State<AdminReportPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.adminSurface,
+            color.withValues(alpha: 0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.adminBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 32),
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: color, size: 30),
+          ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: const TextStyle(
+                  color: AppColors.adminTextSecondary,
+                  fontSize: 15,
+                ),
               ),
               Text(
                 count,
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   fontSize: 24,
-                  color: Colors.black87,
+                  color: AppColors.adminTextPrimary,
                 ),
               ),
             ],
@@ -244,66 +290,120 @@ class _AdminReportPageState extends State<AdminReportPage> {
 
   // Widget: Thanh tìm kiếm và bộ lọc
   Widget _buildToolbar() {
-    return Row(
-      children: [
-        // Ô tìm kiếm
-        Expanded(
-          child: Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) => _filterReports(),
-              decoration: const InputDecoration(
-                hintText: "Tìm kiếm theo địa điểm, mô tả...",
-                border: InputBorder.none,
-                icon: Icon(Icons.search, color: Colors.grey),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useInlineFilters = constraints.maxWidth >= 1040;
+
+        return Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.adminSurface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.adminBorder),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 54,
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) => _filterReports(),
+                        decoration: const InputDecoration(
+                          hintText: "Tìm kiếm theo địa điểm, mô tả...",
+                          border: InputBorder.none,
+                          icon: Icon(
+                            Icons.search_rounded,
+                            color: AppColors.adminTextSecondary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (useInlineFilters) ...[
+                    const SizedBox(width: 12),
+                    _buildDropdownButton(
+                      value: _selectedStatus,
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'ALL',
+                          child: Text("Tất cả trạng thái"),
+                        ),
+                        DropdownMenuItem(value: 'PENDING', child: Text("Chờ xử lý")),
+                        DropdownMenuItem(value: 'VERIFIED', child: Text("Đã xác minh")),
+                        DropdownMenuItem(value: 'CLEANED', child: Text("Đã dọn dẹp")),
+                        DropdownMenuItem(value: 'REJECTED', child: Text("Đã từ chối")),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() {
+                            _selectedStatus = val;
+                            _filterReports();
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    _buildDropdownButton(
+                      value: _selectedLevel,
+                      items: const [
+                        DropdownMenuItem(value: 'ALL', child: Text("Tất cả mức độ")),
+                        DropdownMenuItem(value: 'HIGH', child: Text("Nghiêm trọng")),
+                        DropdownMenuItem(value: 'MEDIUM', child: Text("Trung bình")),
+                        DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedLevel = val);
+                      },
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                ],
               ),
             ),
-          ),
-        ),
-        const SizedBox(width: 16),
-
-        // Dropdown Trạng thái
-        _buildDropdownButton(
-          value: _selectedStatus,
-          items: const [
-            DropdownMenuItem(value: 'ALL', child: Text("Tất cả trạng thái")),
-            DropdownMenuItem(value: 'PENDING', child: Text("Chờ xử lý")),
-            DropdownMenuItem(value: 'VERIFIED', child: Text("Đã xác minh")),
-            DropdownMenuItem(value: 'CLEANED', child: Text("Đã dọn dẹp")),
-            DropdownMenuItem(value: 'REJECTED', child: Text("Đã từ chối")),
+            if (!useInlineFilters) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _buildDropdownButton(
+                    value: _selectedStatus,
+                    items: const [
+                      DropdownMenuItem(value: 'ALL', child: Text("Tất cả trạng thái")),
+                      DropdownMenuItem(value: 'PENDING', child: Text("Chờ xử lý")),
+                      DropdownMenuItem(value: 'VERIFIED', child: Text("Đã xác minh")),
+                      DropdownMenuItem(value: 'CLEANED', child: Text("Đã dọn dẹp")),
+                      DropdownMenuItem(value: 'REJECTED', child: Text("Đã từ chối")),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedStatus = val;
+                          _filterReports();
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  _buildDropdownButton(
+                    value: _selectedLevel,
+                    items: const [
+                      DropdownMenuItem(value: 'ALL', child: Text("Tất cả mức độ")),
+                      DropdownMenuItem(value: 'HIGH', child: Text("Nghiêm trọng")),
+                      DropdownMenuItem(value: 'MEDIUM', child: Text("Trung bình")),
+                      DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedLevel = val);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ],
-          onChanged: (val) {
-            if (val != null) {
-              setState(() {
-                _selectedStatus = val;
-                _filterReports();
-              });
-            }
-          },
-        ),
-        const SizedBox(width: 16),
-
-        // Dropdown Mức độ (Placeholder)
-        _buildDropdownButton(
-          value: _selectedLevel,
-          items: const [
-            DropdownMenuItem(value: 'ALL', child: Text("Tất cả mức độ")),
-            DropdownMenuItem(value: 'HIGH', child: Text("Nghiêm trọng")),
-            DropdownMenuItem(value: 'MEDIUM', child: Text("Trung bình")),
-            DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
-          ],
-          onChanged: (val) {
-            if (val != null) setState(() => _selectedLevel = val);
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -314,11 +414,12 @@ class _AdminReportPageState extends State<AdminReportPage> {
   }) {
     return Container(
       height: 48,
+      constraints: const BoxConstraints(minWidth: 180),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        color: AppColors.adminSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -337,14 +438,14 @@ class _AdminReportPageState extends State<AdminReportPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.adminSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.adminBorder),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -393,11 +494,14 @@ class _AdminReportPageState extends State<AdminReportPage> {
                       _showDetailDialog(report);
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.black87,
-                      side: BorderSide(color: Colors.grey.shade300),
+                      foregroundColor: AppColors.adminTextPrimary,
+                      side: const BorderSide(color: AppColors.adminBorderStrong),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
                       ),
                     ),
                     child: const Text("Xem chi tiết"),
@@ -561,9 +665,10 @@ class _AdminReportPageState extends State<AdminReportPage> {
       return ElevatedButton(
         onPressed: () => _updateStatus(report.reportId, 'VERIFIED'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: AppColors.adminAccentSky,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
         child: const Text("Xác nhận"),
       );
@@ -571,9 +676,10 @@ class _AdminReportPageState extends State<AdminReportPage> {
       return ElevatedButton(
         onPressed: () => _updateStatus(report.reportId, 'CLEANED'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.adminAccent,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         ),
         child: const Text("Đã dọn xong"),
       );
