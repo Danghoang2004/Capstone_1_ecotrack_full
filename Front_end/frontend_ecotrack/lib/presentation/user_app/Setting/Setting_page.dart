@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frontend_ecotrack/core/services/auth_service.dart';
-import 'package:frontend_ecotrack/presentation/user_app/Home/controllers/profile_controller.dart';
-import 'package:frontend_ecotrack/presentation/user_app/Home/widgets/header/header.dart';
 import 'package:frontend_ecotrack/presentation/user_app/switch_tabs/ThemeService.dart';
 
 import '../introduction/introduction_page.dart';
@@ -17,14 +15,28 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final ProfileController _profileController = ProfileController();
-
-  // Các biến local khác giữ nguyên
+  // Các biến local
   bool thongBao = true;
-  bool thongbaoPush = true;
-  bool amThanh = true;
   String ngonNgu = 'Tiếng Việt';
   final List<String> languages = ['Tiếng Việt', 'English'];
+
+  // Controllers cho dialog
+  late TextEditingController _subjectController;
+  late TextEditingController _messageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _subjectController = TextEditingController();
+    _messageController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _subjectController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
 
   // --- SỬA ĐỔI: Helper Decoration động theo Theme ---
   BoxDecoration cardDecoration(BuildContext context) {
@@ -88,6 +100,135 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showContactSupportDialog() {
+    final subjectController = TextEditingController();
+    final messageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Liên Hệ Hỗ Trợ',
+          style: _headerStyle.copyWith(fontSize: 18),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Tiêu Đề', style: _headerStyle.copyWith(fontSize: 14)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: subjectController,
+                decoration: InputDecoration(
+                  hintText: 'Nhập tiêu đề...',
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Nội Dung', style: _headerStyle.copyWith(fontSize: 14)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: messageController,
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: 'Nhập nội dung tin nhắn...',
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E7D32).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF2E7D32).withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.mail, color: Color(0xFF2E7D32)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'hungdd0307@gmail.com',
+                        style: _subTextStyle.copyWith(
+                          color: const Color(0xFF2E7D32),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              if (subjectController.text.isEmpty ||
+                  messageController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vui lòng điền đầy đủ thông tin'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              // TODO: Gọi API để gửi tin nhắn hỗ trợ
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tin nhắn đã được gửi thành công'),
+                  backgroundColor: Color(0xFF2E7D32),
+                ),
+              );
+              subjectController.dispose();
+              messageController.dispose();
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2E7D32),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            ),
+            child: const Text(
+              'Gửi',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final edge = 18.0;
@@ -98,6 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
         // Icon status bar đổi màu ngược lại với nền
         statusBarIconBrightness: themeService.isDarkMode
             ? Brightness.light
@@ -112,17 +254,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Màu nền scaffold tự động lấy từ ThemeData ở main.dart
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      body: Column(
-        children: [
-          if (!widget.hideAppBar) HeaderWidget(controller: _profileController),
-
-          Expanded(
+      body: CustomScrollView(
+        slivers: [
+          // Header cố định - SliverAppBar
+          SliverAppBar(
+            pinned: true,
+            floating: false,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            expandedHeight: 70,
+            leading: null,
+            automaticallyImplyLeading: false,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                'Cài Đặt',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(18, 0, 16, 16),
+            ),
+          ),
+          // Nội dung Settings
+          SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: edge),
               child: ListView(
-                physics: const BouncingScrollPhysics(),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 6),
 
                   // --- PHẦN 1: THÔNG BÁO ---
                   Container(
@@ -157,58 +319,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             activeTrackColor: const Color(0xFF2E7D32),
                           ),
                         ),
-                        dividerThin(),
-                        // ... (Các phần settingRow khác giữ nguyên, chỉ thay style text)
-                        settingRow(
-                          leading: const Icon(
-                            Icons.push_pin,
-                            color: Color(0xFF2E7D32),
-                          ),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Thông Báo Push', style: _headerStyle),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Nhận thông báo push trên thiết bị',
-                                style: _subTextStyle,
-                              ),
-                            ],
-                          ),
-                          trailing: Switch(
-                            value: thongbaoPush,
-                            onChanged: (v) => setState(() => thongbaoPush = v),
-                            activeTrackColor: const Color(0xFF2E7D32),
-                          ),
-                        ),
-                        dividerThin(),
-                        settingRow(
-                          leading: const Icon(
-                            Icons.volume_up,
-                            color: Color(0xFF2E7D32),
-                          ),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Âm Thanh', style: _headerStyle),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Bật âm thanh cho thông báo',
-                                style: _subTextStyle,
-                              ),
-                            ],
-                          ),
-                          trailing: Switch(
-                            value: amThanh,
-                            onChanged: (v) => setState(() => amThanh = v),
-                            activeTrackColor: const Color(0xFF2E7D32),
-                          ),
-                        ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
 
                   // --- PHẦN 2: HIỂN THỊ & NGÔN NGỮ ---
                   Container(
@@ -300,10 +415,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 14),
 
-                  // --- PHẦN MỚI: THÔNG TIN & HỖ TRỢ ---
-                  const SizedBox(height: 18),
+                  // --- PHẦN 3: THÔNG TIN & HỖ TRỢ ---
                   Container(
                     decoration: cardDecoration(context),
                     padding: const EdgeInsets.symmetric(
@@ -351,28 +465,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             );
                           },
                         ),
-                        // Bạn có thể thêm các dòng như "Hướng dẫn sử dụng" hoặc "Đánh giá ứng dụng" ở đây
+                        dividerThin(),
+                        settingRow(
+                          leading: const Icon(
+                            Icons.mail_outline,
+                            color: Color(0xFF2E7D32),
+                          ),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Liên Hệ Hỗ Trợ', style: _headerStyle),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Gửi câu hỏi và nhận hỗ trợ từ team',
+                                style: _subTextStyle,
+                              ),
+                            ],
+                          ),
+                          trailing: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.color?.withOpacity(0.3),
+                          ),
+                          onTap: () {
+                            _showContactSupportDialog();
+                          },
+                        ),
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
-                  // --- PHẦN 3: TÀI KHOẢN ---
+
+                  const SizedBox(height: 14),
+
+                  // --- PHẦN 4: TÀI KHOẢN ---
                   Container(
                     decoration: cardDecoration(context),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
-                      vertical: 18,
+                      vertical: 14,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Tài Khoản & Bảo Mật',
-                          style: _headerStyle.copyWith(fontSize: 16),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Nút Đăng Xuất (Giữ nguyên logic)
+                        // Nút Đăng Xuất
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -390,7 +527,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               color: Color.fromARGB(255, 243, 243, 243),
                             ),
                             label: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 14.0),
+                              padding: EdgeInsets.symmetric(vertical: 12.0),
                               child: Text(
                                 'Đăng xuất',
                                 style: TextStyle(
@@ -416,12 +553,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 8),
                         Text(
                           'Đăng xuất tài khoản ra khỏi ứng dụng Ecotrack',
-                          style: _subTextStyle, // Dùng style động
+                          style: _subTextStyle,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
