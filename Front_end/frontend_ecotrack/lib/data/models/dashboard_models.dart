@@ -28,6 +28,59 @@ class MonthlyActivity {
   }
 }
 
+class CampaignParticipationPoint {
+  final String month;
+  final int participants;
+
+  CampaignParticipationPoint({
+    required this.month,
+    required this.participants,
+  });
+
+  factory CampaignParticipationPoint.fromJson(Map<String, dynamic> json) {
+    return CampaignParticipationPoint(
+      month: (json['month'] ?? '') as String,
+      participants: (json['participants'] is num)
+          ? (json['participants'] as num).toInt()
+          : 0,
+    );
+  }
+}
+
+class LevelDistributionItem {
+  final String level;
+  final int count;
+
+  LevelDistributionItem({required this.level, required this.count});
+
+  factory LevelDistributionItem.fromJson(Map<String, dynamic> json) {
+    return LevelDistributionItem(
+      level: (json['level'] ?? '') as String,
+      count: (json['count'] is num) ? (json['count'] as num).toInt() : 0,
+    );
+  }
+}
+
+class RecentActivityItem {
+  final String actionType;
+  final String title;
+  final String createdAt;
+
+  RecentActivityItem({
+    required this.actionType,
+    required this.title,
+    required this.createdAt,
+  });
+
+  factory RecentActivityItem.fromJson(Map<String, dynamic> json) {
+    return RecentActivityItem(
+      actionType: (json['actionType'] ?? '') as String,
+      title: (json['title'] ?? '') as String,
+      createdAt: (json['createdAt'] ?? '') as String,
+    );
+  }
+}
+
 // ===================== DASHBOARD SUMMARY MODEL =====================
 class DashboardSummary {
   final int totalUsers;
@@ -41,6 +94,9 @@ class DashboardSummary {
   final double reportGrowthPercent;
   final double campaignGrowthPercent;
   final double pointGrowthPercent;
+  final List<CampaignParticipationPoint> campaignParticipation;
+  final List<LevelDistributionItem> levelDistribution;
+  final List<RecentActivityItem> recentActivities;
 
   DashboardSummary({
     required this.totalUsers,
@@ -53,6 +109,9 @@ class DashboardSummary {
     required this.reportGrowthPercent,
     required this.campaignGrowthPercent,
     required this.pointGrowthPercent,
+    required this.campaignParticipation,
+    required this.levelDistribution,
+    required this.recentActivities,
   });
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
@@ -87,6 +146,21 @@ class DashboardSummary {
       reportGrowthPercent: _num(json['reportGrowthPercent']).toDouble(),
       campaignGrowthPercent: _num(json['campaignGrowthPercent']).toDouble(),
       pointGrowthPercent: _num(json['pointGrowthPercent']).toDouble(),
+      campaignParticipation: ((json['campaignParticipation'] as List?) ?? [])
+          .map((e) => CampaignParticipationPoint.fromJson(
+                e as Map<String, dynamic>,
+              ))
+          .toList(),
+      levelDistribution: ((json['levelDistribution'] as List?) ?? [])
+          .map((e) => LevelDistributionItem.fromJson(
+                e as Map<String, dynamic>,
+              ))
+          .toList(),
+      recentActivities: ((json['recentActivities'] as List?) ?? [])
+          .map((e) => RecentActivityItem.fromJson(
+                e as Map<String, dynamic>,
+              ))
+          .toList(),
     );
   }
 }
