@@ -50,6 +50,8 @@ public class RecycleSuggestion {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "materials_needed", nullable = false, columnDefinition = "LONGTEXT")
+    private String materialsNeeded;
 
     @OneToMany(mappedBy = "suggestion", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @OrderBy("stepOrder ASC")
@@ -141,5 +143,13 @@ public class RecycleSuggestion {
 
     public void setSteps(List<RecycleSuggestionStep> steps) {
         this.steps = steps;
+    }
+
+    public String getMaterialsNeeded() {
+        return materialsNeeded;
+    }
+
+    public void setMaterialsNeeded(String materialsNeeded) {
+        this.materialsNeeded = materialsNeeded;
     }
 }

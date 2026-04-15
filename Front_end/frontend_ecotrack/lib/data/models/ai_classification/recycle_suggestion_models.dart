@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class RecycleSuggestionListResponse {
   final bool success;
   final String code;
@@ -109,6 +111,7 @@ class RecycleSuggestionDetail {
   final String recycleImageUrl;
   final String difficultyLevel;
   final int? estimatedTimeMinutes;
+  final List<String> materialsNeeded;
   final List<RecycleSuggestionStep> steps;
 
   const RecycleSuggestionDetail({
@@ -119,11 +122,34 @@ class RecycleSuggestionDetail {
     required this.recycleImageUrl,
     required this.difficultyLevel,
     required this.estimatedTimeMinutes,
+    required this.materialsNeeded,
     required this.steps,
   });
 
   factory RecycleSuggestionDetail.fromJson(Map<String, dynamic> json) {
     final rawSteps = json['steps'] as List<dynamic>? ?? const [];
+    final rawMaterials = json['materialsNeeded'] ?? json['materials_needed'];
+
+    List<String> materials = const [];
+    if (rawMaterials is List) {
+      materials = rawMaterials.map((e) => e.toString()).toList();
+    } else if (rawMaterials is String && rawMaterials.trim().isNotEmpty) {
+      try {
+        final parsed = jsonDecode(rawMaterials);
+        if (parsed is List) {
+          materials = parsed.map((e) => e.toString()).toList();
+        } else {
+          materials = [rawMaterials];
+        }
+      } catch (_) {
+        materials = rawMaterials
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+    }
+
     return RecycleSuggestionDetail(
       suggestionId:
           ((json['suggestionId'] ?? json['suggestion_id']) as num?)?.toInt() ??
@@ -144,6 +170,7 @@ class RecycleSuggestionDetail {
           ((json['estimatedTimeMinutes'] ?? json['estimated_time_minutes'])
                   as num?)
               ?.toInt(),
+      materialsNeeded: materials,
       steps: rawSteps
           .whereType<Map<String, dynamic>>()
           .map(RecycleSuggestionStep.fromJson)
@@ -156,11 +183,15 @@ class RecycleSuggestionStep {
   final int stepOrder;
   final String stepTitle;
   final String stepDescription;
+  final String? instructionImageUrl;
+  final String? instructionVideoUrl;
 
   const RecycleSuggestionStep({
     required this.stepOrder,
     required this.stepTitle,
     required this.stepDescription,
+    required this.instructionImageUrl,
+    required this.instructionVideoUrl,
   });
 
   factory RecycleSuggestionStep.fromJson(Map<String, dynamic> json) {
@@ -171,6 +202,12 @@ class RecycleSuggestionStep {
       stepDescription:
           (json['stepDescription'] ?? json['step_description'] ?? '')
               .toString(),
+      instructionImageUrl:
+          (json['instructionImageUrl'] ?? json['instruction_image_url'])
+              ?.toString(),
+      instructionVideoUrl:
+          (json['instructionVideoUrl'] ?? json['instruction_video_url'])
+              ?.toString(),
     );
   }
 }

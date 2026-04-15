@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/ai_classification/recycle_suggestion_service.dart';
 import 'package:frontend_ecotrack/data/models/ai_classification/recycle_suggestion_models.dart';
+import 'package:frontend_ecotrack/presentation/user_app/classification/recycle_suggestion_video_page.dart';
 
 class RecycleSuggestionDetailPage extends StatefulWidget {
   final int suggestionId;
@@ -86,6 +87,32 @@ class _RecycleSuggestionDetailPageState
               ),
               const SizedBox(height: 16),
               const Text(
+                'Nguyên liệu cần có',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              if (detail.materialsNeeded.isEmpty)
+                const Text('Chưa có thông tin nguyên liệu.')
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFBFDBFE)),
+                  ),
+                  child: Text(
+                    detail.materialsNeeded.join(', '),
+                    style: const TextStyle(
+                      color: Color(0xFF1E3A8A),
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              const Text(
                 'Các bước tái chế',
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
               ),
@@ -111,6 +138,46 @@ class _RecycleSuggestionDetailPageState
                         ),
                         const SizedBox(height: 6),
                         Text(step.stepDescription),
+                        if ((step.instructionImageUrl ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              step.instructionImageUrl!,
+                              height: 160,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 160,
+                                color: const Color(0xFFE2E8F0),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'Không tải được ảnh bước này',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        if ((step.instructionVideoUrl ?? '').isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => RecycleSuggestionVideoPage(
+                                      url: step.instructionVideoUrl!,
+                                      title: step.stepTitle,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.play_circle_outline),
+                              label: const Text('Xem video hướng dẫn'),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -34,7 +34,7 @@ public class RecycleSuggestionService {
     public List<RecycleSuggestionListItemDto> findSuggestionsByWasteTypes(List<String> wasteTypes) {
         Set<String> canonicalKeys = toCanonicalWasteTypeKeys(wasteTypes);
         if (canonicalKeys.isEmpty()) {
-            throw new IllegalArgumentException("Danh sách loại rác không hợp lệ.");
+            throw new IllegalArgumentException("Danh sach loai rac khong hop le.");
         }
 
         List<RecycleSuggestion> suggestions = recycleSuggestionRepository
@@ -51,11 +51,11 @@ public class RecycleSuggestionService {
     @Transactional(readOnly = true)
     public RecycleSuggestionDetailDto getSuggestionDetail(Long suggestionId) {
         if (suggestionId == null || suggestionId <= 0) {
-            throw new IllegalArgumentException("ID gợi ý tái chế không hợp lệ.");
+            throw new IllegalArgumentException("ID goi y tai che khong hop le.");
         }
 
         RecycleSuggestion suggestion = recycleSuggestionRepository.findBySuggestionIdAndIsActiveTrue(suggestionId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy gợi ý tái chế phù hợp."));
+                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay goi y tai che phu hop."));
 
         return toDetailDto(suggestion);
     }
@@ -102,15 +102,13 @@ public class RecycleSuggestionService {
             return "";
         }
 
-        String value = Normalizer.normalize(rawType, Normalizer.Form.NFD)
+        return Normalizer.normalize(rawType, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT)
                 .replace('_', ' ')
                 .replace('-', ' ')
                 .replaceAll("\\s+", " ")
                 .trim();
-
-        return value;
     }
 
     private RecycleSuggestionListItemDto toListItemDto(RecycleSuggestion suggestion) {
@@ -136,6 +134,7 @@ public class RecycleSuggestionService {
         dto.setRecycleImageUrl(suggestion.getRecycleImageUrl());
         dto.setDifficultyLevel(suggestion.getDifficultyLevel());
         dto.setEstimatedTimeMinutes(suggestion.getEstimatedTimeMinutes());
+        dto.setMaterialsNeeded(suggestion.getMaterialsNeeded());
 
         List<RecycleSuggestionStepDto> stepDtos = new ArrayList<>();
         for (RecycleSuggestionStep step : suggestion.getSteps()) {
@@ -143,6 +142,8 @@ public class RecycleSuggestionService {
             stepDto.setStepOrder(step.getStepOrder());
             stepDto.setStepTitle(step.getStepTitle());
             stepDto.setStepDescription(step.getStepDescription());
+            stepDto.setInstructionImageUrl(step.getInstructionImageUrl());
+            stepDto.setInstructionVideoUrl(step.getInstructionVideoUrl());
             stepDtos.add(stepDto);
         }
         dto.setSteps(stepDtos);

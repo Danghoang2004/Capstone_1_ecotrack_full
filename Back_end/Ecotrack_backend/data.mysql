@@ -323,6 +323,7 @@ CREATE TABLE recycle_suggestions (
     recycle_image_url VARCHAR(500) NOT NULL,
     difficulty_level VARCHAR(50),
     estimated_time_minutes INT,
+    materials_needed LONGTEXT NOT NULL COMMENT 'Danh sach nguyen lieu can thiet (JSON hoac text)',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_recycle_suggestions_type_active (waste_type_key, is_active)
@@ -334,6 +335,8 @@ CREATE TABLE recycle_suggestion_steps (
     step_order INT NOT NULL,
     step_title VARCHAR(200) NOT NULL,
     step_description TEXT NOT NULL,
+    instruction_image_url VARCHAR(500) NULL COMMENT 'Hinh anh huong dan cho buoc nay',
+    instruction_video_url VARCHAR(500) NULL COMMENT 'Video huong dan (tuy chon)',
     FOREIGN KEY (suggestion_id) REFERENCES recycle_suggestions(suggestion_id) ON DELETE CASCADE,
     UNIQUE KEY uk_recycle_step_order (suggestion_id, step_order)
 );
@@ -346,98 +349,85 @@ INSERT INTO recycle_suggestions (
     recycle_image_url,
     difficulty_level,
     estimated_time_minutes,
+    materials_needed,
     is_active
 ) VALUES
-('nhua', 'Nhựa', 'Chậu cây mini từ chai nhựa', 'Tận dụng chai nhựa để làm chậu trồng cây để bàn.', 'https://images.unsplash.com/photo-1483794344563-d27a8d18014e', 'Dễ', 25, TRUE),
-('nhua', 'Nhựa', 'Ống đựng bút từ hộp nhựa', 'Tạo ống đựng bút gọn gàng từ hộp nhựa cũ.', 'https://images.unsplash.com/photo-1455390582262-044cdead277a', 'Dễ', 20, TRUE),
-('giay', 'Giấy', 'Giỏ đựng đồ từ bìa carton', 'Gấp và dán bìa carton thành giỏ lưu trữ đa năng.', 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4', 'Trung bình', 40, TRUE),
-('giay', 'Giấy', 'Khung ảnh handmade từ giấy', 'Làm khung ảnh trang trí từ giấy bìa và giấy màu.', 'https://images.unsplash.com/photo-1510936111840-65e151ad71bb', 'Dễ', 30, TRUE),
-('kim loai', 'Kim loại', 'Đèn nến từ lon nước', 'Biến lon nước thành đèn nến trang trí an toàn.', 'https://images.unsplash.com/photo-1463320726281-696a485928c7', 'Trung bình', 35, TRUE),
-('thuy tinh', 'Thủy tinh', 'Bình hoa từ chai thủy tinh', 'Trang trí chai thủy tinh cũ thành bình hoa.', 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad6', 'Dễ', 30, TRUE),
-('huu co', 'Rác hữu cơ', 'Phân compost tại nhà', 'Ủ rác hữu cơ thành phân bón cho cây.', 'https://images.unsplash.com/photo-1464226184884-fa280b87c399', 'Trung bình', 120, TRUE);
+('nhua', 'Nhựa', 'Chậu cây mini từ chai nhựa', 'Tận dụng chai nhựa để làm chậu trồng cây để bàn.', 'https://images.unsplash.com/photo-1483794344563-d27a8d18014e', 'Dễ', 25, '["Chai nhua cu","Keo","Keo dan","Dat trong cay","Cay nho","Dinh duc lo"]', TRUE),
+('nhua', 'Nhựa', 'Ống đựng bút từ hộp nhựa', 'Tạo ống đựng bút gọn gàng từ hộp nhựa cũ.', 'https://images.unsplash.com/photo-1455390582262-044cdead277a', 'Dễ', 20, '["Hop nhua cung","Giay mau","Keo dan","Keo cat","But marker"]', TRUE),
+('giay', 'Giấy', 'Giỏ đựng đồ từ bìa carton', 'Gấp và dán bìa carton thành giỏ lưu trữ đa năng.', 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4', 'Trung bình', 40, '["Bia carton","Keo cat","Keo nen","Giay trang tri","Vai boc ngoai"]', TRUE),
+('giay', 'Giấy', 'Khung ảnh handmade từ giấy', 'Làm khung ảnh trang trí từ giấy bìa và giấy màu.', 'https://images.unsplash.com/photo-1510936111840-65e151ad71bb', 'Dễ', 30, '["Giay bia","Giay mau","Keo dan","Keo cat","Sticker","Anh in"]', TRUE),
+('kim loai', 'Kim loại', 'Đèn nến từ lon nước', 'Biến lon nước thành đèn nến trang trí an toàn.', 'https://images.unsplash.com/photo-1463320726281-696a485928c7', 'Trung bình', 35, '["Lon nhom","Dao hoac keo","Dinh duc lo","Nen tealight"]', TRUE),
+('thuy tinh', 'Thủy tinh', 'Bình hoa từ chai thủy tinh', 'Trang trí chai thủy tinh cũ thành bình hoa.', 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad6', 'Dễ', 30, '["Chai thuy tinh","Son","Day trang tri","Keo cat","Nuoc cam hoa"]', TRUE),
+('huu co', 'Rác hữu cơ', 'Phân compost tại nhà', 'Ủ rác hữu cơ thành phân bón cho cây.', 'https://images.unsplash.com/photo-1464226184884-fa280b87c399', 'Trung bình', 120, '["Thung u","Rac huu co","La kho","Phan vi sinh","Dung cu dao"]', TRUE);
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Làm sạch nguyên liệu', 'Rửa sạch và để khô nguyên liệu trước khi thao tác.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Làm sạch nguyên liệu', 'Rửa sạch và để khô nguyên liệu trước khi thao tác.', 'https://images.unsplash.com/photo-1622287160745-14d2b51aa566', NULL
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Cắt tạo hình', 'Cắt thân chai theo chiều ngang để tạo phần thân chậu.', 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3', 'https://www.youtube.com/watch?v=TZ0yA3lM3xM'
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Hoàn thiện', 'Đục lỗ thoát nước, thêm đất và trồng cây nhỏ.', 'https://images.unsplash.com/photo-1463320898484-cdee8141c787', NULL
 FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Cắt tạo hình', 'Cắt thân chai theo chiều ngang để tạo phần thân chậu.'
-FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Hoàn thiện', 'Đục lỗ thoát nước, thêm đất và trồng cây nhỏ.'
-FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Chuẩn bị hộp nhựa', 'Chọn hộp nhựa cứng, vệ sinh sạch và để khô.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Chuẩn bị hộp nhựa', 'Chọn hộp nhựa cứng, vệ sinh sạch và để khô.', 'https://images.unsplash.com/photo-1608889335941-32ac5f2041b9', NULL
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Trang trí bề mặt', 'Dán giấy màu hoặc sơn để tạo thẩm mỹ.', 'https://images.unsplash.com/photo-1485546246426-74dc88dec4d9', 'https://www.youtube.com/watch?v=oQ9Yw2f2N2A'
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Sắp xếp sử dụng', 'Đặt lên bàn học và phân loại bút theo nhóm.', 'https://images.unsplash.com/photo-1517842645767-c639042777db', NULL
 FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Trang trí bề mặt', 'Dán giấy màu hoặc sơn để tạo thẩm mỹ.'
-FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Sắp xếp sử dụng', 'Đặt lên bàn học và phân loại bút theo nhóm.'
-FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Cắt bìa carton', 'Cắt bìa theo kích thước đáy và thành giỏ.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Cắt bìa carton', 'Cắt bìa theo kích thước đáy và thành giỏ.', 'https://images.unsplash.com/photo-1503602642458-232111445657', NULL
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Dán cố định', 'Dùng keo nến dán các mặt lại chắc chắn.', 'https://images.unsplash.com/photo-1581622558663-b2df8f5f16fa', 'https://www.youtube.com/watch?v=Fuvf6Q7t6w4'
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Bọc ngoài', 'Bọc giấy màu hoặc vải để tăng độ bền và đẹp mắt.', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee', NULL
 FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Dán cố định', 'Dùng keo nến dán các mặt lại chắc chắn.'
-FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Bọc ngoài', 'Bọc giấy màu hoặc vải để tăng độ bền và đẹp mắt.'
-FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Cắt khung giấy', 'Cắt 2 lớp bìa theo kích thước ảnh mong muốn.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Cắt khung giấy', 'Cắt 2 lớp bìa theo kích thước ảnh mong muốn.', 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30', NULL
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Dán và cố định ảnh', 'Dán lớp nền và tạo khe để thay ảnh khi cần.', 'https://images.unsplash.com/photo-1455885666463-9c1b8fd57d80', 'https://www.youtube.com/watch?v=2HqN5RjJwAE'
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Trang trí hoàn thiện', 'Trang trí thêm sticker hoặc họa tiết tự vẽ.', 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b', NULL
 FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Dán và cố định ảnh', 'Dán lớp nền và tạo khe để thay ảnh khi cần.'
-FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Trang trí hoàn thiện', 'Trang trí thêm sticker hoặc họa tiết tự vẽ.'
-FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Làm sạch lon', 'Rửa sạch lon kim loại và bóc nhãn cũ.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Làm sạch lon', 'Rửa sạch lon kim loại và bóc nhãn cũ.', 'https://images.unsplash.com/photo-1532634896-26909d0d4b6b', NULL
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Đục họa tiết', 'Đục lỗ họa tiết nhỏ xung quanh lon theo mẫu.', 'https://images.unsplash.com/photo-1516542076529-1ea3854896f2', 'https://www.youtube.com/watch?v=XnT5QJv1f5A'
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Lắp nến', 'Đặt nến tealight vào trong lon và kiểm tra an toàn.', 'https://images.unsplash.com/photo-1515444744559-5f6b18f5ddc0', NULL
 FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Đục họa tiết', 'Đục lỗ họa tiết nhỏ xung quanh lon theo mẫu.'
-FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Lắp nến', 'Đặt nến tealight vào trong lon và kiểm tra an toàn.'
-FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Rửa chai', 'Làm sạch chai thủy tinh và loại bỏ nắp cũ.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Rửa chai', 'Làm sạch chai thủy tinh và loại bỏ nắp cũ.', 'https://images.unsplash.com/photo-1576416806626-7463c5f4a3f1', NULL
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Trang trí thân chai', 'Sơn hoặc quấn dây thừng trang trí bên ngoài.', 'https://images.unsplash.com/photo-1467533003447-e295ff1b0435', 'https://www.youtube.com/watch?v=5K8n3L_p4gw'
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Cắm hoa', 'Thêm nước và cắm hoa tươi hoặc hoa khô.', 'https://images.unsplash.com/photo-1490750967868-88aa4486c946', NULL
 FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
 
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Trang trí thân chai', 'Sơn hoặc quấn dây thừng trang trí bên ngoài.'
-FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Cắm hoa', 'Thêm nước và cắm hoa tươi hoặc hoa khô.'
-FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 1, 'Chuẩn bị thùng ủ', 'Chuẩn bị thùng có lỗ thoáng và nắp đậy.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Chuẩn bị thùng ủ', 'Chuẩn bị thùng có lỗ thoáng và nắp đậy.', 'https://images.unsplash.com/photo-1608939705107-98fe503df4fe', NULL
 FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 2, 'Phân lớp rác hữu cơ', 'Xếp xen kẽ rác hữu cơ và vật liệu khô như lá khô.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Phân lớp rác hữu cơ', 'Xếp xen kẽ rác hữu cơ và vật liệu khô như lá khô.', 'https://images.unsplash.com/photo-1581579188871-45ea61f2a238', 'https://www.youtube.com/watch?v=TCQx2fLCM9k'
 FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
-
-INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description)
-SELECT suggestion_id, 3, 'Theo dõi độ ẩm', 'Đảo đều định kỳ và giữ độ ẩm vừa phải đến khi hoai mục.'
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Theo dõi độ ẩm', 'Đảo đều định kỳ và giữ độ ẩm vừa phải đến khi hoai mục.', 'https://images.unsplash.com/photo-1464226184884-fa280b87c399', NULL
 FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
 
 -- ================================================================
