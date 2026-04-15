@@ -18,6 +18,9 @@ public class DashboardResponse {
 
     private List<MonthlyActivityDto> monthlyActivity;
     private Map<String, Long> reportStatus; // PENDING / VERIFIED / REJECTED / CLEANED
+    private List<DashboardCampaignParticipationDto> campaignParticipation;
+    private List<DashboardLevelDistributionDto> levelDistribution;
+    private List<DashboardRecentActivityDto> recentActivities;
 
     // ===== GET/SET TỔNG QUAN =====
     public long getTotalUsers() {
@@ -100,5 +103,29 @@ public class DashboardResponse {
 
     public void setReportStatus(Map<String, Long> reportStatus) {
         this.reportStatus = reportStatus;
+    }
+
+    public List<DashboardCampaignParticipationDto> getCampaignParticipation() {
+        return campaignParticipation;
+    }
+
+    public void setCampaignParticipation(List<DashboardCampaignParticipationDto> campaignParticipation) {
+        this.campaignParticipation = campaignParticipation;
+    }
+
+    public List<DashboardLevelDistributionDto> getLevelDistribution() {
+        return levelDistribution;
+    }
+
+    public void setLevelDistribution(List<DashboardLevelDistributionDto> levelDistribution) {
+        this.levelDistribution = levelDistribution;
+    }
+
+    public List<DashboardRecentActivityDto> getRecentActivities() {
+        return recentActivities;
+    }
+
+    public void setRecentActivities(List<DashboardRecentActivityDto> recentActivities) {
+        this.recentActivities = recentActivities;
     }
 }

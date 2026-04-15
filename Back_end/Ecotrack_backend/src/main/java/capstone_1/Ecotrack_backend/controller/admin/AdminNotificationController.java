@@ -40,4 +40,31 @@ public class AdminNotificationController {
         notificationRepository.save(n);
         return ResponseEntity.ok(Map.of("success", true));
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateNotification(@PathVariable Long id, @RequestBody Map<String, String> updates) {
+        Notification n = notificationRepository
+                .findByIdAndSourceScope(id, NotificationSourceScope.ADMIN_BROADCAST_MASTER)
+                .orElseThrow(() -> new RuntimeException("Admin notification not found"));
+        
+        if (updates.containsKey("title") && updates.get("title") != null) {
+            n.setTitle(updates.get("title"));
+        }
+        if (updates.containsKey("message") && updates.get("message") != null) {
+            n.setMessage(updates.get("message"));
+        }
+        
+        notificationRepository.save(n);
+        return ResponseEntity.ok(Map.of("success", true, "notification", NotificationResponse.fromEntity(n)));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
+        Notification n = notificationRepository
+                .findByIdAndSourceScope(id, NotificationSourceScope.ADMIN_BROADCAST_MASTER)
+                .orElseThrow(() -> new RuntimeException("Admin notification not found"));
+        
+        notificationRepository.delete(n);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
 }
