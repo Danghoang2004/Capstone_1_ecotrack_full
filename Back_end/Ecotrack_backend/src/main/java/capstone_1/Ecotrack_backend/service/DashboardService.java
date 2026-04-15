@@ -2,11 +2,16 @@ package capstone_1.Ecotrack_backend.service;
 
 // src/main/java/com/ecotrack/admin/service/DashboardService.java
 
+import capstone_1.Ecotrack_backend.dto.response.DashboardCampaignParticipationDto;
+import capstone_1.Ecotrack_backend.dto.response.DashboardLevelDistributionDto;
 import capstone_1.Ecotrack_backend.dto.response.DashboardResponse;
+import capstone_1.Ecotrack_backend.dto.response.DashboardRecentActivityDto;
 import capstone_1.Ecotrack_backend.dto.response.MonthlyActivityDto;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
+import java.time.YearMonth;
 import java.time.YearMonth;
 import java.util.*;
 
@@ -78,6 +83,15 @@ public class DashboardService {
                 // 6. Thống kê trạng thái báo cáo rác
                 res.setReportStatus(buildReportStatus());
 
+                // 7. Tham gia chiến dịch theo tháng
+                res.setCampaignParticipation(buildCampaignParticipation());
+
+                // 8. Phân bố cấp độ người dùng theo điểm hiện tại
+                res.setLevelDistribution(buildLevelDistribution());
+
+                // 9. Hoạt động gần đây lấy từ activity_logs
+                res.setRecentActivities(buildRecentActivities());
+
                 return res;
         }
 
@@ -125,8 +139,8 @@ public class DashboardService {
                         if (monthlyCampaigns == null)
                                 monthlyCampaigns = 0L;
 
-                        // T1..T5 theo thứ tự thời gian
-                        String label = "T" + (5 - i);
+                        String label = ym.getMonth().getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.forLanguageTag("vi-VN"))
+                                        + "/" + year;
 
                         list.add(new MonthlyActivityDto(
                                         label,
@@ -150,5 +164,86 @@ public class DashboardService {
                 });
 
                 return map;
+        }
+
+        private List<DashboardCampaignParticipationDto> buildCampaignParticipation() {
+                List<DashboardCampaignParticipationDto> list = new ArrayList<>();
+                YearMonth current = YearMonth.now();
+
+                for (int i = 4; i >= 0; i--) {
+                        YearMonth ym = current.minusMonths(i);
+                        int year = ym.getYear();
+                        int month = ym.getMonthValue();
+
+                        Long participants = jdbcTemplate.queryForObject(
+                                        "SELECT COUNT(*) FROM campaign_participants " +
+                                                        "WHERE YEAR(joined_at) = ? AND MONTH(joined_at) = ?",
+                                        Long.class, year, month);
+
+                        list.add(new DashboardCampaignParticipationDto(
+                                        ym.getMonth().getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.forLanguageTag("vi-VN"))
+                                                        + "/" + year,
+                                        participants != null ? participants : 0L));
+                }
+
+                return list;
+        }
+
+        private List<DashboardLevelDistributionDto> buildLevelDistribution() {
+                String sql = "SELECT " +
+                                "SUM(CASE WHEN points < 300 THEN 1 ELSE 0 END) AS bronzeCount, " +
+                                "SUM(CASE WHEN points >= 300 AND points < 600 THEN 1 ELSE 0 END) AS silverCount, " +
+                                "SUM(CASE WHEN points >= 600 AND points < 900 THEN 1 ELSE 0 END) AS goldCount, " +
+                                "SUM(CASE WHEN points >= 900 THEN 1 ELSE 0 END) AS platinumCount " +
+                                "FROM user_points";
+
+                Map<String, Object> row = jdbcTemplate.queryForMap(sql);
+
+                return List.of(
+                                new DashboardLevelDistributionDto("Bronze", toLong(row.get("bronzeCount"))),
+                                new DashboardLevelDistributionDto("Silver", toLong(row.get("silverCount"))),
+                                new DashboardLevelDistributionDto("Gold", toLong(row.get("goldCount"))),
+                                new DashboardLevelDistributionDto("Platinum", toLong(row.get("platinumCount"))));
+        }
+
+        private List<DashboardRecentActivityDto> buildRecentActivities() {
+                String sql = "SELECT al.action, al.created_at, u.username " +
+                                "FROM activity_logs al " +
+                                "JOIN users u ON u.user_id = al.user_id " +
+                                "ORDER BY al.created_at DESC, al.log_id DESC " +
+                                "LIMIT 4";
+
+                List<DashboardRecentActivityDto> activities = new ArrayList<>();
+                jdbcTemplate.query(sql, rs -> {
+                        String action = rs.getString("action");
+                        String username = rs.getString("username");
+                        Timestamp createdAt = rs.getTimestamp("created_at");
+                        activities.add(new DashboardRecentActivityDto(
+                                        action,
+                                        buildActivityTitle(action, username),
+                                        createdAt != null ? createdAt.toLocalDateTime().toString() : null));
+                });
+
+                return activities;
+        }
+
+        private long toLong(Object value) {
+                if (value instanceof Number number) {
+                        return number.longValue();
+                }
+                return 0L;
+        }
+
+        private String buildActivityTitle(String action, String username) {
+                String displayName = (username == null || username.isBlank()) ? "một người dùng" : username;
+
+                return switch (action) {
+                        case "CREATE_REPORT" -> "Người dùng " + displayName + " vừa tạo báo cáo rác mới";
+                        case "JOIN_CAMPAIGN" -> "Người dùng " + displayName + " vừa tham gia chiến dịch";
+                        case "COMPLETE_QUIZ" -> "Người dùng " + displayName + " vừa hoàn thành quiz";
+                        case "REDEEM_COUPON" -> "Người dùng " + displayName + " vừa đổi voucher";
+                        case "UPDATE_PROFILE" -> "Người dùng " + displayName + " vừa cập nhật hồ sơ";
+                        default -> "Người dùng " + displayName + " vừa thực hiện hoạt động hệ thống";
+                };
         }
 }

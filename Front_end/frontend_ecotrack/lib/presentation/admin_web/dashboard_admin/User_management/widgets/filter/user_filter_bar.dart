@@ -101,7 +101,10 @@ class UserFilterBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            _buildDropdown(),
+            SizedBox(
+              width: isMobile ? 150 : 180,
+              child: _buildDropdown(),
+            ),
           ],
         ),
       ],

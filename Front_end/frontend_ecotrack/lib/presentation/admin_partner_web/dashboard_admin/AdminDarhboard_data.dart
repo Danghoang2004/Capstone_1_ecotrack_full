@@ -1,7 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/core/services/admin_dashboard_api.dart';
+import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/data/models/dashboard_models.dart';
 
 const Color primaryGreen = AppColors.adminAccent;
@@ -36,7 +36,7 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return Center(child: Text("Lỗi dữ liệu: ${snap.error}"));
+          return Center(child: Text('Lỗi dữ liệu: ${snap.error}'));
         }
 
         final data = snap.data!;
@@ -53,16 +53,15 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     );
   }
 
-  // ===================== MAIN CONTENT =====================
   Widget _buildDashboardContent(DashboardSummary data) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final double viewportWidth = constraints.maxWidth;
         final int statsPerRow = viewportWidth >= 980
             ? 4
-          : viewportWidth >= 760
-                    ? 2
-                    : 1;
+            : viewportWidth >= 760
+                ? 2
+                : 1;
         final double statsGap = 16;
         final double statsCardWidth =
             (viewportWidth - (statsGap * (statsPerRow - 1))) / statsPerRow;
@@ -80,10 +79,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 SizedBox(
                   width: statsCardWidth,
                   child: _StatCard(
-                    title: "Tổng người dùng",
+                    title: 'Tổng người dùng',
                     value: data.totalUsers.toString(),
                     subtitle:
-                        "${data.userGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                        '${data.userGrowthPercent.toStringAsFixed(1)}% so với tháng trước',
                     icon: Icons.group_outlined,
                     iconBg: const Color(0xFFE4F2E8),
                     cardTint: const Color(0xFFF5FBF7),
@@ -94,10 +93,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 SizedBox(
                   width: statsCardWidth,
                   child: _StatCard(
-                    title: "Báo cáo rác",
+                    title: 'Báo cáo rác',
                     value: data.totalReports.toString(),
                     subtitle:
-                        "${data.reportGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                        '${data.reportGrowthPercent.toStringAsFixed(1)}% so với tháng trước',
                     icon: Icons.place_outlined,
                     iconBg: const Color(0xFFFFF0E3),
                     cardTint: const Color(0xFFFFFAF4),
@@ -108,10 +107,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 SizedBox(
                   width: statsCardWidth,
                   child: _StatCard(
-                    title: "Chiến dịch",
+                    title: 'Chiến dịch',
                     value: data.totalCampaigns.toString(),
                     subtitle:
-                        "${data.campaignGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                        '${data.campaignGrowthPercent.toStringAsFixed(1)}% so với tháng trước',
                     icon: Icons.radio_button_checked_outlined,
                     iconBg: const Color(0xFFE6F4F1),
                     cardTint: const Color(0xFFF2FAF8),
@@ -122,10 +121,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 SizedBox(
                   width: statsCardWidth,
                   child: _StatCard(
-                    title: "Điểm thưởng",
+                    title: 'Điểm thưởng',
                     value: data.totalPoints.toString(),
                     subtitle:
-                        "${data.pointGrowthPercent.toStringAsFixed(1)}% so với tháng trước",
+                        '${data.pointGrowthPercent.toStringAsFixed(1)}% so với tháng trước',
                     icon: Icons.emoji_events_outlined,
                     iconBg: const Color(0xFFFFF5D9),
                     cardTint: const Color(0xFFFFFCEF),
@@ -158,21 +157,27 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 6, child: _buildCampaignParticipationCard()),
+                  Expanded(
+                    flex: 6,
+                    child: _buildCampaignParticipationCard(data),
+                  ),
                   const SizedBox(width: 20),
-                  Expanded(flex: 5, child: _buildUserLevelDistributionCard()),
+                  Expanded(
+                    flex: 5,
+                    child: _buildUserLevelDistributionCard(data),
+                  ),
                 ],
               )
             else
               Column(
                 children: [
-                  _buildCampaignParticipationCard(),
+                  _buildCampaignParticipationCard(data),
                   const SizedBox(height: 20),
-                  _buildUserLevelDistributionCard(),
+                  _buildUserLevelDistributionCard(data),
                 ],
               ),
             const SizedBox(height: 26),
-            _buildRecentActivityCard(),
+            _buildRecentActivityCard(data),
           ],
         );
       },
@@ -197,7 +202,6 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final bool compact = constraints.maxWidth < 860;
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -278,7 +282,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                       children: [
                         _buildHeroMetric('Người dùng', data.totalUsers.toString()),
                         _buildHeroMetric('Báo cáo', data.totalReports.toString()),
-                        _buildHeroMetric('Chiến dịch', data.totalCampaigns.toString()),
+                        _buildHeroMetric(
+                          'Chiến dịch',
+                          data.totalCampaigns.toString(),
+                        ),
                       ],
                     ),
                   ],
@@ -300,11 +307,7 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -321,13 +324,7 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.82),
-              fontSize: 12,
-            ),
-          ),
+          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.82), fontSize: 12)),
           const SizedBox(height: 4),
           Text(
             value,
@@ -342,9 +339,15 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     );
   }
 
-  // ===================== LINE CHART CARD =====================
   Widget _buildLineChartCard(DashboardSummary data) {
-    // ====== TÍNH DỮ LIỆU NHƯ CŨ ======
+    if (data.monthlyActivity.isEmpty) {
+      return const _CardContainer(
+        title: 'Xu hướng hoạt động theo tháng',
+        height: 360,
+        child: Center(child: Text('Chưa có dữ liệu')),
+      );
+    }
+
     final usersSpots = <FlSpot>[];
     final reportsSpots = <FlSpot>[];
     final campaignsSpots = <FlSpot>[];
@@ -353,7 +356,6 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
 
     for (int i = 0; i < data.monthlyActivity.length; i++) {
       final m = data.monthlyActivity[i];
-
       final u = m.users.toDouble();
       final r = m.reports.toDouble();
       final c = m.campaigns.toDouble();
@@ -368,193 +370,212 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     if (maxY < 10) maxY = 10;
     maxY = ((maxY / 20).ceil() * 20).toDouble();
 
-    // ====== CARD + CHART ĐÃ SỬA ======
+    final intervalY = (maxY / 3).ceilToDouble();
+
     return _CardContainer(
-      title: "Xu hướng hoạt động theo tháng",
-      // chiều cao cố định, không cho “co giãn” khi tooltip xuất hiện
+      title: 'Xu hướng hoạt động theo tháng',
       height: 360,
-      child: SizedBox.expand(
-        child: LineChart(
-          LineChartData(
-            minX: 0,
-            maxX: (data.monthlyActivity.length - 1).toDouble(),
-            minY: 0,
-            maxY: maxY,
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: maxY / 4,
-            ),
-            borderData: FlBorderData(
-              show: true,
-              border: const Border(
-                left: BorderSide(color: Colors.black45, width: 1),
-                bottom: BorderSide(color: Colors.black45, width: 1),
-                right: BorderSide(color: Colors.transparent),
-                top: BorderSide(color: Colors.transparent),
-              ),
-            ),
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 32,
-                  interval: maxY / 4,
-                  getTitlesWidget: (value, meta) => Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 1,
-                  getTitlesWidget: (value, meta) {
-                    final idx = value.toInt();
-                    if (idx < 0 || idx >= data.monthlyActivity.length) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        data.monthlyActivity[idx].month, // "T1".."T5"
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-            ),
-
-            // ===== TOOLTIP KHÔNG LÀM LỆCH LAYOUT =====
-            lineTouchData: LineTouchData(
-              enabled: false,
-              handleBuiltInTouches: true,
-              touchTooltipData: LineTouchTooltipData(
-                tooltipRoundedRadius: 8,
-                tooltipPadding: const EdgeInsets.all(8),
-                tooltipMargin: 8,
-                tooltipBorder: const BorderSide(color: Colors.black12),
-                getTooltipColor: (spot) => Colors.white,
-                // ép tooltip nằm GỌN trong chart, không đẩy layout ra ngoài
-                fitInsideHorizontally: true,
-                fitInsideVertically: true,
-                getTooltipItems: (touchedSpots) {
-                  if (touchedSpots.isEmpty) return [];
-
-                  final idx = touchedSpots.first.x.toInt();
-                  final m = data.monthlyActivity[idx];
-
-                  return [
-                    LineTooltipItem(
-                      '${m.month}\n',
-                      const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Colors.black,
-                      ),
-                    ),
-                    LineTooltipItem(
-                      'Báo cáo: ${m.reports}\n',
-                      const TextStyle(color: Colors.red, fontSize: 12),
-                    ),
-                    LineTooltipItem(
-                      'Chiến dịch: ${m.campaigns}\n',
-                      const TextStyle(color: Color(0xFF2F8DE4), fontSize: 12),
-                    ),
-                    LineTooltipItem(
-                      'Người dùng: ${m.users}',
-                      const TextStyle(color: Color(0xFF1FA971), fontSize: 12),
-                    ),
-                  ];
-                },
-              ),
-            ),
-
-            lineBarsData: [
-              LineChartBarData(
-                isCurved: true,
-                color: const Color(0xFF2F8C4C),
-                barWidth: 2.5,
-                spots: usersSpots,
-                dotData: FlDotData(show: false),
-              ),
-              LineChartBarData(
-                isCurved: true,
-                color: AppColors.adminAccentWarm,
-                barWidth: 2.5,
-                spots: reportsSpots,
-                dotData: FlDotData(show: false),
-              ),
-              LineChartBarData(
-                isCurved: true,
-                color: AppColors.adminAccentSky,
-                barWidth: 2.5,
-                spots: campaignsSpots,
-                dotData: FlDotData(show: false),
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Wrap(
+            spacing: 14,
+            runSpacing: 8,
+            children: [
+              _ChartLegendItem(label: 'Người dùng', color: Color(0xFF4285F4)),
+              _ChartLegendItem(label: 'Báo cáo', color: Color(0xFFFF8A65)),
+              _ChartLegendItem(label: 'Chiến dịch', color: Color(0xFF34A853)),
             ],
           ),
-        ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: LineChart(
+              LineChartData(
+                minX: 0,
+                maxX: (data.monthlyActivity.length - 1).toDouble(),
+                minY: 0,
+                maxY: maxY,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval: intervalY,
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 32,
+                      interval: intervalY,
+                      getTitlesWidget: (value, meta) => Text(
+                        value.toInt().toString(),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        final idx = value.toInt();
+                        if (idx < 0 || idx >= data.monthlyActivity.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            _shortMonthLabel(data.monthlyActivity[idx].month),
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                ),
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    tooltipRoundedRadius: 8,
+                    fitInsideHorizontally: true,
+                    fitInsideVertically: true,
+                    getTooltipColor: (spot) => Colors.black87,
+                    getTooltipItems: (touchedSpots) {
+                      if (touchedSpots.isEmpty) return [];
+
+                      final monthIndex = touchedSpots.first.x.toInt();
+                      final monthLabel = (monthIndex >= 0 && monthIndex < data.monthlyActivity.length)
+                          ? data.monthlyActivity[monthIndex].month
+                          : '';
+
+                      return touchedSpots
+                          .map(
+                            (spot) => LineTooltipItem(
+                              monthLabel.isEmpty
+                                  ? spot.y.toInt().toString()
+                                  : '$monthLabel: ${spot.y.toInt()}',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                          .toList();
+                    },
+                  ),
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    isCurved: false,
+                    color: const Color(0xFF4285F4),
+                    barWidth: 2.2,
+                    spots: usersSpots,
+                    dotData: FlDotData(show: false),
+                  ),
+                  LineChartBarData(
+                    isCurved: false,
+                    color: const Color(0xFFFF8A65),
+                    barWidth: 2.2,
+                    spots: reportsSpots,
+                    dotData: FlDotData(show: false),
+                  ),
+                  LineChartBarData(
+                    isCurved: false,
+                    color: const Color(0xFF34A853),
+                    barWidth: 2.2,
+                    spots: campaignsSpots,
+                    dotData: FlDotData(show: false),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ===================== PIE CHART CARD =====================
   Widget _buildPieChart(DashboardSummary data) {
-    final total = data.reportStatus.values.fold<int>(0, (p, e) => p + e);
-
-    final orderedKeys = ["PENDING", "VERIFIED", "CLEANED", "REJECTED"];
-
+    final orderedKeys = ['PENDING', 'VERIFIED', 'CLEANED', 'REJECTED'];
+    final total = orderedKeys.fold<int>(
+      0,
+      (sum, key) => sum + (data.reportStatus[key] ?? 0),
+    );
     final viLabel = {
-      "PENDING": "Đang chờ xử lý",
-      "VERIFIED": "Đã xác minh",
-      "CLEANED": "Đã dọn dẹp",
-      "REJECTED": "Bị từ chối",
+      'PENDING': 'Đang chờ xử lý',
+      'VERIFIED': 'Đã xác minh',
+      'CLEANED': 'Đã dọn dẹp',
+      'REJECTED': 'Bị từ chối',
     };
-
     final colors = {
-      "PENDING": const Color(0xFF90A4AE),
-      "VERIFIED": const Color(0xFF2F8C4C),
-      "CLEANED": AppColors.adminAccentSky,
-      "REJECTED": AppColors.adminAccentWarm,
+      'PENDING': const Color(0xFF90A4AE),
+      'VERIFIED': const Color(0xFF34A853),
+      'CLEANED': const Color(0xFF4285F4),
+      'REJECTED': const Color(0xFFFF8A65),
     };
 
     return _CardContainer(
-      title: "Trạng thái báo cáo rác",
+      title: 'Trạng thái báo cáo rác',
+      height: 360,
       child: Row(
         children: [
           Expanded(
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 0,
-                sections: orderedKeys.map((key) {
-                  final value = data.reportStatus[key] ?? 0;
-                  if (total == 0 || value == 0) {
-                    return PieChartSectionData(value: 0, title: "");
-                  }
-                  final percent = (value / total) * 100;
-                  return PieChartSectionData(
-                    value: value.toDouble(),
-                    title: "${percent.toStringAsFixed(0)}%",
-                    radius: 60,
-                    color: colors[key],
-                    titleStyle: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                PieChart(
+                  PieChartData(
+                    sectionsSpace: 2,
+                    centerSpaceRadius: 38,
+                    startDegreeOffset: -90,
+                    sections: orderedKeys.map((key) {
+                      final value = data.reportStatus[key] ?? 0;
+                      if (total == 0 || value == 0) {
+                        return PieChartSectionData(value: 0, title: '');
+                      }
+                      final percent = (value / total) * 100;
+                      return PieChartSectionData(
+                        value: value.toDouble(),
+                        title: '${percent.toStringAsFixed(0)}%',
+                        radius: 70,
+                        color: colors[key],
+                        titleStyle: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Tổng',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.adminTextSecondary,
+                      ),
                     ),
-                  );
-                }).toList(),
-              ),
+                    Text(
+                      total.toString(),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.adminTextPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -565,21 +586,21 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 final value = data.reportStatus[key] ?? 0;
                 final percent = total == 0 ? 0 : (value / total * 100).round();
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     children: [
                       Container(
-                        width: 10,
-                        height: 10,
+                        width: 12,
+                        height: 12,
                         decoration: BoxDecoration(
                           color: colors[key],
-                          borderRadius: BorderRadius.circular(3),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "${viLabel[key]} $percent%",
+                          '${viLabel[key]} $percent% ($value)',
                           style: const TextStyle(fontSize: 13),
                         ),
                       ),
@@ -594,20 +615,31 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     );
   }
 
-  // ===================== THAM GIA CHIẾN DỊCH =====================
-  Widget _buildCampaignParticipationCard() {
-    final participants = [80.0, 60.0, 90.0, 120.0];
-    final spots = <FlSpot>[];
-
-    for (int i = 0; i < participants.length; i++) {
-      spots.add(FlSpot((i + 1).toDouble(), participants[i]));
+  Widget _buildCampaignParticipationCard(DashboardSummary data) {
+    if (data.campaignParticipation.isEmpty) {
+      return const _CardContainer(
+        title: 'Tham gia chiến dịch',
+        height: 320,
+        child: Center(child: Text('Chưa có dữ liệu')),
+      );
     }
 
-    final maxValue = participants.reduce((a, b) => a > b ? a : b);
-    final maxY = ((maxValue / 20).ceil() * 20).toDouble();
+    final spots = <FlSpot>[];
+    double maxY = 0;
+
+    for (int i = 0; i < data.campaignParticipation.length; i++) {
+      final val = data.campaignParticipation[i].participants.toDouble();
+      spots.add(FlSpot(i.toDouble(), val));
+      if (val > maxY) maxY = val;
+    }
+
+    if (maxY < 10) maxY = 10;
+    maxY = ((maxY / 20).ceil() * 20).toDouble();
+
+    final intervalY = (maxY / 3).ceilToDouble();
 
     return _CardContainer(
-      title: "Tham gia chiến dịch",
+      title: 'Tham gia chiến dịch',
       height: 320,
       child: LineChart(
         LineChartData(
@@ -616,20 +648,18 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            horizontalInterval: maxY / 4,
+            horizontalInterval: intervalY,
           ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 32,
-                interval: maxY / 4,
-                getTitlesWidget: (value, meta) {
-                  return Text(
-                    value.toInt().toString(),
-                    style: const TextStyle(fontSize: 11),
-                  );
-                },
+                interval: intervalY,
+                getTitlesWidget: (value, meta) => Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(fontSize: 11),
+                ),
               ),
             ),
             bottomTitles: AxisTitles(
@@ -638,13 +668,13 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 interval: 1,
                 getTitlesWidget: (value, meta) {
                   final idx = value.toInt();
-                  if (idx < 1 || idx > participants.length) {
+                  if (idx < 0 || idx >= data.campaignParticipation.length) {
                     return const SizedBox.shrink();
                   }
                   return Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      idx.toString(),
+                      _shortMonthLabel(data.campaignParticipation[idx].month),
                       style: const TextStyle(fontSize: 11),
                     ),
                   );
@@ -658,20 +688,12 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
               sideTitles: SideTitles(showTitles: false),
             ),
           ),
-          borderData: FlBorderData(
-            show: true,
-            border: const Border(
-              left: BorderSide(color: Colors.black45, width: 1),
-              bottom: BorderSide(color: Colors.black45, width: 1),
-              right: BorderSide(color: Colors.transparent),
-              top: BorderSide(color: Colors.transparent),
-            ),
-          ),
+          borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
-              isCurved: true,
+              isCurved: false,
               color: const Color(0xFF2F8C4C),
-              barWidth: 2.5,
+              barWidth: 2.2,
               spots: spots,
               dotData: FlDotData(show: false),
             ),
@@ -681,24 +703,36 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     );
   }
 
-  // ===================== PHÂN BỐ CẤP ĐỘ NGƯỜI DÙNG =====================
-  Widget _buildUserLevelDistributionCard() {
-    final levels = [
-      _LevelData("Bronze", const Color(0xFF8D6E63), 180),
-      _LevelData("Silver", const Color(0xFF90A4AE), 95),
-      _LevelData("Gold", AppColors.adminAccent, 45),
-      _LevelData("Platinum", AppColors.adminAccentSky, 12),
-    ];
+  Widget _buildUserLevelDistributionCard(DashboardSummary data) {
+    if (data.levelDistribution.isEmpty) {
+      return const _CardContainer(
+        title: 'Phân bố cấp độ người dùng',
+        height: 320,
+        child: Center(child: Text('Chưa có dữ liệu')),
+      );
+    }
 
-    final maxCount = levels.map((e) => e.count).reduce((a, b) => a > b ? a : b);
+    final levels = data.levelDistribution.map((e) {
+      Color c = AppColors.adminAccent;
+      final lvlStr = e.level.toLowerCase();
+      if (lvlStr.contains('bronze')) c = const Color(0xFF8D6E63);
+      if (lvlStr.contains('silver')) c = const Color(0xFF90A4AE);
+      if (lvlStr.contains('gold')) c = AppColors.adminAccent;
+      if (lvlStr.contains('platinum')) c = AppColors.adminAccentSky;
+      return _LevelData(e.level, c, e.count);
+    }).toList();
+
+    final maxCount = levels.isEmpty
+        ? 0
+        : levels.map((e) => e.count).reduce((a, b) => a > b ? a : b);
 
     return _CardContainer(
-      title: "Phân bố cấp độ người dùng",
+      title: 'Phân bố cấp độ người dùng',
       height: 320,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: levels.map((level) {
-          final ratio = level.count / maxCount;
+          final ratio = maxCount == 0 ? 0.0 : level.count / maxCount;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
@@ -706,16 +740,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(
-                    color: level.color,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: level.color, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(
-                  width: 70,
-                  child: Text(level.name, style: const TextStyle(fontSize: 13)),
-                ),
+                SizedBox(width: 70, child: Text(level.name, style: const TextStyle(fontSize: 13))),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Stack(
@@ -757,33 +785,27 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     );
   }
 
-  // ===================== HOẠT ĐỘNG GẦN ĐÂY =====================
-  Widget _buildRecentActivityCard() {
-    final activities = [
-      _ActivityItem(
-            color: AppColors.adminAccent,
-        title: "Chiến dịch \"Dọn dẹp bãi biển Vũng Tàu\" đã hoàn thành",
-        time: "2 giờ trước · 120 người tham gia",
-      ),
-      _ActivityItem(
-            color: AppColors.adminAccentSky,
-        title: "15 báo cáo rác mới đã được xác minh",
-        time: "2 giờ trước · 120 người tham gia",
-      ),
-      _ActivityItem(
-        color: AppColors.adminAccentWarm,
-        title: "25 người dùng mới đăng ký tham gia hệ thống",
-        time: "2 giờ trước · 120 người tham gia",
-      ),
-      _ActivityItem(
-        color: const Color(0xFF28B89A),
-        title: "Chiến dịch \"Làm sạch sông Sài Gòn\" đã được tạo",
-        time: "2 giờ trước · 120 người tham gia",
-      ),
-    ];
+  Widget _buildRecentActivityCard(DashboardSummary data) {
+    if (data.recentActivities.isEmpty) {
+      return const _CardContainer(
+        title: 'Hoạt động gần đây',
+        height: 260,
+        child: Center(child: Text('Chưa có hoạt động nào')),
+      );
+    }
+
+    final activities = data.recentActivities.map((e) {
+      Color c = AppColors.adminTextSecondary;
+      if (e.actionType == 'CREATE_REPORT') c = AppColors.adminAccent;
+      if (e.actionType == 'JOIN_CAMPAIGN') c = AppColors.adminAccentSky;
+      if (e.actionType == 'COMPLETE_QUIZ') c = AppColors.adminAccentWarm;
+      if (e.actionType == 'REDEEM_COUPON') c = const Color(0xFF28B89A);
+
+      return _ActivityItem(color: c, title: e.title, time: _formatRelativeTime(e.createdAt));
+    }).toList();
 
     return _CardContainer(
-      title: "Hoạt động gần đây",
+      title: 'Hoạt động gần đây',
       height: 260,
       child: ListView.separated(
         itemCount: activities.length,
@@ -796,28 +818,16 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 width: 10,
                 height: 10,
                 margin: const EdgeInsets.only(top: 6),
-                decoration: BoxDecoration(
-                  color: item.color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text(item.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 2),
-                    Text(
-                      item.time,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
+                    Text(item.time, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
@@ -828,57 +838,60 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
       ),
     );
   }
+
+  String _formatRelativeTime(String isoDateTime) {
+    if (isoDateTime.isEmpty) return 'Vừa xong';
+    final createdAt = DateTime.tryParse(isoDateTime);
+    if (createdAt == null) return 'Vừa xong';
+
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inMinutes < 1) return 'Vừa xong';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} phút trước';
+    if (diff.inHours < 24) return '${diff.inHours} giờ trước';
+    return '${diff.inDays} ngày trước';
+  }
+
+  String _shortMonthLabel(String label) {
+    final trimmed = label.trim();
+    final match = RegExp(r'(\d{1,2})\s*/\s*(\d{4})').firstMatch(trimmed);
+    if (match != null) {
+      final month = match.group(1)!;
+      final year2 = match.group(2)!.substring(2);
+      return '$month/$year2';
+    }
+    return trimmed.replaceAll('thg ', '').replaceAll('tháng ', '');
+  }
 }
 
-// ===================== REUSABLE WIDGETS & MODELS =====================
-
-class _SidebarItem extends StatelessWidget {
-  final IconData icon;
+class _ChartLegendItem extends StatelessWidget {
   final String label;
-  final bool selected;
-  final VoidCallback? onTap;
+  final Color color;
 
-  const _SidebarItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    this.onTap,
-  });
+  const _ChartLegendItem({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          height: 44,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
           decoration: BoxDecoration(
-            color: selected ? primaryGreen : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: selected ? Colors.white : Colors.black87,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected ? Colors.white : Colors.black87,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 13,
-                ),
-              ),
-            ],
+            color: color,
+            borderRadius: BorderRadius.circular(999),
           ),
         ),
-      ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.adminTextSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -913,10 +926,7 @@ class _StatCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            cardTint ?? cardBg,
-            AppColors.adminSurface,
-          ],
+          colors: [cardTint ?? cardBg, AppColors.adminSurface],
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.adminBorder),
@@ -931,13 +941,13 @@ class _StatCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
               color: iconBg,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, size: 22),
+            child: Icon(icon, size: 24, color: Colors.black87),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -964,16 +974,9 @@ class _StatCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.trending_up,
-                      size: 14,
-                      color: AppColors.adminAccent,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      subtitle,
-                      style: TextStyle(fontSize: 12, color: subtitleColor),
-                    ),
+                    const Icon(Icons.trending_up, size: 14, color: AppColors.adminAccent),
+                    const SizedBox(width: 4),
+                    Text(subtitle, style: TextStyle(fontSize: 12, color: subtitleColor)),
                   ],
                 ),
               ],
