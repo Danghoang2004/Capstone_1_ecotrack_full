@@ -27,7 +27,14 @@ class _ClassificationHistoryListPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lịch sử phân loại'), centerTitle: true),
+      backgroundColor: const Color(0xFFF4FBF8),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFF062D2B),
+        title: const Text('Lịch sử phân loại'),
+        centerTitle: true,
+      ),
       body: FutureBuilder<ClassificationHistoryListResponse>(
         future: _historyFuture,
         builder: (context, snapshot) {
@@ -35,117 +42,172 @@ class _ClassificationHistoryListPageState
             return const Center(child: CircularProgressIndicator());
           }
 
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Không thể tải lịch sử: ${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Color(0xFF8B1E1E)),
+                ),
+              ),
+            );
+          }
+
           if (!snapshot.hasData ||
               !snapshot.data!.success ||
               snapshot.data!.data == null ||
               snapshot.data!.data!.isEmpty) {
-            return const Center(child: Text('Chưa có lịch sử phân loại nào.'));
+            return Center(
+              child: Container(
+                margin: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFDDEDE8)),
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.history_toggle_off, size: 36),
+                    SizedBox(height: 8),
+                    Text(
+                      'Chưa có lịch sử phân loại nào.',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           final histories = snapshot.data!.data!;
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: histories.length,
-            itemBuilder: (context, index) {
-              final history = histories[index];
-              final dateTime = DateTime.tryParse(history.createdAt);
-              final formattedDate = dateTime != null
-                  ? DateFormat('dd/MM/yyyy HH:mm').format(dateTime)
-                  : history.createdAt;
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+            children: [
+              ...histories.map(
+                (history) => _buildHistoryCard(context, history),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-              return Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+  Widget _buildHistoryCard(
+    BuildContext context,
+    ClassificationHistoryListItem history,
+  ) {
+    final dateTime = DateTime.tryParse(history.createdAt);
+    final formattedDate = dateTime != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(dateTime)
+        : history.createdAt;
+    final confidencePercent =
+        '${(history.overallConfidence * 100).toStringAsFixed(1)}%';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDDEDE8)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  ClassificationHistoryDetailPage(historyId: history.historyId),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  history.originalImageUrl,
+                  width: 88,
+                  height: 88,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 88,
+                    height: 88,
+                    color: const Color(0xFFE5EEE9),
+                    child: const Icon(Icons.image_not_supported),
+                  ),
                 ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ClassificationHistoryDetailPage(
-                          historyId: history.historyId,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      history.trashDetected
+                          ? 'Phát hiện rác'
+                          : 'Không phát hiện rác',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8FAF3),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Độ tin cậy: $confidencePercent',
+                        style: const TextStyle(
+                          color: Color(0xFF0E6B57),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    );
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    history.trashDetected
-                                        ? 'Phát hiện rác'
-                                        : 'Không phát hiện rác',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Độ tự tin: ${(history.overallConfidence * 100).toStringAsFixed(1)}%',
-                                    style: const TextStyle(
-                                      color: Color(0xFF334155),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                history.originalImageUrl,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  width: 80,
-                                  height: 80,
-                                  color: const Color(0xFFE2E8F0),
-                                  child: const Icon(Icons.image_not_supported),
-                                ),
-                              ),
-                            ),
-                          ],
+                        const Icon(
+                          Icons.schedule_outlined,
+                          size: 14,
+                          color: Color(0xFF6C8A82),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Số lượng: ${history.totalObjectsDetected}',
-                              style: const TextStyle(
-                                color: Color(0xFF4A5568),
-                                fontSize: 13,
-                              ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            formattedDate,
+                            style: const TextStyle(
+                              color: Color(0xFF6C8A82),
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
                             ),
-                            Text(
-                              formattedDate,
-                              style: const TextStyle(
-                                color: Color(0xFF94A3B8),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              );
-            },
-          );
-        },
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, color: Color(0xFF7C948E)),
+            ],
+          ),
+        ),
       ),
     );
   }

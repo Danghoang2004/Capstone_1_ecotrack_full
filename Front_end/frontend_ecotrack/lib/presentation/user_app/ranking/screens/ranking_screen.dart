@@ -42,7 +42,7 @@ class _RankingScreenState extends State<RankingScreen> {
     if (widget.hideHeader) {
       // Desktop: Không dùng Scaffold, chỉ hiển thị content với scroll
       return Container(
-        color: Colors.grey.shade50,
+        color: const Color(0xFFF4FBF8),
         child: Column(
           children: [
             // Tabs
@@ -74,7 +74,7 @@ class _RankingScreenState extends State<RankingScreen> {
     } else {
       // Mobile: Dùng Scaffold và SafeArea
       return Scaffold(
-        backgroundColor: HomeColors.background,
+        backgroundColor: const Color(0xFFF4FBF8),
         appBar: const RankingHeader(),
         body: SafeArea(
           child: Column(
@@ -126,6 +126,8 @@ class _RankingScreenState extends State<RankingScreen> {
 
   Widget _buildTab(String label, int index) {
     final isSelected = _selectedTab == index;
+    const selectedColor = Color(0xFF2F8F46);
+    const unselectedColor = Color(0xFFE6F1EB);
     return InkWell(
       onTap: () {
         setState(() {
@@ -135,16 +137,19 @@ class _RankingScreenState extends State<RankingScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3C9541) : Colors.grey[300],
+          color: isSelected ? selectedColor : unselectedColor,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? selectedColor : const Color(0xFFCDE1D7),
+          ),
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? AppColors.white : Colors.grey[700],
+              color: isSelected ? AppColors.white : const Color(0xFF4B655A),
               fontSize: 14,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
             ),
           ),
         ),

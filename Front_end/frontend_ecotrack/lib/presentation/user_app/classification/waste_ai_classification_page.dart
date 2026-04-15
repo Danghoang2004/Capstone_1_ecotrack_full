@@ -169,11 +169,13 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF4FBF8),
       appBar: AppBar(
-        title: const Text('AI Phân Lọai Rác'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFF062D2B),
+        title: const Text('AI Phân Loại Rác'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -213,71 +215,247 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
               ),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 16),
-              _buildImagePreview(theme),
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.photo_library_outlined),
-                label: const Text('Chọn Ảnh'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: _isClassifying ? null : _classifyImage,
-                icon: const Icon(Icons.auto_awesome),
-                label: Text(
-                  _isClassifying ? 'Đang Phân Loại...' : 'Phân Loại Bằng AI',
-                ),
-              ),
-              if (_isClassifying) ...[
-                const SizedBox(height: 18),
-                const Center(child: CircularProgressIndicator()),
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFEAFBF3), Color(0xFFF7FCFA)],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHeroCard(),
+                const SizedBox(height: 14),
+                _buildActionPanel(),
+                if (_isClassifying) ...[
+                  const SizedBox(height: 16),
+                  _buildLoadingCard(),
+                ],
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 14),
+                  _buildErrorCard(_errorMessage!),
+                ],
+                const SizedBox(height: 14),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _result == null
+                      ? const SizedBox.shrink()
+                      : _buildResultCard(_result!),
                 ),
               ],
-              if (_result != null) ...[
-                const SizedBox(height: 16),
-                _buildResultCard(_result!),
-              ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildImagePreview(ThemeData theme) {
+  Widget _buildHeroCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF16A34A), Color(0xFF15803D)],
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2E15803D),
+            blurRadius: 18,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.eco_rounded, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Phân loại bằng AI',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Tải ảnh rác thải để nhận diện nhanh và gợi ý tái chế phù hợp.',
+                  style: TextStyle(color: Color(0xFFE5F7F1), height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionPanel() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDDF1EA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildImagePreview(),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _pickImage,
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text(
+              'Chọn ảnh',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: _isClassifying ? null : _classifyImage,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF0A6358),
+              side: const BorderSide(color: Color(0xFF8BD8BF)),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: const Icon(Icons.auto_awesome),
+            label: Text(
+              _isClassifying ? 'Đang phân loại...' : 'Phân loại bằng AI',
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePreview() {
     return Container(
       height: 220,
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD0D0D0)),
+        color: const Color(0xFFF8FCFA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFD4ECE4)),
       ),
       child: _selectedImageBytes == null
-          ? const Center(child: Text('Chưa có ảnh được chọn'))
+          ? const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 34,
+                    color: Color(0xFF76A89A),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Chưa có ảnh được chọn',
+                    style: TextStyle(
+                      color: Color(0xFF4A7168),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            )
           : ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Image.memory(
                 _selectedImageBytes!,
                 fit: BoxFit.cover,
                 width: double.infinity,
               ),
             ),
+    );
+  }
+
+  Widget _buildLoadingCard() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDDF1EA)),
+      ),
+      child: const Row(
+        children: [
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2.5),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'AI đang phân tích ảnh, vui lòng đợi trong giây lát...',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFD1D1)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.error_outline, color: Color(0xFFB91C1C)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Color(0xFF991B1B),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -301,16 +479,17 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
     final topEntry = groupedEntries.isNotEmpty ? groupedEntries.first : null;
 
     return Container(
+      key: const ValueKey('classification-result-card'),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDDEDE8)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x11000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: Color(0x14003A2F),
+            blurRadius: 16,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -319,9 +498,11 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
         children: [
           Text(
             'Kết Quả AI',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF0F3C36),
+              letterSpacing: 0.2,
+            ),
           ),
           const SizedBox(height: 10),
           _infoRow('Phát hiện rác', result.trashDetected ? 'Có' : 'Không'),
@@ -350,9 +531,9 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: const Color(0xFFF5FBF8),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: const Color(0xFFD8ECE5)),
                 ),
                 child: Row(
                   children: [
@@ -363,7 +544,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                       ),
                     ),
                     Text(
-                      '${entry.value} vat | ${_toPercentText(entry.value, totalGroupedCount)}',
+                      '${entry.value} vật | ${_toPercentText(entry.value, totalGroupedCount)}',
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     if (averageConfidenceByType.containsKey(entry.key))
@@ -380,7 +561,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
             ),
           if (hiddenGroups > 0)
             Text(
-              '... va $hiddenGroups loai khac ($hiddenCount vat)',
+              '... và $hiddenGroups loại khác ($hiddenCount vật)',
               style: const TextStyle(color: Color(0xFF4A5568)),
             ),
           if (topEntry != null) ...[
@@ -394,7 +575,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Text(
-                'Loại chiêm ưu thế: ${topEntry.key} (${topEntry.value} vat - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
+                'Loại chiếm ưu thế: ${topEntry.key} (${topEntry.value} vật - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
                 style: const TextStyle(
                   color: Color(0xFF166534),
                   fontWeight: FontWeight.w600,

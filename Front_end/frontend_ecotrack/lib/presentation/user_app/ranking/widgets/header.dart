@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
@@ -12,8 +11,13 @@ class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: HomeColors.bgHeader,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      shadowColor: Colors.transparent,
+      forceMaterialTransparency: true,
+      centerTitle: true,
       automaticallyImplyLeading: false,
 
       systemOverlayStyle: const SystemUiOverlayStyle(
@@ -27,51 +31,14 @@ class RankingHeader extends StatelessWidget implements PreferredSizeWidget {
         onPressed: () => Navigator.pop(context),
       ),
 
-      titleSpacing: 0,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Bảng xếp hạng',
-            style: TextStyle(
-              color: AppColors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            'Thành tích môi trường',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-        ],
-      ),
-
-      actions: [
-        Row(
-          children: [
-            SvgPicture.asset(
-              'assets/images/Logo.svg',
-              width: 22,
-              height: 22,
-              colorFilter: const ColorFilter.mode(
-                Color(0xFF3C9541),
-                BlendMode.srcIn,
-              ),
-            ),
-            const SizedBox(width: 4),
-            const Text(
-              'Eco Track',
-              style: TextStyle(
-                color: Color(0xFF3C9541),
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
+      title: const Text(
+        'Bảng xếp hạng',
+        style: TextStyle(
+          color: AppColors.black,
+          fontSize: 21.5,
+          fontWeight: FontWeight.bold,
         ),
-      ],
+      ),
     );
   }
 }

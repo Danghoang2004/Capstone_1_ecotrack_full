@@ -231,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final edge = 18.0;
+    final edge = 16.0;
 
     // Lấy instance của ThemeService
     final themeService = ThemeService();
@@ -251,41 +251,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     return Scaffold(
-      // Màu nền scaffold tự động lấy từ ThemeData ở main.dart
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF4FBF8),
 
       body: CustomScrollView(
         slivers: [
-          // Header cố định - SliverAppBar
-          SliverAppBar(
-            pinned: true,
-            floating: false,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            expandedHeight: 70,
-            leading: null,
-            automaticallyImplyLeading: false,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'Cài Đặt',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 50, 16, 0),
+              child: Center(
+                child: Text(
+                  'Cài Đặt',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              titlePadding: const EdgeInsets.fromLTRB(18, 0, 16, 16),
             ),
           ),
           // Nội dung Settings
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: edge),
-              child: ListView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              child: Column(
                 children: [
-                  const SizedBox(height: 6),
-
                   // --- PHẦN 1: THÔNG BÁO ---
                   Container(
                     decoration: cardDecoration(context), // Truyền context vào

@@ -68,71 +68,73 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
           return true;
         }).toList();
 
-        return Container(
-          color: Colors.white,
-          child: Scaffold(
-            backgroundColor: const Color(0xFFA0F87D).withOpacity(0.17),
-            // ================= SỬ DỤNG APPBAR TIÊU CHUẨN =================
-            appBar: AppBar(
-              backgroundColor: const Color(0xFF2E7D32).withOpacity(0.3),
-              elevation: 0,
-              toolbarHeight: 55, // Tăng nhẹ chiều cao để cân đối với subtitle
-              automaticallyImplyLeading:
-                  false, // Tắt nút back mặc định để tự tùy chỉnh
-              leading: IconButton(
-                icon: const Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: Color.fromARGB(255, 0, 0, 0),
-                  size: 20,
-                ),
-                onPressed: () {
-                  // Giữ nguyên logic điều hướng ban đầu
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/user_app',
-                    (route) => false,
-                  );
-                },
+        return Scaffold(
+          backgroundColor: const Color(0xFFF4FBF8),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            shadowColor: Colors.transparent,
+            forceMaterialTransparency: true,
+            toolbarHeight: 66,
+            centerTitle: true,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Color(0xFF12352E),
+                size: 20,
               ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'EcoTrack',
-                    style: TextStyle(
-                      color: Color.fromARGB(255, 0, 0, 0),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/user_app',
+                  (route) => false,
+                );
+              },
+            ),
+            title: const Text(
+              'Minigame',
+              style: TextStyle(
+                color: Color(0xFF12352E),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFF4FBF8), Color(0xFFFFFFFF)],
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
+                    child: _buildSummaryCard(
+                      total: total,
+                      completed: completed,
+                      points: totalPoint,
                     ),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Bảo vệ môi trường cùng nhau',
-                    style: TextStyle(
-                      color: Color.fromARGB(179, 0, 0, 0),
-                      fontSize: 10,
-                      fontWeight: FontWeight.normal,
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(12, 2, 12, 16),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final q = filtered[index];
+                        return _buildQuizCard(context, q);
+                      },
                     ),
                   ),
                 ],
               ),
-              centerTitle: false,
-            ),
-            body: Column(
-              children: [
-                _buildFilterRow(completed, total - completed),
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(10, 1, 10, 1),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final q = filtered[index];
-                      return _buildQuizCard(context, q);
-                    },
-                  ),
-                ),
-              ],
             ),
           ),
         );
@@ -140,28 +142,95 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
     );
   }
 
-  // ================ FILTER (Giữ nguyên) ================
-  Widget _buildFilterRow(int done, int notDone) {
+  Widget _buildSummaryCard({
+    required int total,
+    required int completed,
+    required int points,
+  }) {
+    final double progress = total == 0 ? 0 : completed / total;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(2, 3, 1, 3),
-      child: Row(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDCEBE4)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0A3B2D).withOpacity(0.05),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _FilterChip(
-            label: 'Tất cả (${done + notDone})',
-            selected: _filterIndex == 0,
-            onTap: () => setState(() => _filterIndex = 0),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8FAF3),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.quiz_outlined,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tổng quan thử thách',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF12352E),
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Làm quiz để tích điểm và theo dõi tiến độ.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7C75)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 2),
-          _FilterChip(
-            label: 'Hoàn thành ($done)',
-            selected: _filterIndex == 1,
-            onTap: () => setState(() => _filterIndex = 1),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 9,
+              backgroundColor: const Color(0xFFE7F1EC),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                Color(0xFF2E7D32),
+              ),
+            ),
           ),
-          const SizedBox(width: 2),
-          _FilterChip(
-            label: 'Chưa làm ($notDone)',
-            selected: _filterIndex == 2,
-            onTap: () => setState(() => _filterIndex = 2),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(label: 'Tổng bài', value: '$total'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatCard(label: 'Đã làm', value: '$completed'),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatCard(label: 'Điểm', value: '$points'),
+              ),
+            ],
           ),
         ],
       ),
@@ -170,139 +239,208 @@ class _QuizOverviewScreenState extends State<QuizOverviewScreen> {
 
   // ================== 1 ITEM QUIZ (Giữ nguyên) ==================
   Widget _buildQuizCard(BuildContext context, QuizOverviewItem q) {
+    final bool isCompleted = q.completed;
+    final Color accentColor = isCompleted
+        ? const Color(0xFF2E7D32)
+        : const Color(0xFF6B8F73);
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, Color(0xFFF7FBF9)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFDCEBE4)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B3B2C).withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HomeQuiz(quizId: q.quizId, userId: widget.userId),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      q.title,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? const Color(0xFFE8FAF3)
+                          : const Color(0xFFF1F7F4),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(
+                      isCompleted ? Icons.check_circle : Icons.quiz_outlined,
+                      color: accentColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                q.title,
+                                style: const TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF12352E),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF4D6),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                q.difficulty,
+                                style: const TextStyle(
+                                  color: Color(0xFF8A6510),
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          q.description.isNotEmpty
+                              ? q.description
+                              : 'Bài kiểm tra kiến thức về môi trường',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF5A6C64),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _InfoChip(
+                    icon: Icons.help_outline,
+                    text: '${q.questionCount} câu',
+                  ),
+                  _InfoChip(
+                    icon: Icons.timer_outlined,
+                    text: '${q.durationSeconds}s',
+                  ),
+                  _InfoChip(icon: Icons.star, text: '${q.rewardPoints} điểm'),
+                  if (q.correctPercent > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8FAF3),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Đúng ${q.correctPercent}%',
+                        style: const TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    const Text(
-                      "Bài kiểm tra kiến thức về môi trường",
-                      style: TextStyle(fontSize: 10, color: Colors.black45),
-                    ),
-                    Text(
-                      q.description,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.black54,
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: (q.correctPercent) / 100.0,
+                        backgroundColor: const Color(0xFFE7F1EC),
+                        color: const Color(0xFF2E7D32),
+                        minHeight: 5.5,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 2),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9A825).withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  q.difficulty,
-                  style: const TextStyle(
-                    color: const Color(0xFFF9A825),
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
                   ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                q.completed ? Icons.check_circle : Icons.radio_button_unchecked,
-                color: q.completed ? const Color(0xFF2E7D32) : Colors.grey,
-                size: 16,
-              ),
-            ],
-          ),
-          const SizedBox(height: 1),
-          Row(
-            children: [
-              _InfoChip(
-                icon: Icons.help_outline,
-                text: '${q.questionCount} câu',
-              ),
-              const SizedBox(width: 6),
-              _InfoChip(
-                icon: Icons.timer_outlined,
-                text: '${q.durationSeconds}s',
-              ),
-              const SizedBox(width: 6),
-              _InfoChip(icon: Icons.star, text: '${q.rewardPoints} điểm'),
-              const Spacer(),
-              if (q.correctPercent > 0)
-                Text(
-                  '${q.correctPercent}%',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2E7D32),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Row(
-            children: [
-              Expanded(
-                child: LinearProgressIndicator(
-                  value: (q.correctPercent) / 100.0,
-                  backgroundColor: Colors.grey.shade200,
-                  color: const Color(0xFF2E7D32),
-                  minHeight: 2,
-                ),
-              ),
-              const SizedBox(width: 10),
-              InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          HomeQuiz(quizId: q.quizId, userId: widget.userId),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 5,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withOpacity(0.18),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Vào chơi',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                      ],
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -319,10 +457,11 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF7FCFA),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDCEBE4)),
       ),
       child: Column(
         children: [
@@ -361,19 +500,19 @@ class _FilterChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF2E7D32) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: selected ? const Color(0xFF2E7D32) : const Color(0xFFF4FBF8),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? Colors.transparent : Colors.grey.shade300,
+            color: selected ? Colors.transparent : const Color(0xFFD3E2DA),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontSize: 11.5,
+            fontWeight: FontWeight.w700,
             color: selected ? Colors.white : Colors.black87,
           ),
         ),
@@ -391,18 +530,24 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF3F8F5),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFDCEBE4)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 10, color: Colors.grey.shade700),
-          const SizedBox(width: 4),
+          Icon(icon, size: 12, color: const Color(0xFF5C7269)),
+          const SizedBox(width: 5),
           Text(
             text,
-            style: const TextStyle(fontSize: 8, color: Colors.black87),
+            style: const TextStyle(
+              fontSize: 10.5,
+              color: Color(0xFF32433D),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

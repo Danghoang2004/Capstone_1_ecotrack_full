@@ -29,37 +29,36 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
 
   @override
   void dispose() {
-    controller.dispose(); 
+    controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true, 
+      backgroundColor: const Color(0xFFF4FBF8),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         elevation: 0,
-        scrolledUnderElevation: 0, 
+        scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        backgroundColor: Colors.transparent, 
+        backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87), 
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           "Danh Sách Chiến dịch",
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800, fontSize: 20),
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w800,
+            fontSize: 20,
+          ),
         ),
         centerTitle: true,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.green.shade50, Colors.white], 
-          ),
-        ),
+        color: const Color(0xFFF4FBF8),
         child: SafeArea(
           child: AnimatedBuilder(
             animation: controller,
@@ -81,12 +80,17 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
                   Expanded(
                     child: campaigns.isEmpty
                         ? _buildEmptyState()
-                        : RefreshIndicator( 
+                        : RefreshIndicator(
                             onRefresh: () async => controller.loadData(),
                             color: Colors.green,
                             child: ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(), 
-                              padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20, top: 10),
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 20,
+                                top: 10,
+                              ),
                               itemCount: campaigns.length,
                               itemBuilder: (_, i) =>
                                   CampaignListCard(campaign: campaigns[i]),
@@ -104,7 +108,7 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
 
   Widget _buildTabs() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 5), 
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -129,10 +133,12 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10), 
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF386641) : Colors.white.withOpacity(0.7), 
-          borderRadius: BorderRadius.circular(25), 
+          color: isActive
+              ? const Color(0xFF386641)
+              : Colors.white.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(25),
           border: Border.all(
             color: isActive ? Colors.transparent : Colors.grey.shade300,
             width: 1,
@@ -143,7 +149,7 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
                 color: const Color(0xFF386641).withOpacity(0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
-              )
+              ),
           ],
         ),
         child: Text(
@@ -172,7 +178,7 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.nature_people_outlined, 
+            Icons.nature_people_outlined,
             size: 80,
             color: Colors.green.shade200,
           ),
