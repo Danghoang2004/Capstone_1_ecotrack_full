@@ -13,6 +13,7 @@ public class RecycleSuggestionDetailDto {
     private String recycleImageUrl;
     private String difficultyLevel;
     private Integer estimatedTimeMinutes;
+    private String materialsNeeded;
     private List<RecycleSuggestionStepDto> steps = new ArrayList<>();
 
     public Long getSuggestionId() {
@@ -77,6 +78,14 @@ public class RecycleSuggestionDetailDto {
 
     public void setEstimatedTimeMinutes(Integer estimatedTimeMinutes) {
         this.estimatedTimeMinutes = estimatedTimeMinutes;
+    }
+
+    public String getMaterialsNeeded() {
+        return materialsNeeded;
+    }
+
+    public void setMaterialsNeeded(String materialsNeeded) {
+        this.materialsNeeded = materialsNeeded;
     }
 
     public List<RecycleSuggestionStepDto> getSteps() {

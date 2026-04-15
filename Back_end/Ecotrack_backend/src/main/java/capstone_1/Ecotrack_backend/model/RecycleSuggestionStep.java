@@ -32,6 +32,12 @@ public class RecycleSuggestionStep {
     @Column(name = "step_description", nullable = false, columnDefinition = "TEXT")
     private String stepDescription;
 
+    @Column(name = "instruction_image_url", length = 500)
+    private String instructionImageUrl;
+
+    @Column(name = "instruction_video_url", length = 500)
+    private String instructionVideoUrl;
+
     public Long getStepId() {
         return stepId;
     }
@@ -70,5 +76,21 @@ public class RecycleSuggestionStep {
 
     public void setStepDescription(String stepDescription) {
         this.stepDescription = stepDescription;
+    }
+
+    public String getInstructionImageUrl() {
+        return instructionImageUrl;
+    }
+
+    public void setInstructionImageUrl(String instructionImageUrl) {
+        this.instructionImageUrl = instructionImageUrl;
+    }
+
+    public String getInstructionVideoUrl() {
+        return instructionVideoUrl;
+    }
+
+    public void setInstructionVideoUrl(String instructionVideoUrl) {
+        this.instructionVideoUrl = instructionVideoUrl;
     }
 }

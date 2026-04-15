@@ -5,6 +5,8 @@ public class RecycleSuggestionStepDto {
     private Integer stepOrder;
     private String stepTitle;
     private String stepDescription;
+    private String instructionImageUrl;
+    private String instructionVideoUrl;
 
     public Integer getStepOrder() {
         return stepOrder;
@@ -28,5 +30,21 @@ public class RecycleSuggestionStepDto {
 
     public void setStepDescription(String stepDescription) {
         this.stepDescription = stepDescription;
+    }
+
+    public String getInstructionImageUrl() {
+        return instructionImageUrl;
+    }
+
+    public void setInstructionImageUrl(String instructionImageUrl) {
+        this.instructionImageUrl = instructionImageUrl;
+    }
+
+    public String getInstructionVideoUrl() {
+        return instructionVideoUrl;
+    }
+
+    public void setInstructionVideoUrl(String instructionVideoUrl) {
+        this.instructionVideoUrl = instructionVideoUrl;
     }
 }
