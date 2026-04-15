@@ -1,12 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:frontend_ecotrack/data/models/CampaignModel.dart'; 
+import 'package:frontend_ecotrack/data/models/CampaignModel.dart';
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignDetailScreen.dart';
 
 // Đổi từ StatelessWidget sang StatefulWidget để quản lý trạng thái nút bấm
 class CampaignListCard extends StatefulWidget {
-  final CampaignModel campaign; 
-  
+  final CampaignModel campaign;
+
   const CampaignListCard({super.key, required this.campaign});
 
   @override
@@ -22,7 +22,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
   void _showSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, 
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -40,11 +40,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
                     color: Color(0xFF2E7D32),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 40,
-                  ),
+                  child: const Icon(Icons.check, color: Colors.white, size: 40),
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -74,7 +70,11 @@ class _CampaignListCardState extends State<CampaignListCard> {
                     onPressed: () {
                       Navigator.of(context).pop(); // Đóng popup
                     },
-                    icon: const Icon(Icons.check, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     label: const Text(
                       "Tuyệt vời",
                       style: TextStyle(
@@ -112,7 +112,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
     if (mounted) {
       setState(() {
         _isLoading = false; // Tắt loading
-        _isJoined = true;   // Cập nhật trạng thái thành Đã tham gia
+        _isJoined = true; // Cập nhật trạng thái thành Đã tham gia
       });
       // Hiện popup
       _showSuccessDialog(context);
@@ -124,12 +124,14 @@ class _CampaignListCardState extends State<CampaignListCard> {
     // Dùng widget.campaign vì đang ở trong State class
     final campaign = widget.campaign;
 
-    int fakeMaxParticipants = campaign.participants == 0 ? 1000 : campaign.participants + 500;
-    
-    double progressValue = (fakeMaxParticipants > 0) 
-        ? (campaign.participants / fakeMaxParticipants) 
+    int fakeMaxParticipants = campaign.participants == 0
+        ? 1000
+        : campaign.participants + 500;
+
+    double progressValue = (fakeMaxParticipants > 0)
+        ? (campaign.participants / fakeMaxParticipants)
         : 0.0;
-    if (progressValue > 1.0) progressValue = 1.0; 
+    if (progressValue > 1.0) progressValue = 1.0;
 
     // --- LOGIC XÁC ĐỊNH MÀU VÀ CHỮ CHO NÚT BẤM ---
     String buttonText = "Tham gia chiến dịch";
@@ -150,7 +152,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.85),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: Colors.white.withOpacity(0.5),
@@ -183,7 +185,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
                             width: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              color: Colors.green.shade50,
+                              color: const Color(0xFFF4FBF8),
                               child: const Icon(
                                 Icons.image_not_supported_outlined,
                                 size: 50,
@@ -197,14 +199,17 @@ class _CampaignListCardState extends State<CampaignListCard> {
                         bottom: 12,
                         right: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.9),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             campaign.daysRemaining > 0
-                                ? "${campaign.daysRemaining} ngày còn lại" 
+                                ? "${campaign.daysRemaining} ngày còn lại"
                                 : "Đã kết thúc",
                             style: TextStyle(
                               fontSize: 12,
@@ -243,7 +248,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          campaign.location, 
+                          campaign.location,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -259,10 +264,14 @@ class _CampaignListCardState extends State<CampaignListCard> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.people_alt, size: 18, color: Colors.green.shade700),
+                                Icon(
+                                  Icons.people_alt,
+                                  size: 18,
+                                  color: Colors.green.shade700,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "${campaign.participants} người", 
+                                  "${campaign.participants} người",
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -271,31 +280,44 @@ class _CampaignListCardState extends State<CampaignListCard> {
                                 ),
                               ],
                             ),
-                            
+
                             // --- NÚT BẤM CÓ TRẠNG THÁI ---
                             ElevatedButton(
                               // Nếu đã tham gia hoặc đang loading thì khóa nút (trả về null)
-                              onPressed: (_isJoined || _isLoading) ? null : _handleJoin,
+                              onPressed: (_isJoined || _isLoading)
+                                  ? null
+                                  : _handleJoin,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: buttonColor,
-                                disabledBackgroundColor: buttonColor.withOpacity(0.7), // Màu xám khi khóa
+                                disabledBackgroundColor: buttonColor
+                                    .withOpacity(0.7), // Màu xám khi khóa
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                               ),
-                              child: _isLoading 
-                                ? const SizedBox(
-                                    width: 16, 
-                                    height: 16, 
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                                  )
-                                : Text(
-                                    buttonText,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
-                                  ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      buttonText,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
@@ -322,7 +344,11 @@ class _CampaignListCardState extends State<CampaignListCard> {
           children: [
             Row(
               children: [
-                Icon(Icons.group_outlined, size: 18, color: Colors.green.shade700),
+                Icon(
+                  Icons.group_outlined,
+                  size: 18,
+                  color: Colors.green.shade700,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   "$maxParticipants người",
@@ -358,7 +384,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CampaignDetailScreen(campaignId: widget.campaign.id), 
+        builder: (_) => CampaignDetailScreen(campaignId: widget.campaign.id),
       ),
     );
   }

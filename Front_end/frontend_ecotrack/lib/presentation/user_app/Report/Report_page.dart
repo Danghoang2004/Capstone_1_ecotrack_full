@@ -44,7 +44,10 @@ class _Report_pageState extends State<Report_page> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("ĐÃ HIỂU", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+            child: const Text(
+              "ĐÃ HIỂU",
+              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -317,28 +320,29 @@ class _Report_pageState extends State<Report_page> {
         trashCategory: selectedTrashType,
         imagePath: selectedImage!.path,
       );
-        if (resultData != null) {
-          // KIỂM TRA SUCCESS TỪ BACKEND TRẢ VỀ
-          if (resultData['success'] == true || resultData['status'] == "PENDING") {
-            // 1. Trường hợp thành công hoặc đang chờ duyệt
-            _showReportSuccessTicket(resultData);
-            setState(() {
-              selectedImage = null;
-              descriptionController.clear();
-            });
-          } else {
-            // 2. [QUAN TRỌNG] Trường hợp lỗi Business (Cooldown, Limit, AI reject)
-            // Hiển thị message lỗi ở giữa màn hình
-            _showErrorDialog(resultData['message'] ?? "Gửi báo cáo thất bại");
-          }
+      if (resultData != null) {
+        // KIỂM TRA SUCCESS TỪ BACKEND TRẢ VỀ
+        if (resultData['success'] == true ||
+            resultData['status'] == "PENDING") {
+          // 1. Trường hợp thành công hoặc đang chờ duyệt
+          _showReportSuccessTicket(resultData);
+          setState(() {
+            selectedImage = null;
+            descriptionController.clear();
+          });
         } else {
-          _showErrorDialog("Lỗi hệ thống, vui lòng thử lại sau");
+          // 2. [QUAN TRỌNG] Trường hợp lỗi Business (Cooldown, Limit, AI reject)
+          // Hiển thị message lỗi ở giữa màn hình
+          _showErrorDialog(resultData['message'] ?? "Gửi báo cáo thất bại");
         }
-      } catch (e) {
-        _showErrorDialog("Lỗi: $e");
-      } finally {
-        if (mounted) setState(() => isSending = false);
+      } else {
+        _showErrorDialog("Lỗi hệ thống, vui lòng thử lại sau");
       }
+    } catch (e) {
+      _showErrorDialog("Lỗi: $e");
+    } finally {
+      if (mounted) setState(() => isSending = false);
+    }
   }
 
   // --- BUILD METHOD VÀ CÁC WIDGET CON ĐÃ TỐI ƯU ---
@@ -346,28 +350,32 @@ class _Report_pageState extends State<Report_page> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FFF8),
+      backgroundColor: const Color(0xFFF4FBF8),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60),
         child: AppBar(
-          backgroundColor: const Color(0xFF2E7D32),
           elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
+          forceMaterialTransparency: true,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
           centerTitle: true,
           title: const Text(
             "Báo cáo rác thải",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.black87,
             ),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
             onPressed: () => Navigator.pop(context),
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.help_outline, color: Colors.white),
+              icon: const Icon(Icons.help_outline, color: Colors.black87),
               onPressed: () {},
             ),
             const SizedBox(width: 6),

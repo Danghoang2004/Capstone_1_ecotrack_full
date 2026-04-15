@@ -31,7 +31,7 @@ class _MyCouponsScreenState extends State<MyCouponsScreen> {
 
   // Bảng màu Eco Theme (Em có thể tách ra file constants riêng)
   final Color primaryGreen = const Color(0xFF2E7D32); // Xanh rừng
-  final Color lightGreenBg = const Color(0xFFF1F8E9); // Xanh nhạt nền
+  final Color lightGreenBg = const Color(0xFFF4FBF8); // Xanh mint rất nhạt
   final Color accentOrange = const Color(0xFFFF8F00); // Màu nhấn cho HSD
 
   @override
@@ -97,18 +97,23 @@ class _MyCouponsScreenState extends State<MyCouponsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: lightGreenBg, // Nền sáng nhẹ nhàng
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: primaryGreen,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        forceMaterialTransparency: true,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 25),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 25),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Kho Voucher Của Tôi",
+          "Kho voucher của tôi",
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black87,
             fontWeight: FontWeight.w600,
             fontSize: 20,
           ),
@@ -157,7 +162,7 @@ class _MyCouponsScreenState extends State<MyCouponsScreen> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, kToolbarHeight + 60, 16, 16),
       itemCount: groupedCoupons.length,
       separatorBuilder: (c, i) => const SizedBox(height: 16),
       itemBuilder: (context, index) {

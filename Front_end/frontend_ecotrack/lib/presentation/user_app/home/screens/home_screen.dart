@@ -146,9 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // -------------------------------------------------------------------------------------
 
     return Scaffold(
-      backgroundColor: isDesktop
-          ? Colors.white
-          : const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: const Color(0xFFF4FBF8),
 
       // --- FIX: Loại bỏ SafeArea bao quanh Column để Header tràn lên mép trên ---
       body: Column(
@@ -266,10 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
         const SizedBox(height: 24),
 
-        RankingSection(controller: homeController.rankingController),
-
-        const SizedBox(height: 24),
-
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
@@ -317,6 +311,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+
+        const SizedBox(height: 24),
+
+        RankingSection(controller: homeController.rankingController),
 
         const SizedBox(height: 24),
       ],

@@ -119,7 +119,14 @@ class _ClassificationHistoryDetailPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết lịch sử phân loại')),
+      backgroundColor: const Color(0xFFF4FBF8),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFF062D2B),
+        title: const Text('Chi tiết lịch sử phân loại'),
+        centerTitle: true,
+      ),
       body: FutureBuilder<ClassificationHistoryDetailResponse>(
         future: _future,
         builder: (context, snapshot) {
@@ -148,10 +155,10 @@ class _ClassificationHistoryDetailPageState
               : detail.createdAt;
 
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
                 child: Image.network(
                   detail.originalImageUrl,
                   height: 240,
@@ -164,66 +171,90 @@ class _ClassificationHistoryDetailPageState
                 ),
               ),
               const SizedBox(height: 16),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFDDEDE8)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: detail.trashDetected
+                            ? const Color(0xFFE8FAF3)
+                            : const Color(0xFFF2F5F7),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
                         detail.trashDetected
                             ? 'Phát hiện rác'
                             : 'Không phát hiện rác',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: detail.trashDetected
+                              ? const Color(0xFF0E6B57)
+                              : const Color(0xFF425466),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Ngày phân loại: $formattedDate',
-                        style: const TextStyle(color: Color(0xFF475569)),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Độ tự tin: ${(detail.overallConfidence * 100).toStringAsFixed(1)}%',
-                        style: const TextStyle(color: Color(0xFF475569)),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Số lượng phát hiện: ${detail.totalObjectsDetected}',
-                        style: const TextStyle(color: Color(0xFF475569)),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Ngày phân loại: $formattedDate',
+                      style: const TextStyle(color: Color(0xFF475569)),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Độ tin cậy: ${(detail.overallConfidence * 100).toStringAsFixed(1)}%',
+                      style: const TextStyle(color: Color(0xFF475569)),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
               if (detectedWasteTypes.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Các loại rác được nhận diện',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFDDEDE8)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Các loại rác được nhận diện',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: detectedWasteTypes
-                          .map(
-                            (type) => Chip(
-                              label: Text(type),
-                              backgroundColor: const Color(0xFFE2E8F0),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: detectedWasteTypes
+                            .map(
+                              (type) => Chip(
+                                label: Text(type),
+                                backgroundColor: const Color(0xFFE8FAF3),
+                                side: const BorderSide(
+                                  color: Color(0xFFC7ECDD),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 20),
               if (detectedWasteTypes.isNotEmpty)
@@ -240,6 +271,14 @@ class _ClassificationHistoryDetailPageState
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.recycling),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF16A34A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                     label: Text(
                       _isLoadingSuggestions
                           ? 'Đang tải gợi ý...'
