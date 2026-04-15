@@ -93,7 +93,10 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
                               ),
                               itemCount: campaigns.length,
                               itemBuilder: (_, i) =>
-                                  CampaignListCard(campaign: campaigns[i]),
+                                  CampaignListCard(
+                                    campaign: campaigns[i],
+                                    onJoined: _handleJoinedCampaign,
+                                  ),
                             ),
                           ),
                   ),
@@ -104,6 +107,10 @@ class _CampaignListScreenState extends State<CampaignListScreen> {
         ),
       ),
     );
+  }
+
+  void _handleJoinedCampaign(int campaignId, int participants) {
+    controller.markCampaignJoined(campaignId, participants: participants);
   }
 
   Widget _buildTabs() {

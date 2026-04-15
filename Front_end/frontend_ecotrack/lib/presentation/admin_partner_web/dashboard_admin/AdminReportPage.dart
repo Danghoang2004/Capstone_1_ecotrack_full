@@ -547,20 +547,6 @@ class _AdminReportPageState extends State<AdminReportPage> {
             ],
           ),
 
-          const SizedBox(height: 16),
-
-          // Dòng 3: Tọa độ & Loại rác (Khối màu xám)
-          Row(
-            children: [
-              _infoBox(
-                Icons.location_on_outlined,
-                "Tọa độ GPS",
-                "${report.latitude}, ${report.longitude}",
-              ),
-              const SizedBox(width: 16),
-              _infoBox(Icons.category_outlined, "Loại rác", report.category),
-            ],
-          ),
         ],
       ),
     );
@@ -766,16 +752,6 @@ class _AdminReportPageState extends State<AdminReportPage> {
                             "Người báo cáo",
                             "User #${report.reportId}",
                           ), // Thay ID thật nếu có
-                          _detailItem(
-                            Icons.category,
-                            "Loại rác",
-                            report.category,
-                          ),
-                          _detailItem(
-                            Icons.location_on,
-                            "Tọa độ",
-                            "${report.latitude}, ${report.longitude}",
-                          ),
                           if (report.aiConfidence != null)
                             _detailItem(
                               Icons.smart_toy,

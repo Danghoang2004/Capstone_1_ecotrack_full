@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:frontend_ecotrack/presentation/user_app/classification/waste_ai_classification_page.dart';
 import 'package:frontend_ecotrack/presentation/user_app/home/screens/home_screen.dart';
 import 'package:frontend_ecotrack/presentation/user_app/Map/Map_page.dart';
@@ -102,6 +103,7 @@ class BottomNotchPainter extends CustomPainter {
 class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
   int currentIndex = 0;
   bool _isCollapsed = false;
+  bool _isBottomNavVisible = true;
   final HomeController homeController = HomeController();
 
   late final List<Widget> screens;
@@ -144,7 +146,10 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
   Widget _navItem(IconData icon, int index) {
     bool isActive = currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => currentIndex = index),
+      onTap: () => setState(() {
+        currentIndex = index;
+        _isBottomNavVisible = true;
+      }),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -195,60 +200,101 @@ class _UserlayoutState extends State<Userlayout> with WidgetsBindingObserver {
                 ),
               ],
             )
-          : screens[currentIndex],
+          : NotificationListener<ScrollNotification>(
+              onNotification: _onScrollNotification,
+              child: screens[currentIndex],
+            ),
       bottomNavigationBar: isDesktop ? null : _buildFloatingNavBar(),
     );
   }
 
+  bool _onScrollNotification(ScrollNotification notification) {
+    if (notification.depth != 0) return false;
+
+    if (notification is UserScrollNotification) {
+      if (notification.direction == ScrollDirection.reverse &&
+          _isBottomNavVisible) {
+        setState(() => _isBottomNavVisible = false);
+      } else if (notification.direction == ScrollDirection.forward &&
+          !_isBottomNavVisible) {
+        setState(() => _isBottomNavVisible = true);
+      }
+    }
+
+    return false;
+  }
+
   Widget _buildFloatingNavBar() {
-    return Container(
-      margin: const EdgeInsets.only(left: 3, right: 3, bottom: 3),
+    return SizedBox(
       height: 70,
-      color: Colors.transparent,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          CustomPaint(
-            size: const Size(double.infinity, 45),
-            painter: BottomNotchPainter(),
-          ),
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(Icons.home_rounded, 0),
-                _navItem(Icons.map_outlined, 1),
-                const SizedBox(width: 45),
-                _navItem(Icons.person_outline, 3),
-                _navItem(Icons.settings_outlined, 4),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 6,
-            child: GestureDetector(
-              onTap: () => setState(() => currentIndex = 2),
-              child: Container(
-                height: 50,
-                width: 48,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2E7D32),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 20,
-                      offset: Offset(0, 4),
+      child: IgnorePointer(
+        ignoring: !_isBottomNavVisible,
+        child: AnimatedSlide(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          offset: _isBottomNavVisible ? Offset.zero : const Offset(0, 1.2),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: _isBottomNavVisible ? 1 : 0,
+            child: Container(
+              margin: const EdgeInsets.only(left: 3, right: 3, bottom: 3),
+              height: 70,
+              color: Colors.transparent,
+              child: Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  CustomPaint(
+                    size: const Size(double.infinity, 45),
+                    painter: BottomNotchPainter(),
+                  ),
+                  Container(
+                    height: 50,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _navItem(Icons.home_rounded, 0),
+                        _navItem(Icons.map_outlined, 1),
+                        const SizedBox(width: 45),
+                        _navItem(Icons.person_outline, 3),
+                        _navItem(Icons.settings_outlined, 4),
+                      ],
                     ),
-                  ],
-                ),
-                child: const Icon(Icons.eco, color: Colors.white, size: 30),
+                  ),
+                  Positioned(
+                    top: 6,
+                    child: GestureDetector(
+                      onTap: () => setState(() {
+                        currentIndex = 2;
+                        _isBottomNavVisible = true;
+                      }),
+                      child: Container(
+                        height: 50,
+                        width: 48,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF2E7D32),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 20,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.eco,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

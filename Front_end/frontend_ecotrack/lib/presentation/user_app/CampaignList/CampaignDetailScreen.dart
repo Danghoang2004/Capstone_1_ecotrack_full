@@ -6,8 +6,15 @@ import 'package:frontend_ecotrack/data/models/CampaignDetailModel.dart';
 
 class CampaignDetailScreen extends StatefulWidget {
   final int campaignId;
+  final bool initialJoined;
+  final int? initialParticipantCount;
 
-  const CampaignDetailScreen({super.key, required this.campaignId});
+  const CampaignDetailScreen({
+    super.key,
+    required this.campaignId,
+    this.initialJoined = false,
+    this.initialParticipantCount,
+  });
 
   @override
   State<CampaignDetailScreen> createState() => _CampaignDetailScreenState();
@@ -17,6 +24,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   late CampaignRepository _repo;
   late Future<CampaignDetailModel> _campaignFuture;
   bool _isJoining = false;
+  late bool _joinedOverride;
+  int? _participantOverride;
 
   @override
   void initState() {
@@ -24,6 +33,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     _repo = CampaignRepository(
       ApiClient(storage: const FlutterSecureStorage()),
     );
+    _joinedOverride = widget.initialJoined;
+    _participantOverride = widget.initialParticipantCount;
     _loadCampaign();
   }
 
@@ -117,7 +128,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   }
 
   // --- GỌI API THẬT ĐỂ THAM GIA CHIẾN DỊCH ---
-  Future<void> _handleJoinCampaign() async {
+  Future<void> _handleJoinCampaign(int currentParticipantCount) async {
     setState(() {
       _isJoining = true;
     });
@@ -127,6 +138,11 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       await _repo.joinCampaign(widget.campaignId);
 
       if (mounted) {
+        setState(() {
+          _joinedOverride = true;
+          _participantOverride = currentParticipantCount + 1;
+        });
+
         // Hiện Popup thành công
         _showSuccessDialog(context);
 
@@ -201,17 +217,32 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
           }
 
           final c = snapshot.data!;
+          final effectiveParticipants = _participantOverride != null &&
+                  _participantOverride! > c.participantCount
+              ? _participantOverride!
+              : c.participantCount;
+          final effectiveJoined = c.joined || _joinedOverride;
           final progress = c.maxParticipants > 0
-              ? (c.participantCount / c.maxParticipants).clamp(0.0, 1.0)
+              ? (effectiveParticipants / c.maxParticipants).clamp(0.0, 1.0)
               : 0.0;
 
-          return Stack(children: [_body(context, c, progress), _joinButton(c)]);
+          return Stack(
+            children: [
+              _body(context, c, progress, effectiveParticipants),
+              _joinButton(c, effectiveJoined, effectiveParticipants),
+            ],
+          );
         },
       ),
     );
   }
 
-  Widget _body(BuildContext context, CampaignDetailModel c, double progress) {
+  Widget _body(
+    BuildContext context,
+    CampaignDetailModel c,
+    double progress,
+    int effectiveParticipants,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 90),
       child: Column(
@@ -277,7 +308,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _participants(c.participantCount, c.maxParticipants, progress),
+                _participants(effectiveParticipants, c.maxParticipants, progress),
                 const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
@@ -316,14 +347,18 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     );
   }
 
-  Widget _joinButton(CampaignDetailModel c) {
-    final bool isFull = c.participantCount >= c.maxParticipants;
-    final bool canJoin = !c.joined && !isFull && !_isJoining;
+  Widget _joinButton(
+    CampaignDetailModel c,
+    bool effectiveJoined,
+    int effectiveParticipants,
+  ) {
+    final bool isFull = effectiveParticipants >= c.maxParticipants;
+    final bool canJoin = !effectiveJoined && !isFull && !_isJoining;
 
     String buttonText = "Tham gia chiến dịch";
     Color buttonColor = const Color(0xFF2E7D32);
 
-    if (c.joined) {
+    if (effectiveJoined) {
       buttonText = "Đã tham gia";
       buttonColor = Colors.grey;
     } else if (isFull) {
@@ -340,14 +375,16 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       child: SizedBox(
         height: 50,
         child: ElevatedButton(
-          onPressed: canJoin ? _handleJoinCampaign : null,
+            onPressed: canJoin
+              ? () => _handleJoinCampaign(effectiveParticipants)
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: buttonColor,
             disabledBackgroundColor: buttonColor.withOpacity(0.6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
             ),
-            elevation: c.joined ? 0 : 4,
+            elevation: effectiveJoined ? 0 : 4,
           ),
           child: _isJoining
               ? const SizedBox(
