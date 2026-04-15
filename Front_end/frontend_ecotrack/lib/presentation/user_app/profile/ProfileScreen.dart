@@ -12,6 +12,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const Color _pageBg = Color(0xFFF4FBF8);
+  static const Color _surfaceCard = Color(0xFFFCFEFC);
+  static const Color _surfaceBorder = Color(0xFFE0ECE3);
+  static const Color _titleText = Color(0xFF22372A);
+  static const Color _mutedText = Color(0xFF6A7D71);
+  static const Color _primaryGreen = Color(0xFF2F7D4B);
+
   late Future<ProfileView> _viewFuture;
   late Future<List<BadgeModel>> _badgesFuture;
   final UserService _userService = UserService();
@@ -27,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F9F4),
+      backgroundColor: _pageBg,
       body: FutureBuilder<ProfileView>(
         future: _viewFuture,
         builder: (context, snap) {
@@ -75,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatsGrid(view),
-                const SizedBox(height: 1),
+                const SizedBox(height: 10),
 
                 _buildAchievementsSection(context),
                 const SizedBox(height: 14),
@@ -104,7 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E7D32),
+                      backgroundColor: _primaryGreen,
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -166,7 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       expandedHeight: 250.0,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF2E7D32),
+      backgroundColor: _primaryGreen,
       elevation: 0,
       automaticallyImplyLeading: false,
       flexibleSpace: FlexibleSpaceBar(
@@ -344,28 +351,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 10,
       mainAxisSpacing: 10,
-      childAspectRatio: 1.1,
+      childAspectRatio: 1.2,
       children: [
         _statCard(
-          color: const Color(0xFF2E7D32),
+          accentColor: const Color(0xFF1F8F53),
+          surfaceTint: const Color(0xFFD8F1E1),
+          iconBg: const Color(0xFFCDEEDB),
           icon: Icons.eco,
           title: view.points.toString(),
           subtitle: 'Eco Points',
         ),
         _statCard(
-          color: const Color(0xFFF57C00),
+          accentColor: const Color(0xFFE07A00),
+          surfaceTint: const Color(0xFFFFE6C9),
+          iconBg: const Color(0xFFFFDDAF),
           icon: Icons.camera_alt,
           title: view.reportCount.toString(),
           subtitle: 'Báo cáo rác',
         ),
         _statCard(
-          color: const Color(0xFF3F51B5),
+          accentColor: const Color(0xFF3F4FBE),
+          surfaceTint: const Color(0xFFDCE1FF),
+          iconBg: const Color(0xFFC8D0FF),
           icon: Icons.people,
           title: view.groupCount.toString(),
           subtitle: 'Chiến dịch',
         ),
         _statCard(
-          color: const Color(0xFFFF7043),
+          accentColor: const Color(0xFFD85B39),
+          surfaceTint: const Color(0xFFFFDFD6),
+          iconBg: const Color(0xFFFFCFC0),
           icon: Icons.leaderboard,
           title: view.rank != null ? '#${view.rank}' : '-',
           subtitle: 'Xếp hạng',
@@ -375,39 +390,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _statCard({
-    required Color color,
+    required Color accentColor,
+    required Color surfaceTint,
+    required Color iconBg,
     required IconData icon,
     required String title,
     required String subtitle,
   }) {
-    return Card(
-      color: color,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [surfaceTint, surfaceTint.withOpacity(0.55)],
+        ),
+        border: Border.all(color: accentColor.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withOpacity(0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+          const BoxShadow(
+            color: Color(0x10FFFFFF),
+            blurRadius: 4,
+            offset: Offset(0, -1),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: Colors.white, size: 22),
-
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: accentColor, size: 18),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF5B6D63),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: accentColor,
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                height: 1,
               ),
             ),
-            const SizedBox(height: 1),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
+            const SizedBox(height: 3),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: accentColor.withOpacity(0.45),
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
           ],
@@ -427,18 +488,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
             height: 150,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _surfaceCard,
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _surfaceBorder),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: const Color(0x1A284737),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+              child: CircularProgressIndicator(color: _primaryGreen),
             ),
           );
         }
@@ -459,13 +521,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _surfaceCard,
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _surfaceBorder),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: const Color(0x1A284737),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -480,7 +543,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+                      color: _titleText,
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -496,7 +559,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Text(
                         "Xem tất cả >",
                         style: TextStyle(
-                          color: Color(0xFF2E7D32),
+                          color: _primaryGreen,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -536,7 +599,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Center(
                   child: Text(
                     "Chưa có huy hiệu nào",
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                    style: TextStyle(color: _mutedText, fontSize: 13),
                   ),
                 ),
               ],
@@ -612,13 +675,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _surfaceCard,
           borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _surfaceBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: const Color(0x1A284737),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -630,7 +694,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Colors.black87,
+                color: _titleText,
                 letterSpacing: 0.3,
               ),
             ),
@@ -638,15 +702,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: const Color(0xFFF4FAF6),
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE3EEE7)),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: Colors.grey[200],
-                    child: Icon(Icons.event_note, color: Colors.grey[400]),
+                    backgroundColor: const Color(0xFFDDEFE4),
+                    child: const Icon(Icons.event_note, color: _primaryGreen),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -654,7 +719,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       "Chưa có hoạt động",
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey,
+                        color: _mutedText,
                         fontSize: 13,
                       ),
                     ),
@@ -670,13 +735,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surfaceCard,
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _surfaceBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: const Color(0x1A284737),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -691,7 +757,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black87,
+                  color: _titleText,
                   letterSpacing: 0.3,
                 ),
               ),
@@ -704,7 +770,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Text(
                     "Xem tất cả >",
                     style: TextStyle(
-                      color: Color(0xFF2E7D32),
+                      color: _primaryGreen,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -722,21 +788,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: const Color(0xFFF4FAF6),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey[100]!, width: 1),
+                border: Border.all(color: const Color(0xFFE3EEE7), width: 1),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const CircleAvatar(
                     radius: 20,
-                    backgroundColor: Color(0x335EAC24),
-                    child: Icon(
-                      Icons.history,
-                      color: Color(0xFF5EAC24),
-                      size: 20,
-                    ),
+                    backgroundColor: Color(0x333A8E59),
+                    child: Icon(Icons.history, color: _primaryGreen, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -748,7 +810,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.black87,
+                            color: _titleText,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
@@ -756,10 +818,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 3),
                         Text(
                           "${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 10,
-                          ),
+                          style: TextStyle(color: _mutedText, fontSize: 10),
                         ),
                       ],
                     ),
@@ -771,15 +830,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: isGain
+                          ? const Color(0xFFE4F4EA)
+                          : const Color(0xFFFBE4DF),
                       borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isGain
+                            ? const Color(0xFFCAE7D4)
+                            : const Color(0xFFF1CAC1),
+                      ),
                     ),
                     child: Text(
                       pointsText,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        color: isGain
+                            ? const Color(0xFF266F45)
+                            : const Color(0xFFB3472D),
                       ),
                     ),
                   ),

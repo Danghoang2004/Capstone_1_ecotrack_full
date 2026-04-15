@@ -10,6 +10,7 @@ class CampaignModel {
   final String location;
   final int rewardPoints;
   final int daysRemaining; // Thêm trường này
+  final bool joined;
 
   CampaignModel({
     required this.id,
@@ -21,6 +22,7 @@ class CampaignModel {
     required this.location,
     required this.rewardPoints,
     required this.daysRemaining,
+    required this.joined,
   });
 
   factory CampaignModel.fromJson(Map<String, dynamic> json, ApiClient api) {
@@ -34,6 +36,33 @@ class CampaignModel {
       location: json['location'] ?? "",
       rewardPoints: json['rewardPoints'] ?? 0,
       daysRemaining: json['daysRemaining'] ?? 0, // Map từ JSON
+      joined: json['joined'] == true || json['isJoined'] == true,
+    );
+  }
+
+  CampaignModel copyWith({
+    int? id,
+    String? title,
+    String? description,
+    String? imageUrl,
+    String? dateTime,
+    int? participants,
+    String? location,
+    int? rewardPoints,
+    int? daysRemaining,
+    bool? joined,
+  }) {
+    return CampaignModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      dateTime: dateTime ?? this.dateTime,
+      participants: participants ?? this.participants,
+      location: location ?? this.location,
+      rewardPoints: rewardPoints ?? this.rewardPoints,
+      daysRemaining: daysRemaining ?? this.daysRemaining,
+      joined: joined ?? this.joined,
     );
   }
 }

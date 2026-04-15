@@ -1,22 +1,57 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:frontend_ecotrack/core/services/CampaignRepository.dart';
+import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/CampaignModel.dart'; 
 import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignDetailScreen.dart';
 
 // Đổi từ StatelessWidget sang StatefulWidget để quản lý trạng thái nút bấm
 class CampaignListCard extends StatefulWidget {
   final CampaignModel campaign; 
+  final void Function(int campaignId, int participants)? onJoined;
   
-  const CampaignListCard({super.key, required this.campaign});
+  const CampaignListCard({
+    super.key,
+    required this.campaign,
+    this.onJoined,
+  });
 
   @override
   State<CampaignListCard> createState() => _CampaignListCardState();
 }
 
 class _CampaignListCardState extends State<CampaignListCard> {
-  // Thêm 2 biến trạng thái để quản lý nút bấm
+  late final CampaignRepository _repo;
+
   bool _isLoading = false;
-  bool _isJoined = false;
+  late bool _isJoined;
+  late int _participants;
+
+  @override
+  void initState() {
+    super.initState();
+    _repo = CampaignRepository(
+      ApiClient(storage: const FlutterSecureStorage()),
+    );
+    _isJoined = widget.campaign.joined;
+    _participants = widget.campaign.participants;
+  }
+
+  @override
+  void didUpdateWidget(covariant CampaignListCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.campaign.id != widget.campaign.id) {
+      _isJoined = widget.campaign.joined;
+      _participants = widget.campaign.participants;
+      return;
+    }
+
+    if (!_isLoading) {
+      _isJoined = widget.campaign.joined;
+      _participants = widget.campaign.participants;
+    }
+  }
 
   // --- HÀM THIẾT KẾ POPUP THÀNH CÔNG ---
   void _showSuccessDialog(BuildContext context) {
@@ -106,16 +141,31 @@ class _CampaignListCardState extends State<CampaignListCard> {
       _isLoading = true; // Bật vòng xoay loading
     });
 
-    // Giả lập gọi API mất 1 giây
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await _repo.joinCampaign(widget.campaign.id);
 
-    if (mounted) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false; // Tắt loading
         _isJoined = true;   // Cập nhật trạng thái thành Đã tham gia
+        _participants += 1;
       });
+
+      widget.onJoined?.call(widget.campaign.id, _participants);
+
       // Hiện popup
       _showSuccessDialog(context);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll("Exception:", "").trim()),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -124,10 +174,10 @@ class _CampaignListCardState extends State<CampaignListCard> {
     // Dùng widget.campaign vì đang ở trong State class
     final campaign = widget.campaign;
 
-    int fakeMaxParticipants = campaign.participants == 0 ? 1000 : campaign.participants + 500;
+    int fakeMaxParticipants = _participants == 0 ? 1000 : _participants + 500;
     
     double progressValue = (fakeMaxParticipants > 0) 
-        ? (campaign.participants / fakeMaxParticipants) 
+      ? (_participants / fakeMaxParticipants) 
         : 0.0;
     if (progressValue > 1.0) progressValue = 1.0; 
 
@@ -262,7 +312,7 @@ class _CampaignListCardState extends State<CampaignListCard> {
                                 Icon(Icons.people_alt, size: 18, color: Colors.green.shade700),
                                 const SizedBox(width: 6),
                                 Text(
-                                  "${campaign.participants} người", 
+                                  "${_participants} người", 
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -358,7 +408,11 @@ class _CampaignListCardState extends State<CampaignListCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CampaignDetailScreen(campaignId: widget.campaign.id), 
+        builder: (_) => CampaignDetailScreen(
+          campaignId: widget.campaign.id,
+          initialJoined: _isJoined,
+          initialParticipantCount: _participants,
+        ), 
       ),
     );
   }
