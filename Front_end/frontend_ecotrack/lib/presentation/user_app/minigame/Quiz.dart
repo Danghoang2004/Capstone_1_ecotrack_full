@@ -149,12 +149,14 @@ class _QuizScreenState extends State<QuizScreen> {
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting || _quiz == null) {
           return const Scaffold(
+            backgroundColor: Color(0xFFF4FBF8),
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (snap.hasError) {
           return Scaffold(
+            backgroundColor: const Color(0xFFF4FBF8),
             body: Center(child: Text('Lỗi tải quiz: ${snap.error}')),
           );
         }
@@ -167,7 +169,7 @@ class _QuizScreenState extends State<QuizScreen> {
         return WillPopScope(
           onWillPop: () async => false,
           child: Scaffold(
-            backgroundColor: const Color(0xFFEAF3EC),
+            backgroundColor: const Color(0xFFF4FBF8),
             body: SafeArea(
               child: Column(
                 children: [

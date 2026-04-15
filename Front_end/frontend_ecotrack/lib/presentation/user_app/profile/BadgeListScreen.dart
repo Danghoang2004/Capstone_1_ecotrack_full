@@ -12,7 +12,7 @@ class BadgeListScreen extends StatefulWidget {
 }
 
 class _BadgeListScreenState extends State<BadgeListScreen> {
-  int _selectedTabIndex = 0; 
+  int _selectedTabIndex = 0;
   late Future<List<BadgeModel>> _badgesFuture;
   final UserService _userService = UserService();
 
@@ -20,56 +20,72 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
   void initState() {
     super.initState();
     // Gọi API lấy danh sách huy hiệu
-    _badgesFuture = _userService.getAllBadges(); 
+    _badgesFuture = _userService.getAllBadges();
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color bgLight = Color(0xFFF4F9F4);
+    const Color bgLight = Color(0xFFF4FBF8);
     const Color primaryGreen = Color(0xFF2E7D32);
 
     return Scaffold(
       backgroundColor: bgLight,
       appBar: AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      centerTitle: true,
-      title: const Text(
-        "Danh Sách Huy Hiệu",
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        forceMaterialTransparency: true,
+        centerTitle: true,
+        title: const Text(
+          "Danh Sách Huy Hiệu",
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 21,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        iconTheme: const IconThemeData(color: Colors.black), // nút back
       ),
-      iconTheme: const IconThemeData(color: Colors.black), // nút back
-    ),
       body: FutureBuilder<List<BadgeModel>>(
         future: _badgesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: primaryGreen));
+            return const Center(
+              child: CircularProgressIndicator(color: primaryGreen),
+            );
           }
           if (snapshot.hasError) {
             return Center(child: Text("Lỗi: ${snapshot.error}"));
           }
-          
+
           final allBadges = snapshot.data ?? [];
-          
+
           // Phân loại
-          final earnedBadges = allBadges.where((b) => b.awardedAt != null).toList();
-          final lockedBadges = allBadges.where((b) => b.awardedAt == null).toList();
+          final earnedBadges = allBadges
+              .where((b) => b.awardedAt != null)
+              .toList();
+          final lockedBadges = allBadges
+              .where((b) => b.awardedAt == null)
+              .toList();
 
           List<BadgeModel> displayBadges;
-          if (_selectedTabIndex == 1) displayBadges = earnedBadges;
-          else if (_selectedTabIndex == 2) displayBadges = lockedBadges;
-          else displayBadges = allBadges;
+          if (_selectedTabIndex == 1)
+            displayBadges = earnedBadges;
+          else if (_selectedTabIndex == 2)
+            displayBadges = lockedBadges;
+          else
+            displayBadges = allBadges;
 
           return Column(
             children: [
               // Thanh Tabs Filter
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 16.0,
+                ),
                 child: Row(
                   children: [
                     _buildTabButton("Tất cả", 0, null),
@@ -82,18 +98,24 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
               ),
 
               // Lưới hiển thị
-             Expanded(
+              Expanded(
                 child: displayBadges.isEmpty
-                    ? const Center(child: Text("Không có huy hiệu nào trong mục này", style: TextStyle(color: Colors.grey)))
+                    ? const Center(
+                        child: Text(
+                          "Không có huy hiệu nào trong mục này",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
                     : GridView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         // Bắt buộc phải có dòng gridDelegate này
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, 
-                          childAspectRatio: 0.8, 
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.8,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
                         itemCount: displayBadges.length,
                         // Bắt buộc phải có dòng itemBuilder này
                         itemBuilder: (context, index) {
@@ -103,7 +125,7 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
               ),
             ],
           );
-        }
+        },
       ),
     );
   }
@@ -135,16 +157,20 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
   // Thẻ Huy hiệu chuẩn Figma
   Widget _buildBadgeCard(BadgeModel badge) {
     final isLocked = badge.awardedAt == null;
-    
+
     // Xử lý đường dẫn ảnh từ Backend
     final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
     String? imageUrl;
     if (badge.iconUrl != null && badge.iconUrl!.isNotEmpty) {
-      imageUrl = badge.iconUrl!.startsWith('http') ? badge.iconUrl : '$baseUrl${badge.iconUrl}';
+      imageUrl = badge.iconUrl!.startsWith('http')
+          ? badge.iconUrl
+          : '$baseUrl${badge.iconUrl}';
     }
 
     // Đổi màu nền nhẹ dựa theo trạng thái khóa/mở
-    Color imageBgColor = isLocked ? Colors.grey.shade300 : const Color(0xFFE3F2FD); 
+    Color imageBgColor = isLocked
+        ? Colors.grey.shade300
+        : const Color(0xFFE3F2FD);
 
     return Container(
       decoration: BoxDecoration(
@@ -166,14 +192,28 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
                 child: isLocked
                     ? const Icon(Icons.lock, color: Colors.amber, size: 40)
                     : (imageUrl != null
-                        ? Image.network(imageUrl, width: 60, height: 60, fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.star, color: Colors.orange, size: 40))
-                        : const Icon(Icons.star, color: Colors.orange, size: 40)),
+                          ? Image.network(
+                              imageUrl,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                    Icons.star,
+                                    color: Colors.orange,
+                                    size: 40,
+                                  ),
+                            )
+                          : const Icon(
+                              Icons.star,
+                              color: Colors.orange,
+                              size: 40,
+                            )),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // Tên huy hiệu
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -182,11 +222,15 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                color: Colors.black87,
+              ),
             ),
           ),
           const SizedBox(height: 4),
-          
+
           // Độ hiếm
           Text(
             isLocked ? "Chưa mở khóa" : (badge.description ?? "Thường"),
@@ -196,7 +240,9 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
 
           // Ngày nhận hoặc Yêu cầu
           Text(
-            isLocked ? (badge.requirement ?? "Cố gắng lên!") : (badge.awardedAt ?? ""),
+            isLocked
+                ? (badge.requirement ?? "Cố gắng lên!")
+                : (badge.awardedAt ?? ""),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isLocked ? Colors.grey : const Color(0xFF2E7D32),

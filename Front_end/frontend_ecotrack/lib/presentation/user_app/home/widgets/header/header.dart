@@ -53,18 +53,7 @@ class _HeaderWidgetState extends State<HeaderWidget> {
       padding: EdgeInsets.fromLTRB(16, 12 + statusBarHeight, 16, 12),
 
       // ----------------------------------------------------
-      decoration: BoxDecoration(
-        color: isDesktop ? Colors.white : HomeColors.bgHeader,
-        boxShadow: isDesktop
-            ? [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
-      ),
+      decoration: BoxDecoration(color: Colors.transparent, boxShadow: null),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

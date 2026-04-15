@@ -1658,22 +1658,28 @@ class _MapPageState extends State<MapPage> {
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: widget.hideAppBar
           ? null
           : AppBar(
-              backgroundColor: const Color(0xFF2E7D32),
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              shadowColor: Colors.transparent,
+              forceMaterialTransparency: true,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
               title: const Text(
                 "Bản đồ báo cáo",
-                style: TextStyle(color: Colors.white, fontSize: 20),
+                style: TextStyle(color: Colors.black87, fontSize: 20),
               ),
               centerTitle: true,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
                 onPressed: () => Navigator.pushNamed(context, '/user_app'),
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.my_location, color: Colors.white),
+                  icon: const Icon(Icons.my_location, color: Colors.black87),
                   onPressed: _centerOnMe,
                 ),
               ],
@@ -1752,7 +1758,7 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          Positioned(top: 12, right: 10, child: _buildLegend()),
+          Positioned(top: 110, right: 10, child: _buildLegend()),
           Positioned(
             bottom: 50,
             right: 0,

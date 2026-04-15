@@ -40,11 +40,9 @@ class ResultScreen extends StatelessWidget {
       ),
       // BỌC SCAFFOLD BẰNG CONTAINER MÀU TRẮNG Ở ĐÂY
       child: Container(
-        color: Colors.white, // Lớp lót màu trắng
+        color: const Color(0xFFF4FBF8),
         child: Scaffold(
-          backgroundColor: const Color(
-            0xFFA0F87D,
-          ).withOpacity(0.17), // Nền xanh trong suốt đè lên trên
+          backgroundColor: const Color(0xFFF4FBF8),
           body: SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(13),
@@ -139,7 +137,7 @@ class ResultScreen extends StatelessWidget {
                     Colors.orange,
                   ),
                 ),
-                Container(width: 1, height: 50, color: Colors.grey.shade300),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatItem(
                     'Streak tối đa',
@@ -265,7 +263,7 @@ class ResultScreen extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 4),
+        const SizedBox(height: 11),
 
         SizedBox(
           width: double.infinity,

@@ -91,11 +91,35 @@ class _RecycleSuggestionVideoPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), centerTitle: true),
+      backgroundColor: const Color(0xFFF4FBF8),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFF062D2B),
+        title: Text(widget.title),
+        centerTitle: true,
+      ),
       body: Stack(
         children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          Container(
+            margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFDDEDE8)),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: WebViewWidget(controller: _controller),
+          ),
+          if (_isLoading)
+            const Center(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ),
+            ),
         ],
       ),
     );

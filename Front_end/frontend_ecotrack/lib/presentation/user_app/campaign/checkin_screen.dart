@@ -285,12 +285,21 @@ class _CheckIn_screenrealState extends State<CheckIn_screenreal> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
         elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        forceMaterialTransparency: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         title: const Text(
           "Quét Mã QR",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white , fontSize: 20),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 20,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(

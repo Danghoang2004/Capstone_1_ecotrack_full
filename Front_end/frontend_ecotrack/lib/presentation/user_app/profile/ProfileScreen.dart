@@ -85,10 +85,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 10),
 
                 _buildAchievementsSection(context),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
 
                 _buildRecentActivitySection(view.recentActivities),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
 
                 SizedBox(
                   width: double.infinity,
@@ -119,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 70),
+                const SizedBox(height: 28),
               ],
             ),
           ),
@@ -207,13 +207,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(
-                      Icons.notifications_none,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {},
-                  ),
-                  IconButton(
                     icon: const Icon(Icons.edit, color: Colors.white),
                     onPressed: () async {
                       final result = await Navigator.pushNamed(
@@ -224,8 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (result == true) {
                         setState(() {
                           _viewFuture = _userService.getProfileView();
-                          _badgesFuture = _userService
-                              .getAllBadges(); // Refresh cả huy hiệu
+                          _badgesFuture = _userService.getAllBadges();
                         });
                       }
                     },
@@ -486,7 +478,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
             height: 150,
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: _surfaceCard,
               borderRadius: BorderRadius.circular(14),
@@ -519,7 +511,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final effective = realBadges.take(3).toList();
 
         return Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: _surfaceCard,
             borderRadius: BorderRadius.circular(14),
@@ -568,7 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               // Render Grid
               if (effective.isNotEmpty) ...[
@@ -583,7 +575,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       .toList(),
                 ),
                 if (effective.length > 3) ...[
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -698,9 +690,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: const Color(0xFFF4FAF6),
                 borderRadius: BorderRadius.circular(10),
@@ -731,6 +723,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     }
+
+    final latestActivities = List<ActivityModel>.from(activities)
+      ..sort(
+        (a, b) =>
+            _parseDateTime(b.createdAt).compareTo(_parseDateTime(a.createdAt)),
+      );
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -779,14 +777,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          ...activities.map((a) {
+          const SizedBox(height: 12),
+          ...latestActivities.take(3).map((a) {
             final isGain = a.points >= 0;
             final pointsText = "${isGain ? '+' : ''}${a.points} điểm";
 
             return Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFFF4FAF6),
                 borderRadius: BorderRadius.circular(10),
@@ -881,6 +879,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return '${diff.inDays} ngày trước';
     } catch (_) {
       return dateString;
+    }
+  }
+
+  DateTime _parseDateTime(String dateString) {
+    try {
+      return DateTime.parse(dateString);
+    } catch (_) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
     }
   }
 }

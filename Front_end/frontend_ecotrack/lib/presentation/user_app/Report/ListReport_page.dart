@@ -68,7 +68,7 @@ class _ListReportPageState extends State<ListReportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAF8),
+      backgroundColor: const Color(0xFFF4FBF8),
       // APPBAR VỚI KÍCH THƯỚC TIÊU CHUẨN
       appBar: AppBar(
         title: const Text(

@@ -114,96 +114,170 @@ class _RewardsScreenState extends State<RewardsScreen> {
     }
   }
 
+  String _formatRedeemError(Object error) {
+    final text = error.toString();
+    final cleaned = text
+        .replaceFirst(RegExp(r'^Exception:\s*', caseSensitive: false), '')
+        .replaceFirst(RegExp(r'^Error:\s*', caseSensitive: false), '')
+        .replaceFirst(RegExp(r'^redeem failed:\s*', caseSensitive: false), '')
+        .trim();
+
+    if (cleaned.isEmpty) {
+      return 'Không đổi được voucher. Vui lòng thử lại.';
+    }
+
+    return cleaned;
+  }
+
+  Future<void> _showMessageDialog({
+    required String title,
+    required String message,
+    required Color accentColor,
+    required IconData icon,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFF8FCF9),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: accentColor, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.35,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text(
+                  'Đóng',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Scaffold(
-        backgroundColor: const Color(0xFFA0F87D).withOpacity(0.17),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF2E7D32).withOpacity(0.3),
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          toolbarHeight: 50,
-          titleSpacing: 0,
-          title: Padding(
-            padding: const EdgeInsets.fromLTRB(1, 4, 1, 8),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4FBF8),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Transform.translate(
+          offset: Offset(-80, 0),
+          child: Text(
+            'Đổi thưởng',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        actions: [
+          Container(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2E7D32),
+              borderRadius: BorderRadius.circular(999),
+            ),
             child: Row(
               children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Color.fromARGB(255, 0, 0, 0),
-                  ),
-                  onPressed: () => Navigator.pop(context),
+                const Icon(
+                  Icons.redeem_outlined,
+                  size: 16,
+                  color: Color.fromARGB(255, 255, 255, 255),
                 ),
-                const SizedBox(width: 0.0000000000000001),
-                const Text(
-                  'Đổi thưởng',
-                  style: TextStyle(
-                    color: Color.fromARGB(255, 0, 0, 0),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
+                const SizedBox(width: 4),
+                Text(
+                  '$_userPoints điểm',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2E7D32),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.redeem_outlined,
-                        size: 16,
-                        color: Color.fromARGB(255, 255, 255, 255),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$_userPoints điểm',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Color.fromARGB(255, 255, 255, 255),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-
-                IconButton(
-                  icon: const Icon(
-                    Icons.menu,
-                    color: Color.fromARGB(255, 0, 0, 0),
-                  ),
-                  tooltip: 'Voucher của tôi',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const MyCouponsScreen(),
-                      ),
-                    );
-                  },
                 ),
               ],
             ),
           ),
-        ),
-        body: Column(
-          children: [
-            const SizedBox(height: 1),
-            _CategoryFilterRow(
-              selectedCategory: _selectedCategory,
-              onChanged: _onCategoryChanged,
-            ),
-
-            Expanded(child: _buildBody()),
-          ],
-        ),
+          const SizedBox(width: 6),
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.black),
+            tooltip: 'Voucher của tôi',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyCouponsScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 1),
+          _CategoryFilterRow(
+            selectedCategory: _selectedCategory,
+            onChanged: _onCategoryChanged,
+          ),
+          Expanded(child: _buildBody()),
+        ],
       ),
     );
   }
@@ -245,16 +319,23 @@ class _RewardsScreenState extends State<RewardsScreen> {
                 if (_currentUserId == null) return;
                 await api.redeemVoucher(r.voucherId, _currentUserId!);
                 if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Đổi voucher thành công')),
-                );
                 _loadRewards();
                 _loadUserPoints();
+                await _showMessageDialog(
+                  title: 'Đổi thành công',
+                  message:
+                      'Voucher đã được đổi thành công. Bạn có thể kiểm tra lại trong mục voucher của tôi.',
+                  accentColor: const Color(0xFF2E7D32),
+                  icon: Icons.check_circle,
+                );
               } catch (e) {
                 if (!mounted) return;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('Không đổi được: $e')));
+                await _showMessageDialog(
+                  title: 'Chưa thể đổi voucher',
+                  message: _formatRedeemError(e),
+                  accentColor: Colors.redAccent,
+                  icon: Icons.error_outline,
+                );
               }
             },
           ),
