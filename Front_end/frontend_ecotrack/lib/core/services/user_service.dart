@@ -1,6 +1,6 @@
 // lib/core/services/user_service.dart
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/ProfileView.dart';
@@ -140,7 +140,8 @@ class UserService {
     String? currentPassword,
     String? newPassword,
     String? confirmPassword,
-    File? avatarFile,
+    Uint8List? avatarBytes,
+    String? avatarFilename,
   }) async {
     // SỬA Ở ĐÂY: Lấy baseUrl từ đối tượng apiClient
     // apiClient.baseUrl là thuộc tính public bạn đã khai báo trong class ApiClient
@@ -170,11 +171,12 @@ class UserService {
     }
 
     // Thêm file ảnh (nếu có)
-    if (avatarFile != null) {
+    if (avatarBytes != null && avatarBytes.isNotEmpty) {
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'avatar', // Key này phải trùng với @RequestParam("avatar") ở Java
-          avatarFile.path,
+          avatarBytes,
+          filename: avatarFilename ?? 'avatar.jpg',
         ),
       );
     }

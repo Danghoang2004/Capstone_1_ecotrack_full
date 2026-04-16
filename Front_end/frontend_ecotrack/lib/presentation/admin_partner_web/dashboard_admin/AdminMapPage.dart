@@ -612,9 +612,10 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
   String _pickClusterStatus(List<Report> reports) {
     final statuses = reports.map((r) => r.status.toUpperCase()).toSet();
+    // CLEANED has highest priority so a cleaned cluster turns green immediately.
+    if (statuses.contains('CLEANED')) return 'CLEANED';
     if (statuses.contains('PENDING')) return 'PENDING';
     if (statuses.contains('VERIFIED')) return 'VERIFIED';
-    if (statuses.contains('CLEANED')) return 'CLEANED';
     if (reports.isEmpty) return 'UNKNOWN';
     return reports.first.status;
   }

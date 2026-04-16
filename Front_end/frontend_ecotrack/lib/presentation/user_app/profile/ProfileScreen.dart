@@ -154,10 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // =================== HEADER / APPBAR ===================
 
   SliverAppBar _buildSliverAppBar(ProfileView view) {
-    final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    final String? avatarNetworkUrl = view.avatarUrl.isNotEmpty
-        ? '$baseUrl${view.avatarUrl}'
-        : null;
+    final String? avatarNetworkUrl = _resolveAvatarUrl(view.avatarUrl);
     final displayName = view.fullName.isNotEmpty
         ? view.fullName
         : (view.username.isNotEmpty ? view.username : 'Người dùng');
@@ -228,16 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.white,
-                  backgroundImage: avatarNetworkUrl != null
-                      ? NetworkImage(avatarNetworkUrl)
-                      : null,
-                  child: avatarNetworkUrl == null
-                      ? const Icon(Icons.person, size: 50, color: Colors.grey)
-                      : null,
-                ),
+                _buildProfileAvatar(avatarNetworkUrl),
                 const SizedBox(height: 8),
                 Text(
                   displayName,
@@ -888,5 +876,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {
       return DateTime.fromMillisecondsSinceEpoch(0);
     }
+  }
+
+  String? _resolveAvatarUrl(String rawUrl) {
+    final value = rawUrl.trim();
+    if (value.isEmpty) return null;
+    if (value.startsWith('http')) return value;
+
+    final baseUrl = dotenv.env['API_BASE_URL'] ?? '';
+    if (baseUrl.isEmpty) return value;
+
+    if (value.startsWith('/')) {
+      return '$baseUrl$value';
+    }
+
+    return '$baseUrl/$value';
+  }
+
+  Widget _buildProfileAvatar(String? avatarUrl) {
+    return Container(
+      width: 84,
+      height: 84,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(color: Colors.white, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: avatarUrl == null
+            ? Container(
+                color: const Color(0xFFF1F6F3),
+                child: const Icon(Icons.person, size: 48, color: Colors.grey),
+              )
+            : Image.network(
+                avatarUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: const Color(0xFFF1F6F3),
+                    child: const Icon(
+                      Icons.person,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
+      ),
+    );
   }
 }

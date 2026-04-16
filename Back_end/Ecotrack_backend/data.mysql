@@ -862,7 +862,9 @@ FROM tmp_seed20 s
 JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'))
 JOIN quizzes q ON q.title = CONCAT('Quiz Moi Truong Da Nang ', LPAD(s.n, 2, '0'));
 
--- 17) waste_reports: 100 dòng quanh khu vực Đà Nẵng (16.047079, 108.206230)
+-- 17) waste_reports: xóa dữ liệu cũ và chèn dữ liệu mới ở nội thành/inland Đà Nẵng
+DELETE FROM waste_reports;
+
 INSERT INTO waste_reports
 (
     user_id, title, description, image_url,
@@ -870,60 +872,66 @@ INSERT INTO waste_reports
     category, ai_verified, ai_confidence,
     ai_analysis_json, ai_analyzed_image_url
 )
-SELECT
-    u.user_id,
-    CONCAT('Bao cao rac Da Nang #', LPAD(s.n, 3, '0')),
-    CONCAT('Phat hien diem rac tai Da Nang, vi tri thu ', s.n, '.'),
-    CONCAT('reports/danang/report_', LPAD(s.n, 3, '0'), '.jpg'),
-    ROUND(
-        16.047079
-        + ((MOD(s.n, 20) - 10) * 0.0022)
-        + ((MOD(s.n, 3) - 1) * 0.0007),
-        8
-    ),
-    ROUND(
-        108.206230
-        + ((FLOOR((s.n - 1) / 20) - 2) * 0.0080)
-        + ((MOD(s.n, 5) - 2) * 0.0018),
-        8
-    ),
-    CASE MOD(s.n, 4)
-        WHEN 0 THEN 'PENDING'
-        WHEN 1 THEN 'VERIFIED'
-        WHEN 2 THEN 'REJECTED'
-        ELSE 'CLEANED'
-    END,
-    DATE_SUB(NOW(), INTERVAL s.n HOUR),
-    CASE MOD(s.n, 5)
-        WHEN 0 THEN 'NHUA'
-        WHEN 1 THEN 'HUU_CO'
-        WHEN 2 THEN 'KIM_LOAI'
-        WHEN 3 THEN 'XAY_DUNG'
-        ELSE 'KHAC'
-    END,
-    CASE WHEN MOD(s.n, 6) = 0 THEN NULL WHEN MOD(s.n, 2) = 0 THEN 1 ELSE 0 END,
-    ROUND(0.60 + (MOD(s.n, 35) / 100), 2),
-    JSON_OBJECT(
-        'city', 'Da Nang',
-        'model', 'ecotrack-ai-v1',
-        'report_no', s.n,
-        'label', CASE WHEN MOD(s.n, 2)=0 THEN 'trash_spot' ELSE 'mixed_waste' END
-    ),
-    CONCAT('reports/danang/analyzed_', LPAD(s.n, 3, '0'), '.jpg')
-FROM tmp_seed100 s
-JOIN users u ON u.username = CONCAT('dn_user_', LPAD(((s.n - 1) MOD 20) + 1, 2, '0'));
+VALUES
+((SELECT user_id FROM users WHERE username = 'dn_user_01'), 'Bao cao rac Thanh Khe 01', 'Diem rac nho tren duong noi bo Thanh Khe, khong nam gan bien.', 'reports/danang/thanhkhe_001.jpg', 16.06892000, 108.21640000, 'PENDING', DATE_SUB(NOW(), INTERVAL 1 HOUR), 'NHUA', 1, 0.93, JSON_OBJECT('city', 'Da Nang', 'district', 'Thanh Khe', 'ward', 'Chinh Gian', 'label', 'trash_spot'), 'reports/danang/thanbkhe_analyzed_001.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_02'), 'Bao cao rac Hai Chau 02', 'Diem rac tren khu pho co trung tam Hai Chau, khu vuc nội thanh.', 'reports/danang/haichau_002.jpg', 16.07124000, 108.22018000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 2 HOUR), 'HUU_CO', 1, 0.88, JSON_OBJECT('city', 'Da Nang', 'district', 'Hai Chau', 'ward', 'Hai Chau 1', 'label', 'mixed_waste'), 'reports/danang/haichau_analyzed_002.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_03'), 'Bao cao rac Hoa Xuan 03', 'Rac phat sinh tai khu dan cu Hoa Xuan, nam trong khu do thi, khong gan bien.', 'reports/danang/hoaxuan_003.jpg', 16.01278000, 108.22374000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 3 HOUR), 'KIM_LOAI', 0, 0.76, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa Xuan', 'label', 'scrap_metal'), 'reports/danang/hoaxuan_analyzed_003.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_04'), 'Bao cao rac Hoa Khanh 04', 'Diem rac quanh truong hoc khu Hoa Khanh, khu vuc an toan noi dia.', 'reports/danang/hoakhanh_004.jpg', 16.06054000, 108.14789000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 4 HOUR), 'KHAC', 1, 0.91, JSON_OBJECT('city', 'Da Nang', 'district', 'Lien Chieu', 'ward', 'Hoa Khanh', 'label', 'cleaned_spot'), 'reports/danang/hoakhanh_analyzed_004.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_05'), 'Bao cao rac Hoa Cuong 05', 'Rac nho tai khu pho Hoa Cuong Bac, khu trung tam thanh pho.', 'reports/danang/hoacuong_005.jpg', 16.04263000, 108.22745000, 'PENDING', DATE_SUB(NOW(), INTERVAL 5 HOUR), 'NHUA', 1, 0.84, JSON_OBJECT('city', 'Da Nang', 'district', 'Hai Chau', 'ward', 'Hoa Cuong Bac', 'label', 'plastic_waste'), 'reports/danang/hoacuong_analyzed_005.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_06'), 'Bao cao rac Vinh Trung 06', 'Diem rac ven duong khu Vinh Trung, hoat dong sinh hoat gan nha dan.', 'reports/danang/vinhtrung_006.jpg', 16.07311000, 108.20695000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 6 HOUR), 'HUU_CO', 1, 0.87, JSON_OBJECT('city', 'Da Nang', 'district', 'Thanh Khe', 'ward', 'Vinh Trung', 'label', 'organic_waste'), 'reports/danang/vinhtrung_analyzed_006.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_07'), 'Bao cao rac Hoa An 07', 'Rac roi ven khu hoa an, nam tren dat lien ke khu cong nghiep.', 'reports/danang/hoaan_007.jpg', 16.02894000, 108.20641000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 7 HOUR), 'XAY_DUNG', 1, 0.90, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa An', 'label', 'construction_waste'), 'reports/danang/hoaan_analyzed_007.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_08'), 'Bao cao rac An Khe 08', 'Diem rac nho tai khu An Khe, khu dan cu khong sat duong bien.', 'reports/danang/ankhe_008.jpg', 16.04588000, 108.18432000, 'PENDING', DATE_SUB(NOW(), INTERVAL 8 HOUR), 'NHUA', 0, 0.79, JSON_OBJECT('city', 'Da Nang', 'district', 'Thanh Khe', 'ward', 'An Khe', 'label', 'trash_spot'), 'reports/danang/ankhe_analyzed_008.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_09'), 'Bao cao rac Hoa Minh 09', 'Rac tap ket trong khu Hoa Minh, khu vuc noi bo, xa duong bien.', 'reports/danang/hoaminh_009.jpg', 16.07652000, 108.14488000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 9 HOUR), 'HUU_CO', 1, 0.86, JSON_OBJECT('city', 'Da Nang', 'district', 'Lien Chieu', 'ward', 'Hoa Minh', 'label', 'organic_waste'), 'reports/danang/hoaminh_analyzed_009.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_10'), 'Bao cao rac Khu Trung 10', 'Diem rac tai Khu Trung, gan khu dan cu noi thanh.', 'reports/danang/khutrung_010.jpg', 16.03141000, 108.21977000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 10 HOUR), 'KIM_LOAI', 0, 0.74, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa Tho Dong', 'label', 'mixed_waste'), 'reports/danang/khutrung_analyzed_010.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_11'), 'Bao cao rac Chinh Gian 11', 'Rac ven tuyen duong Chinh Gian, khu pho cu, khong gan bien.', 'reports/danang/chinhgian_011.jpg', 16.06190000, 108.21450000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 11 HOUR), 'NHUA', 1, 0.92, JSON_OBJECT('city', 'Da Nang', 'district', 'Thanh Khe', 'ward', 'Chinh Gian', 'label', 'cleaned_spot'), 'reports/danang/chinhgian_analyzed_011.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_12'), 'Bao cao rac Nam Duong 12', 'Rac sinh hoat tai khu Nam Duong, khu trung tam thanh pho.', 'reports/danang/namduong_012.jpg', 16.05645000, 108.22130000, 'PENDING', DATE_SUB(NOW(), INTERVAL 12 HOUR), 'HUU_CO', 1, 0.83, JSON_OBJECT('city', 'Da Nang', 'district', 'Hai Chau', 'ward', 'Nam Duong', 'label', 'organic_waste'), 'reports/danang/namduong_analyzed_012.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_13'), 'Bao cao rac Hoa Tho 13', 'Diem rac trong khu dan cu Hoa Tho, nam sau cum nha dan.', 'reports/danang/hoatho_013.jpg', 16.02286000, 108.20884000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 13 HOUR), 'KHAC', 1, 0.89, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa Tho Dong', 'label', 'trash_spot'), 'reports/danang/hoatho_analyzed_013.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_14'), 'Bao cao rac Ha Mau 14', 'Rac don dong tai khu Ha Mau, khu vuc noi dia, khong sat bien.', 'reports/danang/hamau_014.jpg', 16.03468000, 108.19795000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 14 HOUR), 'XAY_DUNG', 0, 0.72, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa Tho Tay', 'label', 'construction_waste'), 'reports/danang/hamau_analyzed_014.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_15'), 'Bao cao rac Xuan Ha 15', 'Diem rac nho trong khu pho Xuan Ha, khu vuc thanh pho cu.', 'reports/danang/xuanha_015.jpg', 16.05820000, 108.21226000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 15 HOUR), 'NHUA', 1, 0.94, JSON_OBJECT('city', 'Da Nang', 'district', 'Thanh Khe', 'ward', 'Xuan Ha', 'label', 'cleaned_spot'), 'reports/danang/xuanha_analyzed_015.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_16'), 'Bao cao rac Hoa Phat 16', 'Rac ven duong Hoa Phat, khu dan cu phia tay thanh pho.', 'reports/danang/hoaphat_016.jpg', 16.07985000, 108.17324000, 'PENDING', DATE_SUB(NOW(), INTERVAL 16 HOUR), 'HUU_CO', 1, 0.85, JSON_OBJECT('city', 'Da Nang', 'district', 'Lien Chieu', 'ward', 'Hoa Phat', 'label', 'organic_waste'), 'reports/danang/hoaphat_analyzed_016.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_17'), 'Bao cao rac Khu Trung 17', 'Diem rac phat sinh gan khu dan cu Khu Trung, xa bo bien.', 'reports/danang/khutrung_017.jpg', 16.03802000, 108.21462000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 17 HOUR), 'NHUA', 1, 0.88, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa Cuong Nam', 'label', 'plastic_waste'), 'reports/danang/khutrung_analyzed_017.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_18'), 'Bao cao rac Hoa Khanh Nam 18', 'Rac tai khu Hoa Khanh Nam, khu cong nghiep va khu dan cu.', 'reports/danang/hoakhanhnam_018.jpg', 16.06612000, 108.14590000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 18 HOUR), 'KIM_LOAI', 0, 0.71, JSON_OBJECT('city', 'Da Nang', 'district', 'Lien Chieu', 'ward', 'Hoa Khanh Nam', 'label', 'mixed_waste'), 'reports/danang/hoakhanhnam_analyzed_018.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_19'), 'Bao cao rac Trung Nuoc 19', 'Rac tap trung tai khu Trung Nuoc, khu vuc noi thanh khong gan bien.', 'reports/danang/trungnuoc_019.jpg', 16.05133000, 108.20572000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 19 HOUR), 'HUU_CO', 1, 0.93, JSON_OBJECT('city', 'Da Nang', 'district', 'Hai Chau', 'ward', 'Binh Hien', 'label', 'cleaned_spot'), 'reports/danang/trungnuoc_analyzed_019.jpg'),
+((SELECT user_id FROM users WHERE username = 'dn_user_20'), 'Bao cao rac Hoa Cam 20', 'Diem rac o khu Hoa Cam, khu dan cu noi bo cua Cam Le.', 'reports/danang/hoacam_020.jpg', 16.01876000, 108.20286000, 'PENDING', DATE_SUB(NOW(), INTERVAL 20 HOUR), 'XAY_DUNG', 1, 0.82, JSON_OBJECT('city', 'Da Nang', 'district', 'Cam Le', 'ward', 'Hoa Cam', 'label', 'construction_waste'), 'reports/danang/hoacam_analyzed_020.jpg');
 
--- 18) report_verifications: 20 dòng
+-- 18) report_verifications: 20 dòng cho dữ liệu mới
 INSERT INTO report_verifications (report_id, verified_by, result, confidence_score, created_at)
 SELECT
     wr.report_id,
     u.user_id,
-    CASE WHEN MOD(s.n, 2) = 0 THEN 'APPROVED' ELSE 'REJECTED' END,
-    CASE WHEN MOD(s.n, 2) = 0 THEN 91.25 ELSE 66.50 END,
+    CASE MOD(s.n, 2)
+        WHEN 0 THEN 'APPROVED'
+        ELSE 'REJECTED'
+    END,
+    CASE MOD(s.n, 2)
+        WHEN 0 THEN 92.40
+        ELSE 67.80
+    END,
     DATE_SUB(NOW(), INTERVAL s.n MINUTE)
 FROM tmp_seed20 s
-JOIN waste_reports wr ON wr.title = CONCAT('Bao cao rac Da Nang #', LPAD(s.n, 3, '0'))
-JOIN users u ON u.username = CONCAT('dn_user_', LPAD(((s.n - 1) MOD 20) + 1, 2, '0'));
+JOIN waste_reports wr ON wr.title = CASE s.n
+    WHEN 1 THEN 'Bao cao rac Thanh Khe 01'
+    WHEN 2 THEN 'Bao cao rac Hai Chau 02'
+    WHEN 3 THEN 'Bao cao rac Hoa Xuan 03'
+    WHEN 4 THEN 'Bao cao rac Hoa Khanh 04'
+    WHEN 5 THEN 'Bao cao rac Hoa Cuong 05'
+    WHEN 6 THEN 'Bao cao rac Vinh Trung 06'
+    WHEN 7 THEN 'Bao cao rac Hoa An 07'
+    WHEN 8 THEN 'Bao cao rac An Khe 08'
+    WHEN 9 THEN 'Bao cao rac Hoa Minh 09'
+    WHEN 10 THEN 'Bao cao rac Khu Trung 10'
+    WHEN 11 THEN 'Bao cao rac Chinh Gian 11'
+    WHEN 12 THEN 'Bao cao rac Nam Duong 12'
+    WHEN 13 THEN 'Bao cao rac Hoa Tho 13'
+    WHEN 14 THEN 'Bao cao rac Ha Mau 14'
+    WHEN 15 THEN 'Bao cao rac Xuan Ha 15'
+    WHEN 16 THEN 'Bao cao rac Hoa Phat 16'
+    WHEN 17 THEN 'Bao cao rac Khu Trung 17'
+    WHEN 18 THEN 'Bao cao rac Hoa Khanh Nam 18'
+    WHEN 19 THEN 'Bao cao rac Trung Nuoc 19'
+    ELSE 'Bao cao rac Hoa Cam 20'
+END
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
 
 -- 19) partners: 20 dòng
 INSERT IGNORE INTO partners (user_id, company_name, website, logo_url)
