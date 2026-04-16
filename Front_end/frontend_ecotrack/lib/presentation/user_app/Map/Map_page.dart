@@ -1292,6 +1292,26 @@ class _MapPageState extends State<MapPage> {
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <style>
     html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+    .goong-report-popup-shell .maplibregl-popup-content {
+      padding: 10px 12px;
+      max-width: min(88vw, 360px);
+      box-sizing: border-box;
+    }
+    .goong-report-popup-body {
+      width: min(84vw, 332px);
+      max-width: 100%;
+      max-height: 52vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+      line-height: 1.4;
+    }
+    .goong-report-popup-body,
+    .goong-report-popup-body * {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
   </style>
 </head>
 <body>
@@ -1438,7 +1458,7 @@ class _MapPageState extends State<MapPage> {
           : [item];
 
         let html = '';
-        html += '<div style="width:min(88vw,340px);max-height:52vh;overflow-y:auto;overflow-x:hidden;font-family:Arial,sans-serif;line-height:1.4;word-break:break-word;">';
+        html += '<div class="goong-report-popup-body">';
         html += '<div style="font-weight:700;font-size:14px;margin-bottom:8px;color:#111827;">';
         html += 'Cụm báo cáo (' + reports.length + ')';
         html += '</div>';
@@ -1538,7 +1558,8 @@ class _MapPageState extends State<MapPage> {
               state.popup = null;
             }
 
-            state.popup = new maplibregl.Popup({ offset: 18, closeButton: true, closeOnClick: true })
+            state.popup = new maplibregl.Popup({ offset: 18, closeButton: true, closeOnClick: true, anchor: 'center', className: 'goong-report-popup-shell' })
+                .setMaxWidth('360px')
               .setLngLat(feature.geometry.coordinates)
               .setHTML(popupHtml)
               .addTo(state.map);

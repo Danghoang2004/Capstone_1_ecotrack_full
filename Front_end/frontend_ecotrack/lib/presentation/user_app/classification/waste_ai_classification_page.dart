@@ -510,10 +510,6 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
             'Độ tin cậy tổng',
             '${(result.overallConfidence * 100).toStringAsFixed(1)}%',
           ),
-          _infoRow(
-            'Tổng vật thể nhận diện',
-            result.totalObjectsDetected.toString(),
-          ),
           const SizedBox(height: 12),
           const Text(
             'Tổng Hợp Theo Loại Rác',
@@ -544,7 +540,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                       ),
                     ),
                     Text(
-                      '${entry.value} vật | ${_toPercentText(entry.value, totalGroupedCount)}',
+                      _toPercentText(entry.value, totalGroupedCount),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     if (averageConfidenceByType.containsKey(entry.key))

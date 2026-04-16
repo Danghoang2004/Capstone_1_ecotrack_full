@@ -40,12 +40,39 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
         }
 
         final data = snap.data!;
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1280),
-              child: _buildDashboardContent(data),
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 280),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          transitionBuilder: (child, animation) {
+            final fade = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            );
+            final offset =
+                Tween<Offset>(
+                  begin: const Offset(0, 0.03),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                );
+
+            return FadeTransition(
+              opacity: fade,
+              child: SlideTransition(position: offset, child: child),
+            );
+          },
+          child: SingleChildScrollView(
+            key: const ValueKey('admin-dashboard-loaded'),
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1280),
+                child: _buildDashboardContent(data),
+              ),
             ),
           ),
         );
@@ -60,8 +87,8 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
         final int statsPerRow = viewportWidth >= 980
             ? 4
             : viewportWidth >= 760
-                ? 2
-                : 1;
+            ? 2
+            : 1;
         final double statsGap = 16;
         final double statsCardWidth =
             (viewportWidth - (statsGap * (statsPerRow - 1))) / statsPerRow;
@@ -280,8 +307,14 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                       spacing: 12,
                       runSpacing: 12,
                       children: [
-                        _buildHeroMetric('Người dùng', data.totalUsers.toString()),
-                        _buildHeroMetric('Báo cáo', data.totalReports.toString()),
+                        _buildHeroMetric(
+                          'Người dùng',
+                          data.totalUsers.toString(),
+                        ),
+                        _buildHeroMetric(
+                          'Báo cáo',
+                          data.totalReports.toString(),
+                        ),
                         _buildHeroMetric(
                           'Chiến dịch',
                           data.totalCampaigns.toString(),
@@ -307,7 +340,11 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -324,7 +361,13 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.82), fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.82),
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
@@ -368,9 +411,10 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     }
 
     if (maxY < 10) maxY = 10;
+    maxY = (maxY * 1.18).ceilToDouble();
     maxY = ((maxY / 20).ceil() * 20).toDouble();
 
-    final intervalY = (maxY / 3).ceilToDouble();
+    final intervalY = (maxY / 4).ceilToDouble();
 
     return _CardContainer(
       title: 'Xu hướng hoạt động theo tháng',
@@ -389,112 +433,168 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: LineChart(
-              LineChartData(
-                minX: 0,
-                maxX: (data.monthlyActivity.length - 1).toDouble(),
-                minY: 0,
-                maxY: maxY,
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: intervalY,
-                ),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 32,
-                      interval: intervalY,
-                      getTitlesWidget: (value, meta) => Text(
-                        value.toInt().toString(),
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= data.monthlyActivity.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            _shortMonthLabel(data.monthlyActivity[idx].month),
-                            style: const TextStyle(fontSize: 11),
+            child: LayoutBuilder(
+              builder: (context, chartConstraints) {
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 8, 8, 8),
+                      child: LineChart(
+                        LineChartData(
+                          minX: 0,
+                          maxX: (data.monthlyActivity.length - 1).toDouble(),
+                          minY: 0,
+                          maxY: maxY,
+                          extraLinesData: ExtraLinesData(
+                            horizontalLines: [
+                              HorizontalLine(
+                                y: 0,
+                                color: const Color(0xFFB9C7D4),
+                                strokeWidth: 1,
+                                dashArray: [4, 4],
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  handleBuiltInTouches: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    tooltipRoundedRadius: 8,
-                    fitInsideHorizontally: true,
-                    fitInsideVertically: true,
-                    getTooltipColor: (spot) => Colors.black87,
-                    getTooltipItems: (touchedSpots) {
-                      if (touchedSpots.isEmpty) return [];
-
-                      final monthIndex = touchedSpots.first.x.toInt();
-                      final monthLabel = (monthIndex >= 0 && monthIndex < data.monthlyActivity.length)
-                          ? data.monthlyActivity[monthIndex].month
-                          : '';
-
-                      return touchedSpots
-                          .map(
-                            (spot) => LineTooltipItem(
-                              monthLabel.isEmpty
-                                  ? spot.y.toInt().toString()
-                                  : '$monthLabel: ${spot.y.toInt()}',
-                              const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: true,
+                            horizontalInterval: intervalY,
+                            verticalInterval: 1,
+                            getDrawingHorizontalLine: (value) => const FlLine(
+                              color: Color(0xFFD8E1E8),
+                              strokeWidth: 1,
+                              dashArray: [5, 5],
+                            ),
+                            getDrawingVerticalLine: (value) => const FlLine(
+                              color: Color(0xFFF1F4F7),
+                              strokeWidth: 1,
+                            ),
+                          ),
+                          borderData: FlBorderData(
+                            show: true,
+                            border: const Border(
+                              left: BorderSide(
+                                color: Color(0xFF7D909F),
+                                width: 1.2,
+                              ),
+                              bottom: BorderSide(
+                                color: Color(0xFF7D909F),
+                                width: 1.2,
                               ),
                             ),
-                          )
-                          .toList();
-                    },
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    isCurved: false,
-                    color: const Color(0xFF4285F4),
-                    barWidth: 2.2,
-                    spots: usersSpots,
-                    dotData: FlDotData(show: false),
-                  ),
-                  LineChartBarData(
-                    isCurved: false,
-                    color: const Color(0xFFFF8A65),
-                    barWidth: 2.2,
-                    spots: reportsSpots,
-                    dotData: FlDotData(show: false),
-                  ),
-                  LineChartBarData(
-                    isCurved: false,
-                    color: const Color(0xFF34A853),
-                    barWidth: 2.2,
-                    spots: campaignsSpots,
-                    dotData: FlDotData(show: false),
-                  ),
-                ],
-              ),
+                          ),
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 42,
+                                interval: intervalY,
+                                getTitlesWidget: (value, meta) {
+                                  if (value < 0 || value > maxY) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: Text(
+                                      value.toInt().toString(),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                interval: 1,
+                                reservedSize: 30,
+                                getTitlesWidget: (value, meta) {
+                                  final idx = value.toInt();
+                                  if (idx < 0 ||
+                                      idx >= data.monthlyActivity.length) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      _shortMonthLabel(
+                                        data.monthlyActivity[idx].month,
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF4B5563),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                          ),
+                          lineTouchData: LineTouchData(
+                            enabled: true,
+                            handleBuiltInTouches: true,
+                            touchTooltipData: LineTouchTooltipData(
+                              tooltipRoundedRadius: 8,
+                              fitInsideHorizontally: true,
+                              fitInsideVertically: true,
+                              getTooltipColor: (spot) => Colors.black87,
+                              getTooltipItems: (touchedSpots) {
+                                if (touchedSpots.isEmpty) return [];
+
+                                final monthIndex = touchedSpots.first.x.toInt();
+                                final monthLabel =
+                                    (monthIndex >= 0 &&
+                                        monthIndex <
+                                            data.monthlyActivity.length)
+                                    ? data.monthlyActivity[monthIndex].month
+                                    : '';
+
+                                return touchedSpots
+                                    .map(
+                                      (spot) => LineTooltipItem(
+                                        monthLabel.isEmpty
+                                            ? spot.y.toInt().toString()
+                                            : '$monthLabel: ${spot.y.toInt()}',
+                                        const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    )
+                                    .toList();
+                              },
+                            ),
+                          ),
+                          lineBarsData: [
+                            _buildClassicLineSeries(
+                              spots: usersSpots,
+                              color: const Color(0xFF4285F4),
+                            ),
+                            _buildClassicLineSeries(
+                              spots: reportsSpots,
+                              color: const Color(0xFFFF8A65),
+                            ),
+                            _buildClassicLineSeries(
+                              spots: campaignsSpots,
+                              color: const Color(0xFF34A853),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -532,8 +632,8 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
               children: [
                 PieChart(
                   PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 38,
+                    sectionsSpace: 3,
+                    centerSpaceRadius: 44,
                     startDegreeOffset: -90,
                     sections: orderedKeys.map((key) {
                       final value = data.reportStatus[key] ?? 0;
@@ -544,10 +644,11 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                       return PieChartSectionData(
                         value: value.toDouble(),
                         title: '${percent.toStringAsFixed(0)}%',
-                        radius: 70,
+                        radius: 74,
                         color: colors[key],
+                        titlePositionPercentageOffset: 0.62,
                         titleStyle: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -586,22 +687,25 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 final value = data.reportStatus[key] ?? 0;
                 final percent = total == 0 ? 0 : (value / total * 100).round();
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 7),
                   child: Row(
                     children: [
                       Container(
-                        width: 12,
-                        height: 12,
+                        width: 11,
+                        height: 11,
                         decoration: BoxDecoration(
                           color: colors[key],
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '${viLabel[key]} $percent% ($value)',
-                          style: const TextStyle(fontSize: 13),
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
@@ -634,71 +738,130 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
     }
 
     if (maxY < 10) maxY = 10;
+    maxY = (maxY * 1.18).ceilToDouble();
     maxY = ((maxY / 20).ceil() * 20).toDouble();
 
-    final intervalY = (maxY / 3).ceilToDouble();
+    final intervalY = (maxY / 4).ceilToDouble();
 
     return _CardContainer(
       title: 'Tham gia chiến dịch',
       height: 320,
-      child: LineChart(
-        LineChartData(
-          minY: 0,
-          maxY: maxY,
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: intervalY,
-          ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                interval: intervalY,
-                getTitlesWidget: (value, meta) => Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(fontSize: 11),
+      child: LayoutBuilder(
+        builder: (context, chartConstraints) {
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 8, 8, 8),
+                child: LineChart(
+                  LineChartData(
+                    minX: 0,
+                    maxX: (data.campaignParticipation.length - 1).toDouble(),
+                    minY: 0,
+                    maxY: maxY,
+                    extraLinesData: ExtraLinesData(
+                      horizontalLines: [
+                        HorizontalLine(
+                          y: 0,
+                          color: const Color(0xFFB9C7D4),
+                          strokeWidth: 1,
+                          dashArray: [4, 4],
+                        ),
+                      ],
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: true,
+                      horizontalInterval: intervalY,
+                      verticalInterval: 1,
+                      getDrawingHorizontalLine: (value) => const FlLine(
+                        color: Color(0xFFD8E1E8),
+                        strokeWidth: 1,
+                        dashArray: [5, 5],
+                      ),
+                      getDrawingVerticalLine: (value) => const FlLine(
+                        color: Color(0xFFF1F4F7),
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 42,
+                          interval: intervalY,
+                          getTitlesWidget: (value, meta) {
+                            if (value < 0 || value > maxY) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Text(
+                                value.toInt().toString(),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF4B5563),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          interval: 1,
+                          reservedSize: 30,
+                          getTitlesWidget: (value, meta) {
+                            final idx = value.toInt();
+                            if (idx < 0 ||
+                                idx >= data.campaignParticipation.length) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                _shortMonthLabel(
+                                  data.campaignParticipation[idx].month,
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF4B5563),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    borderData: FlBorderData(
+                      show: true,
+                      border: const Border(
+                        left: BorderSide(color: Color(0xFF7D909F), width: 1.2),
+                        bottom: BorderSide(
+                          color: Color(0xFF7D909F),
+                          width: 1.2,
+                        ),
+                      ),
+                    ),
+                    lineBarsData: [
+                      _buildClassicLineSeries(
+                        spots: spots,
+                        color: const Color(0xFF2F8C4C),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  final idx = value.toInt();
-                  if (idx < 0 || idx >= data.campaignParticipation.length) {
-                    return const SizedBox.shrink();
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      _shortMonthLabel(data.campaignParticipation[idx].month),
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  );
-                },
-              ),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              isCurved: false,
-              color: const Color(0xFF2F8C4C),
-              barWidth: 2.2,
-              spots: spots,
-              dotData: FlDotData(show: false),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -740,10 +903,16 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 Container(
                   width: 10,
                   height: 10,
-                  decoration: BoxDecoration(color: level.color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: level.color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 8),
-                SizedBox(width: 70, child: Text(level.name, style: const TextStyle(fontSize: 13))),
+                SizedBox(
+                  width: 70,
+                  child: Text(level.name, style: const TextStyle(fontSize: 13)),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Stack(
@@ -801,7 +970,11 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
       if (e.actionType == 'COMPLETE_QUIZ') c = AppColors.adminAccentWarm;
       if (e.actionType == 'REDEEM_COUPON') c = const Color(0xFF28B89A);
 
-      return _ActivityItem(color: c, title: e.title, time: _formatRelativeTime(e.createdAt));
+      return _ActivityItem(
+        color: c,
+        title: e.title,
+        time: _formatRelativeTime(e.createdAt),
+      );
     }).toList();
 
     return _CardContainer(
@@ -818,16 +991,28 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
                 width: 10,
                 height: 10,
                 margin: const EdgeInsets.only(top: 6),
-                decoration: BoxDecoration(color: item.color, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: item.color,
+                  shape: BoxShape.circle,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(
+                      item.title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(item.time, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text(
+                      item.time,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
                   ],
                 ),
               ),
@@ -860,6 +1045,20 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
       return '$month/$year2';
     }
     return trimmed.replaceAll('thg ', '').replaceAll('tháng ', '');
+  }
+
+  LineChartBarData _buildClassicLineSeries({
+    required List<FlSpot> spots,
+    required Color color,
+  }) {
+    return LineChartBarData(
+      isCurved: false,
+      color: color,
+      barWidth: 2.4,
+      spots: spots,
+      dotData: FlDotData(show: false),
+      belowBarData: BarAreaData(show: false),
+    );
   }
 }
 
@@ -974,9 +1173,16 @@ class _StatCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.trending_up, size: 14, color: AppColors.adminAccent),
+                    const Icon(
+                      Icons.trending_up,
+                      size: 14,
+                      color: AppColors.adminAccent,
+                    ),
                     const SizedBox(width: 4),
-                    Text(subtitle, style: TextStyle(fontSize: 12, color: subtitleColor)),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 12, color: subtitleColor),
+                    ),
                   ],
                 ),
               ],
