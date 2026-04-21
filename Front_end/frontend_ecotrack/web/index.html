@@ -98,6 +98,8 @@
         recoveryAttempts: 0,
         reportLayersInitialized: false,
         clusterLayersInitialized: false,
+        geocodeApiKey: '',
+        locationCache: new Map(),
       };
 
       function pushEvent(stage, detail) {
@@ -184,6 +186,77 @@
           default:
             return '#3874c7';
         }
+      }
+
+      function formatCoordinate(value) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) {
+          return '-';
+        }
+        return numeric.toFixed(6);
+      }
+
+      function buildClusterPopupHtml({ mode, count, intensity, lat, lng, areaName }) {
+        const title = mode === 'heat_predicted' ? 'Vung Du Bao' : 'Vung Hotspot';
+        const countLabel = mode === 'heat_predicted' ? 'Du bao bao cao 7 ngay' : 'Tong so bao cao';
+        const areaText = areaName && String(areaName).trim().length > 0
+          ? areaName
+          : 'Dang xac dinh khu vuc...';
+
+        return `
+          <div style="padding: 10px; font-family: Arial, sans-serif;">
+            <div style="font-weight: 700; font-size: 14px; color: #1f2937; margin-bottom: 6px;">
+              ${title}
+            </div>
+            <div style="font-size: 12px; color: #374151; margin-bottom: 4px;">
+              Khu vuc: <strong>${escapeHtml(areaText)}</strong>
+            </div>
+            <div style="font-size: 12px; color: #374151; margin-bottom: 4px;">
+              Vi tri: <strong>${formatCoordinate(lat)}, ${formatCoordinate(lng)}</strong>
+            </div>
+            <div style="font-size: 12px; color: #6b7280;">
+              ${countLabel}: <strong>${count}</strong>
+            </div>
+            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+              Muc do rui ro: ${(Number(intensity) * 100).toFixed(0)}%
+            </div>
+            <div style="margin-top: 8px; font-size: 11px; color: #9ca3af; font-style: italic;">
+              Nhan de xem chi tiet hoac thu phong de xem bao cao rieng
+            </div>
+          </div>
+        `;
+      }
+
+      async function resolveAreaName(lat, lng) {
+        const key = `${Number(lat).toFixed(5)},${Number(lng).toFixed(5)}`;
+        if (state.locationCache.has(key)) {
+          return state.locationCache.get(key);
+        }
+
+        if (!state.geocodeApiKey || !String(state.geocodeApiKey).trim()) {
+          return null;
+        }
+
+        const endpoint = `https://rsapi.goong.io/Geocode?latlng=${encodeURIComponent(`${lat},${lng}`)}&api_key=${encodeURIComponent(state.geocodeApiKey)}`;
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          return null;
+        }
+
+        const payload = await response.json();
+        const first = payload && Array.isArray(payload.results) && payload.results.length > 0
+          ? payload.results[0]
+          : null;
+
+        const formatted = first && first.formatted_address
+          ? String(first.formatted_address)
+          : null;
+
+        if (formatted) {
+          state.locationCache.set(key, formatted);
+        }
+
+        return formatted;
       }
 
       function scheduleMapResize(container) {
@@ -409,7 +482,9 @@
           const rankedPoints = state.heatPoints
             .map((cluster, index) => ({
               index,
-              count: Number(cluster.count || cluster.reportCount || cluster.predictedCount7d || 0),
+              count: state.mode === 'heat_predicted'
+                ? Number(cluster.count || cluster.predictedCount7d || 0)
+                : Number(cluster.count || cluster.reportCount || 0),
               intensity: Number(cluster.intensity || 0),
             }))
             .sort((a, b) => {
@@ -429,7 +504,9 @@
           });
 
           const features = state.heatPoints.map((cluster, index) => {
-            const count = Number(cluster.count || cluster.reportCount || cluster.predictedCount7d || 0);
+            const count = state.mode === 'heat_predicted'
+              ? Number(cluster.count || cluster.predictedCount7d || 0)
+              : Number(cluster.count || cluster.reportCount || 0);
             const intensity = Number(cluster.intensity || 0);
 
             const tier = totalPoints >= 3
@@ -506,6 +583,18 @@
               if (!event.features || event.features.length === 0) return;
               const feature = event.features[0];
               const props = feature.properties || {};
+              const coords = feature.geometry && feature.geometry.coordinates ? feature.geometry.coordinates : [null, null];
+              const lng = coords[0];
+              const lat = coords[1];
+
+              const baseHtml = buildClusterPopupHtml({
+                mode: state.mode,
+                count: props.count,
+                intensity: props.intensity,
+                lat,
+                lng,
+                areaName: null,
+              });
 
               clearPopup();
               state.popup = new maplibregl.Popup({
@@ -515,23 +604,36 @@
                 maxWidth: '380px',
               })
                 .setLngLat(feature.geometry.coordinates)
-                .setHTML(`
-                <div style="padding: 10px; font-family: Arial, sans-serif;">
-                  <div style="font-weight: 700; font-size: 14px; color: #1f2937; margin-bottom: 6px;">
-                    ${state.mode === 'heat_predicted' ? 'Vùng Dự Báo' : 'Vùng Hotspot'}
-                  </div>
-                  <div style="font-size: 12px; color: #6b7280;">
-                    ${state.mode === 'heat_predicted' ? 'Dự báo báo cáo 7 ngày' : 'Tổng số báo cáo'}: <strong>${props.count}</strong>
-                  </div>
-                  <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
-                    Mức độ rủi ro: ${(Number(props.intensity) * 100).toFixed(0)}%
-                  </div>
-                  <div style="margin-top: 8px; font-size: 11px; color: #9ca3af; font-style: italic;">
-                    Nhấn để xem chi tiết hoặc thu phóng để xem báo cáo riêng
-                  </div>
-                </div>
-              `)
+                .setHTML(baseHtml)
                 .addTo(state.map);
+
+              if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+                resolveAreaName(lat, lng)
+                  .then((areaName) => {
+                    if (!state.popup) return;
+                    const updatedHtml = buildClusterPopupHtml({
+                      mode: state.mode,
+                      count: props.count,
+                      intensity: props.intensity,
+                      lat,
+                      lng,
+                      areaName,
+                    });
+                    state.popup.setHTML(updatedHtml);
+                  })
+                  .catch(() => {
+                    if (!state.popup) return;
+                    const fallbackHtml = buildClusterPopupHtml({
+                      mode: state.mode,
+                      count: props.count,
+                      intensity: props.intensity,
+                      lat,
+                      lng,
+                      areaName: 'Khong xac dinh duoc khu vuc',
+                    });
+                    state.popup.setHTML(fallbackHtml);
+                  });
+              }
             });
 
             state.map.on('mouseenter', 'goong-clusters-circle', () => {
@@ -703,7 +805,7 @@
         return null;
       }
 
-      window.goongAdminMapInit = function (containerOrId, styleUrl, lng, lat, zoom) {
+      window.goongAdminMapInit = function (containerOrId, styleUrl, lng, lat, zoom, geocodeApiKey) {
         logStage('init', 'called');
         if (state.map) {
           state.map.remove();
@@ -719,6 +821,7 @@
         }
         state.ready = false;
         state.lastError = null;
+        state.geocodeApiKey = geocodeApiKey || '';
 
         let container = null;
         if (typeof containerOrId === 'string') {
@@ -953,19 +1056,26 @@
       window.goongAdminMapSetHeatPoints = function (json) {
         try {
           const parsed = JSON.parse(json || '[]');
-          logStage('setHeatPoints', `received JSON length=${(json || '').length}, parsed ${parsed.length} points`);
+          const points = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.points) ? parsed.points : []);
+          const explicitMode = !Array.isArray(parsed) && typeof parsed.mode === 'string'
+            ? parsed.mode
+            : null;
 
-          if (parsed.length === 0) {
+          logStage('setHeatPoints', `received JSON length=${(json || '').length}, parsed ${points.length} points`);
+
+          if (points.length === 0) {
             state.heatPointsMode = null;
             logStage('setHeatPoints', 'empty heatPoints array, clearing render');
           } else {
-            const predicted = parsed[0]?.predicted === true;
-            state.heatPointsMode = predicted ? 'heat_predicted' : 'heat_observed';
-            logStage('setHeatPoints', `first point: lat=${parsed[0]?.lat}, lng=${parsed[0]?.lng}, intensity=${parsed[0]?.intensity}, count=${parsed[0]?.count}, dataMode=${state.heatPointsMode}`);
+            const predicted = explicitMode === 'heat_predicted'
+              || parsed?.predicted === true
+              || points[0]?.predicted === true;
+            state.heatPointsMode = explicitMode || (predicted ? 'heat_predicted' : 'heat_observed');
+            logStage('setHeatPoints', `first point: lat=${points[0]?.lat}, lng=${points[0]?.lng}, intensity=${points[0]?.intensity}, count=${points[0]?.count}, dataMode=${state.heatPointsMode}`);
           }
 
-          state.heatPoints = parsed;
-          if (state.mode === 'reports' || state.heatPointsMode === state.mode || parsed.length === 0) {
+          state.heatPoints = points;
+          if (state.mode === 'reports' || state.heatPointsMode === state.mode || points.length === 0) {
             render();
           } else {
             logStage('setHeatPoints', `data ready for ${state.heatPointsMode}, current mode=${state.mode}, skip render until mode matches`);

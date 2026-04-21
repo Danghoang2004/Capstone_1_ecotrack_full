@@ -46,6 +46,38 @@ class AdminEnvironmentTeamService {
         .toList();
   }
 
+  Future<List<EnvironmentTeamKpiTaskDetail>> fetchKpiTaskDetails({
+    required int teamId,
+    String? fromAt,
+    String? toAt,
+  }) async {
+    final params = <String>[];
+    if (fromAt != null && fromAt.isNotEmpty) {
+      params.add('fromAt=${Uri.encodeComponent(fromAt)}');
+    }
+    if (toAt != null && toAt.isNotEmpty) {
+      params.add('toAt=${Uri.encodeComponent(toAt)}');
+    }
+
+    final path = params.isEmpty
+        ? '/api/admin/environment/teams/$teamId/kpi-task-details'
+        : '/api/admin/environment/teams/$teamId/kpi-task-details?${params.join('&')}';
+
+    final response = await apiClient.get(path);
+    if (response.statusCode != 200) {
+      throw Exception('Không thể tải chi tiết task KPI của đội.');
+    }
+
+    final List<dynamic> data = apiClient.decodeUtf8Json(response);
+    return data
+        .map(
+          (item) => EnvironmentTeamKpiTaskDetail.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList();
+  }
+
   Future<List<EnvironmentTeamUserOption>> fetchUsers() async {
     final response = await apiClient.get(
       '/api/admin/environment/teams/environment-users',

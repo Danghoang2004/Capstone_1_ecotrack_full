@@ -3,6 +3,7 @@ package capstone_1.Ecotrack_backend.service.environment;
 import capstone_1.Ecotrack_backend.dto.request.environment.CreateEnvironmentTeamRequest;
 import capstone_1.Ecotrack_backend.dto.request.environment.UpdateEnvironmentTeamRequest;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamKpiResponse;
+import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamKpiTaskDetailResponse;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentMyTeamInfoResponse;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamMemberResponse;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamResponse;
@@ -13,10 +14,12 @@ import capstone_1.Ecotrack_backend.model.EnvironmentCleanupTask;
 import capstone_1.Ecotrack_backend.model.EnvironmentTeam;
 import capstone_1.Ecotrack_backend.model.EnvironmentTeamMember;
 import capstone_1.Ecotrack_backend.model.User;
+import capstone_1.Ecotrack_backend.model.WasteReport;
 import capstone_1.Ecotrack_backend.repository.EnvironmentCleanupTaskRepository;
 import capstone_1.Ecotrack_backend.repository.EnvironmentTeamMemberRepository;
 import capstone_1.Ecotrack_backend.repository.EnvironmentTeamRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
+import capstone_1.Ecotrack_backend.repository.WasteReportRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,15 +41,18 @@ public class EnvironmentTeamManagementService {
     private final EnvironmentTeamMemberRepository environmentTeamMemberRepository;
     private final UserRepository userRepository;
     private final EnvironmentCleanupTaskRepository environmentCleanupTaskRepository;
+    private final WasteReportRepository wasteReportRepository;
 
     public EnvironmentTeamManagementService(EnvironmentTeamRepository environmentTeamRepository,
             EnvironmentTeamMemberRepository environmentTeamMemberRepository,
             UserRepository userRepository,
-            EnvironmentCleanupTaskRepository environmentCleanupTaskRepository) {
+            EnvironmentCleanupTaskRepository environmentCleanupTaskRepository,
+            WasteReportRepository wasteReportRepository) {
         this.environmentTeamRepository = environmentTeamRepository;
         this.environmentTeamMemberRepository = environmentTeamMemberRepository;
         this.userRepository = userRepository;
         this.environmentCleanupTaskRepository = environmentCleanupTaskRepository;
+        this.wasteReportRepository = wasteReportRepository;
     }
 
     @Transactional
@@ -259,6 +265,80 @@ public class EnvironmentTeamManagementService {
                                 : user.getUsername(),
                         user.getUsername(),
                         user.getEmail()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EnvironmentTeamKpiTaskDetailResponse> getTeamKpiTaskDetails(Long teamId, String fromAt, String toAt) {
+        EnvironmentTeam team = findTeamOrThrow(teamId);
+        boolean hasFrom = fromAt != null && !fromAt.isBlank();
+        boolean hasTo = toAt != null && !toAt.isBlank();
+
+        LocalDateTime from = null;
+        LocalDateTime to = null;
+        if (hasFrom || hasTo) {
+            from = parseDateTimeOrDefault(fromAt, LocalDateTime.now().minusDays(30));
+            to = parseDateTimeOrDefault(toAt, LocalDateTime.now());
+
+            if (to.isBefore(from)) {
+                throw new InvalidTaskStateException("Khoảng thời gian KPI không hợp lệ.");
+            }
+        }
+
+        List<EnvironmentTeamMember> leads = environmentTeamMemberRepository
+                .findByTeamTeamIdAndRoleAndIsActiveTrue(team.getTeamId(), EnvironmentTeamMember.TeamRole.LEAD);
+
+        List<Long> leadUserIds = leads.stream().map(EnvironmentTeamMember::getUserId).distinct().toList();
+        if (leadUserIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<EnvironmentCleanupTask> tasks;
+        if (from != null && to != null) {
+            tasks = environmentCleanupTaskRepository
+                    .findByTeamLeadUserIdInAndAssignedAtBetween(leadUserIds, from, to);
+        } else {
+            tasks = environmentCleanupTaskRepository
+                    .findByTeamLeadUserIdInOrderByAssignedAtDesc(leadUserIds);
+        }
+
+        Map<Long, WasteReport> reportById = wasteReportRepository
+                .findAllById(tasks.stream().map(EnvironmentCleanupTask::getReportId).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(WasteReport::getReportId, report -> report));
+
+        Map<Long, User> leadUserById = userRepository.findAllById(leadUserIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        return tasks.stream()
+                .sorted((a, b) -> b.getAssignedAt().compareTo(a.getAssignedAt()))
+                .map(task -> {
+                    WasteReport report = reportById.get(task.getReportId());
+                    User leadUser = leadUserById.get(task.getTeamLeadUserId());
+
+                    String leadName = leadUser != null && leadUser.getUserProfile() != null
+                            && leadUser.getUserProfile().getFullName() != null
+                                    ? leadUser.getUserProfile().getFullName()
+                                    : (leadUser != null ? leadUser.getUsername() : "Không xác định");
+
+                    EnvironmentTeamKpiTaskDetailResponse response = new EnvironmentTeamKpiTaskDetailResponse();
+                    response.setTaskId(task.getTaskId());
+                    response.setReportId(task.getReportId());
+                    response.setReportTitle(report != null && report.getTitle() != null
+                            ? report.getTitle()
+                            : ("Báo cáo #" + task.getReportId()));
+                    response.setReportCategory(report == null ? null : report.getCategory());
+                    response.setReportStatus(
+                            report == null || report.getStatus() == null ? null : report.getStatus().name());
+                    response.setTaskStatus(task.getStatus().name());
+                    response.setAssigneeLeadId(task.getTeamLeadUserId());
+                    response.setAssigneeLeadName(leadName);
+                    response.setAssignedAt(task.getAssignedAt());
+                    response.setDueAt(task.getDueAt());
+                    response.setCompletedAt(task.getCompletedAt());
+                    response.setResolvedAt(task.getResolvedAt());
+                    return response;
+                })
                 .toList();
     }
 

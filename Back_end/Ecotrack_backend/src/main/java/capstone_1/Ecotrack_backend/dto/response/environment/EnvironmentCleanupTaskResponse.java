@@ -21,6 +21,8 @@ public class EnvironmentCleanupTaskResponse {
     private LocalDateTime completedAt;
     private LocalDateTime resolvedAt;
     private Boolean canSubmitCompletion;
+    private Long teamLeadUserId;
+    private String teamLeadName;
 
     public Long getTaskId() {
         return taskId;
@@ -164,5 +166,21 @@ public class EnvironmentCleanupTaskResponse {
 
     public void setCanSubmitCompletion(Boolean canSubmitCompletion) {
         this.canSubmitCompletion = canSubmitCompletion;
+    }
+
+    public Long getTeamLeadUserId() {
+        return teamLeadUserId;
+    }
+
+    public void setTeamLeadUserId(Long teamLeadUserId) {
+        this.teamLeadUserId = teamLeadUserId;
+    }
+
+    public String getTeamLeadName() {
+        return teamLeadName;
+    }
+
+    public void setTeamLeadName(String teamLeadName) {
+        this.teamLeadName = teamLeadName;
     }
 }
