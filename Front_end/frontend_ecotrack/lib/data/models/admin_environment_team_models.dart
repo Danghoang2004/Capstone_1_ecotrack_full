@@ -116,6 +116,53 @@ class EnvironmentTeamKpi {
   }
 }
 
+class EnvironmentTeamKpiTaskDetail {
+  final int taskId;
+  final int reportId;
+  final String reportTitle;
+  final String reportCategory;
+  final String? reportStatus;
+  final String taskStatus;
+  final int assigneeLeadId;
+  final String assigneeLeadName;
+  final DateTime? assignedAt;
+  final DateTime? dueAt;
+  final DateTime? completedAt;
+  final DateTime? resolvedAt;
+
+  EnvironmentTeamKpiTaskDetail({
+    required this.taskId,
+    required this.reportId,
+    required this.reportTitle,
+    required this.reportCategory,
+    required this.reportStatus,
+    required this.taskStatus,
+    required this.assigneeLeadId,
+    required this.assigneeLeadName,
+    required this.assignedAt,
+    required this.dueAt,
+    required this.completedAt,
+    required this.resolvedAt,
+  });
+
+  factory EnvironmentTeamKpiTaskDetail.fromJson(Map<String, dynamic> json) {
+    return EnvironmentTeamKpiTaskDetail(
+      taskId: (json['taskId'] ?? 0) as int,
+      reportId: (json['reportId'] ?? 0) as int,
+      reportTitle: (json['reportTitle'] ?? '') as String,
+      reportCategory: (json['reportCategory'] ?? '') as String,
+      reportStatus: json['reportStatus']?.toString(),
+      taskStatus: (json['taskStatus'] ?? '') as String,
+      assigneeLeadId: (json['assigneeLeadId'] ?? 0) as int,
+      assigneeLeadName: (json['assigneeLeadName'] ?? '') as String,
+      assignedAt: DateTime.tryParse((json['assignedAt'] ?? '').toString()),
+      dueAt: DateTime.tryParse((json['dueAt'] ?? '').toString()),
+      completedAt: DateTime.tryParse((json['completedAt'] ?? '').toString()),
+      resolvedAt: DateTime.tryParse((json['resolvedAt'] ?? '').toString()),
+    );
+  }
+}
+
 class EnvironmentTeamUserOption {
   final int userId;
   final String fullName;

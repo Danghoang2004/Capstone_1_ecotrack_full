@@ -317,6 +317,20 @@ public class EnvironmentCleanupService {
         response.setCompletedAt(task.getCompletedAt());
         response.setResolvedAt(task.getResolvedAt());
         response.setCanSubmitCompletion(EnvironmentCleanupTask.TaskStatus.ASSIGNED == task.getStatus());
+
+        // Add team lead information
+        response.setTeamLeadUserId(task.getTeamLeadUserId());
+        User teamLeadUser = userRepository.findById(task.getTeamLeadUserId()).orElse(null);
+        if (teamLeadUser != null && teamLeadUser.getUserProfile() != null &&
+                teamLeadUser.getUserProfile().getFullName() != null &&
+                !teamLeadUser.getUserProfile().getFullName().isBlank()) {
+            response.setTeamLeadName(teamLeadUser.getUserProfile().getFullName());
+        } else if (teamLeadUser != null) {
+            response.setTeamLeadName(teamLeadUser.getUsername());
+        } else {
+            response.setTeamLeadName("N/A");
+        }
+
         return response;
     }
 

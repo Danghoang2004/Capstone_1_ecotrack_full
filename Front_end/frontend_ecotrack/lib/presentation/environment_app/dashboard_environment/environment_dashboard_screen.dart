@@ -11,6 +11,7 @@ import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environ
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/screens/environment_task_navigation_map_screen.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/screens/environment_task_report_screen.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_overview_tab.dart';
+import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_chat_tab.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_profile_tab.dart';
 import 'package:frontend_ecotrack/presentation/environment_app/dashboard_environment/tabs/environment_tasks_tab.dart';
 import 'package:frontend_ecotrack/presentation/user_app/notification/notification_screen.dart';
@@ -246,6 +247,7 @@ class _EnvironmentDashboardScreenState
         onOpenTaskNavigationMap: _openTaskNavigationMap,
         onOpenTaskReportPage: _openTaskReportPage,
       ),
+      EnvironmentChatTab(myTeamInfo: _myTeamInfo),
       EnvironmentProfileTab(
         userName: _username,
         userRole: _roleLabel,
@@ -328,7 +330,7 @@ class _EnvironmentDashboardScreenState
           ),
           IconButton(
             tooltip: 'Tài khoản',
-            onPressed: () => setState(() => _selectedTab = 2),
+            onPressed: () => setState(() => _selectedTab = 3),
             icon: Container(
               width: 40,
               height: 40,
@@ -372,7 +374,8 @@ class _EnvironmentDashboardScreenState
         ),
         child: NavigationBar(
           selectedIndex: _selectedTab,
-          onDestinationSelected: (index) => setState(() => _selectedTab = index),
+          onDestinationSelected: (index) =>
+              setState(() => _selectedTab = index),
           backgroundColor: Colors.white,
           indicatorColor: const Color(0xFF5EAC24).withOpacity(0.16),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
@@ -384,9 +387,20 @@ class _EnvironmentDashboardScreenState
               label: 'Tổng quan',
             ),
             NavigationDestination(
-              icon: Icon(Icons.assignment_outlined, color: Colors.grey.shade700),
-              selectedIcon: const Icon(Icons.assignment, color: Color(0xFF5EAC24)),
+              icon: Icon(
+                Icons.assignment_outlined,
+                color: Colors.grey.shade700,
+              ),
+              selectedIcon: const Icon(
+                Icons.assignment,
+                color: Color(0xFF5EAC24),
+              ),
               label: 'Công việc',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.forum_outlined, color: Colors.grey.shade700),
+              selectedIcon: const Icon(Icons.forum, color: Color(0xFF5EAC24)),
+              label: 'Nhóm chat',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline, color: Colors.grey.shade700),

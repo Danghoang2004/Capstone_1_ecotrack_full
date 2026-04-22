@@ -293,6 +293,35 @@ CREATE TABLE environment_team_kpi_daily (
     INDEX idx_environment_team_kpi_daily_date (kpi_date)
 );
 
+CREATE TABLE environment_team_chat_messages (
+    message_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    sender_user_id BIGINT NOT NULL,
+    message_text TEXT NOT NULL,
+    message_type VARCHAR(20) NOT NULL DEFAULT 'TEXT',
+    attachment_url VARCHAR(1000) NULL,
+    attachment_name VARCHAR(255) NULL,
+    attachment_mime_type VARCHAR(120) NULL,
+    attachment_size_bytes BIGINT NULL,
+    sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES environment_teams(team_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_user_id) REFERENCES users(user_id) ON DELETE RESTRICT,
+    INDEX idx_env_team_chat_team_sent (team_id, sent_at),
+    INDEX idx_env_team_chat_team_msg (team_id, message_id)
+);
+
+CREATE TABLE environment_team_chat_read_state (
+    read_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    team_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    last_read_message_id BIGINT NOT NULL DEFAULT 0,
+    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (team_id) REFERENCES environment_teams(team_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY uk_env_team_chat_read_team_user (team_id, user_id),
+    INDEX idx_env_team_chat_read_team_msg (team_id, last_read_message_id)
+);
+
 -- ================================================================
 -- AI_WASTE_CLASSIFICATION_HISTORY
 -- ================================================================

@@ -17,6 +17,8 @@ class EnvironmentCleanupTask {
   final DateTime? completedAt;
   final DateTime? resolvedAt;
   final bool canSubmitCompletion;
+  final int? teamLeadUserId;
+  final String? teamLeadName;
 
   EnvironmentCleanupTask({
     required this.taskId,
@@ -37,6 +39,8 @@ class EnvironmentCleanupTask {
     required this.completedAt,
     required this.resolvedAt,
     required this.canSubmitCompletion,
+    this.teamLeadUserId,
+    this.teamLeadName,
   });
 
   factory EnvironmentCleanupTask.fromJson(Map<String, dynamic> json) {
@@ -59,6 +63,8 @@ class EnvironmentCleanupTask {
       completedAt: _parseDate(json['completedAt']),
       resolvedAt: _parseDate(json['resolvedAt']),
       canSubmitCompletion: (json['canSubmitCompletion'] ?? false) as bool,
+      teamLeadUserId: (json['teamLeadUserId'] ?? 0) as int?,
+      teamLeadName: (json['teamLeadName'] ?? '') as String?,
     );
   }
 

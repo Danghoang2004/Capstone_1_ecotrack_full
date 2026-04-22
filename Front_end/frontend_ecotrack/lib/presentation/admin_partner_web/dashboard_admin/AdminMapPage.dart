@@ -203,6 +203,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
       final styleUrl =
           'https://tiles.goong.io/assets/goong_map_web.json?api_key=$mapKey';
+      final geocodeApiKey = dotenv.env['GOONG_API_KEY'] ?? '';
 
       _mapReadyPoller?.cancel();
 
@@ -225,6 +226,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
         lng: _initialLng,
         lat: _initialLat,
         zoom: _initialZoom,
+        geocodeApiKey: geocodeApiKey,
       );
 
       _mapReadyPoller = Timer.periodic(const Duration(milliseconds: 150), (
@@ -293,6 +295,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
     required double lng,
     required double lat,
     required double zoom,
+    required String geocodeApiKey,
   }) {
     Timer.run(() {
       if (!mounted) {
@@ -310,6 +313,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
           lng,
           lat,
           zoom,
+          geocodeApiKey,
         ]);
         _logMapTrace('host-init', 'goongAdminMapInit invoked successfully');
         _logMapTrace('host-init', _readGoongMapDiagnostics());
@@ -500,19 +504,22 @@ class _AdminMapPageState extends State<AdminMapPage> {
           jsonEncode(reportPayload),
         ]);
       } else {
-        final payload = _showPredictedHotspots
+        final points = _showPredictedHotspots
             ? _buildHeatPayload(_predictedHeatmapPoints, predicted: true)
             : _buildHeatPayload(_observedHeatmapPoints, predicted: false);
         debugPrint(
-          '[AdminMapPage._syncMapState] Sending ${payload.length} heat points (${_showPredictedHotspots ? "predicted" : "observed"}) to JS',
+          '[AdminMapPage._syncMapState] Sending ${points.length} heat points (${_showPredictedHotspots ? "predicted" : "observed"}) to JS',
         );
-        if (payload.isNotEmpty) {
+        if (points.isNotEmpty) {
           debugPrint(
-            '[AdminMapPage._syncMapState] First point: lat=${payload.first['lat']}, lng=${payload.first['lng']}, intensity=${payload.first['intensity']}, count=${payload.first['count']}',
+            '[AdminMapPage._syncMapState] First point: lat=${points.first['lat']}, lng=${points.first['lng']}, intensity=${points.first['intensity']}, count=${points.first['count']}',
           );
         }
         js.context.callMethod('goongAdminMapSetHeatPoints', [
-          jsonEncode(payload),
+          jsonEncode({
+            'mode': _showPredictedHotspots ? 'heat_predicted' : 'heat_observed',
+            'points': points,
+          }),
         ]);
       }
 
@@ -800,26 +807,33 @@ class _AdminMapPageState extends State<AdminMapPage> {
     final int maxCount = zones
         .map((z) {
           if (isPredicted) {
-            return z.predictedCount7d ?? z.reportCount;
+            return z.predictedCount7d ?? 0;
           } else {
             return z.reportCount;
           }
         })
         .fold<int>(1, (acc, value) => value > acc ? value : acc);
 
-    return zones.map((zone) {
-      final int count = isPredicted
-          ? (zone.predictedCount7d ?? zone.reportCount)
-          : zone.reportCount;
+    return zones
+        .map((zone) {
+          final int count = isPredicted
+              ? (zone.predictedCount7d ?? 0)
+              : zone.reportCount;
 
-      return PredictedHeatmapPoint(
-        lat: zone.centerLat,
-        lng: zone.centerLng,
-        intensity: (count / maxCount).clamp(0.0, 1.0),
-        predictedCount7d: isPredicted ? count : 0,
-        reportCount: !isPredicted ? count : 0,
-      );
-    }).toList();
+          if (isPredicted && count <= 0) {
+            return null;
+          }
+
+          return PredictedHeatmapPoint(
+            lat: zone.centerLat,
+            lng: zone.centerLng,
+            intensity: (count / maxCount).clamp(0.0, 1.0),
+            predictedCount7d: isPredicted ? count : 0,
+            reportCount: !isPredicted ? count : 0,
+          );
+        })
+        .whereType<PredictedHeatmapPoint>()
+        .toList();
   }
 
   List<PredictedHeatmapPoint> _toObservedHeatmapPoints(
@@ -858,17 +872,24 @@ class _AdminMapPageState extends State<AdminMapPage> {
       return value > acc ? value : acc;
     });
 
-    return zones.map((zone) {
-      final count = zone.predictedCount7d != null && zone.predictedCount7d! > 0
-          ? zone.predictedCount7d!
-          : zone.reportCount;
-      return PredictedHeatmapPoint(
-        lat: zone.centerLat,
-        lng: zone.centerLng,
-        intensity: (count / maxCount).clamp(0.0, 1.0),
-        predictedCount7d: count,
-      );
-    }).toList();
+    return zones
+        .map((zone) {
+          final count =
+              zone.predictedCount7d != null && zone.predictedCount7d! > 0
+              ? zone.predictedCount7d!
+              : 0;
+          if (count <= 0) {
+            return null;
+          }
+          return PredictedHeatmapPoint(
+            lat: zone.centerLat,
+            lng: zone.centerLng,
+            intensity: (count / maxCount).clamp(0.0, 1.0),
+            predictedCount7d: count,
+          );
+        })
+        .whereType<PredictedHeatmapPoint>()
+        .toList();
   }
 
   Future<void> _zoomIn() async {

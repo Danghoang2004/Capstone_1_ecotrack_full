@@ -26,4 +26,15 @@ public class CloudinaryService {
 
         return uploadResult.get("secure_url").toString(); // HTTPS URL
     }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> uploadFile(MultipartFile file, String folder) throws Exception {
+        return cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                        "folder", folder,
+                        "resource_type", "auto",
+                        "use_filename", true,
+                        "unique_filename", true));
+    }
 }

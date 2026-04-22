@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend_ecotrack/core/services/admin_environment_team_service.dart';
 import 'package:frontend_ecotrack/data/models/admin_environment_team_models.dart';
+import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminEnvironmentTeamTaskDetailsPage.dart';
 
 class AdminEnvironmentTeamPage extends StatefulWidget {
   const AdminEnvironmentTeamPage({super.key});
@@ -24,6 +25,10 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
   bool _isLoading = true;
   bool _isSubmitting = false;
   String? _error;
+  int? _selectedTaskTeamId;
+  String? _selectedTaskTeamName;
+  String? _selectedTaskFromAt;
+  String? _selectedTaskToAt;
   DateTimeRange _kpiRange = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 30)),
     end: DateTime.now(),
@@ -779,6 +784,37 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
   }
 
   Widget _buildTeamsTab() {
+    if (_selectedTaskTeamId != null && _selectedTaskTeamName != null) {
+      final hasRange = _selectedTaskFromAt != null && _selectedTaskToAt != null;
+      final subtitle = hasRange
+          ? 'Khoảng KPI: ${_formatIsoRange(_selectedTaskFromAt!, _selectedTaskToAt!)}'
+          : 'Toàn bộ công việc của đội';
+
+      return RefreshIndicator(
+        onRefresh: () => _loadDashboard(),
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 24),
+          children: [
+            _PanelCard(
+              title: 'Chi tiết công việc: $_selectedTaskTeamName',
+              subtitle: subtitle,
+              trailing: TextButton.icon(
+                onPressed: _closeTeamTaskDetailsInFrame,
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: const Text('Quay lại danh sách đội'),
+              ),
+              child: AdminEnvironmentTeamTaskDetailsPanel(
+                teamId: _selectedTaskTeamId!,
+                teamName: _selectedTaskTeamName!,
+                fromAt: _selectedTaskFromAt,
+                toAt: _selectedTaskToAt,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: () => _loadDashboard(),
       child: ListView(
@@ -800,6 +836,7 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
                             padding: const EdgeInsets.only(bottom: 14),
                             child: _TeamDetailCard(
                               team: team,
+                              onViewTasks: () => _openTeamTaskDetails(team),
                               onEdit: () => _editTeam(team),
                               onChangeLead: () => _changeLead(team),
                               onAddMember: () => _addMember(team),
@@ -839,6 +876,7 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
         rows: _kpis
             .map(
               (item) => DataRow(
+                onSelectChanged: (_) => _openKpiTaskDetails(item),
                 cells: [
                   DataCell(Text(item.teamName)),
                   DataCell(Text(item.totalAssigned.toString())),
@@ -852,6 +890,48 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
             .toList(),
       ),
     );
+  }
+
+  Future<void> _openKpiTaskDetails(EnvironmentTeamKpi kpi) async {
+    final fromAt = DateFormat("yyyy-MM-dd'T'00:00:00").format(_kpiRange.start);
+    final toAt = DateFormat("yyyy-MM-dd'T'23:59:59").format(_kpiRange.end);
+
+    if (!mounted) return;
+    setState(() {
+      _selectedTaskTeamId = kpi.teamId;
+      _selectedTaskTeamName = kpi.teamName;
+      _selectedTaskFromAt = fromAt;
+      _selectedTaskToAt = toAt;
+    });
+    _tabController.animateTo(1);
+  }
+
+  Future<void> _openTeamTaskDetails(EnvironmentTeam team) async {
+    if (!mounted) return;
+    setState(() {
+      _selectedTaskTeamId = team.teamId;
+      _selectedTaskTeamName = team.teamName;
+      _selectedTaskFromAt = null;
+      _selectedTaskToAt = null;
+    });
+  }
+
+  void _closeTeamTaskDetailsInFrame() {
+    setState(() {
+      _selectedTaskTeamId = null;
+      _selectedTaskTeamName = null;
+      _selectedTaskFromAt = null;
+      _selectedTaskToAt = null;
+    });
+  }
+
+  String _formatIsoRange(String fromAt, String toAt) {
+    final from = DateTime.tryParse(fromAt);
+    final to = DateTime.tryParse(toAt);
+    if (from == null || to == null) {
+      return '$fromAt - $toAt';
+    }
+    return '${DateFormat('dd/MM/yyyy').format(from)} - ${DateFormat('dd/MM/yyyy').format(to)}';
   }
 
   Widget _buildErrorState() {
@@ -1184,6 +1264,7 @@ class _TeamPreviewCard extends StatelessWidget {
 
 class _TeamDetailCard extends StatelessWidget {
   final EnvironmentTeam team;
+  final VoidCallback onViewTasks;
   final VoidCallback onEdit;
   final VoidCallback onChangeLead;
   final VoidCallback onAddMember;
@@ -1191,6 +1272,7 @@ class _TeamDetailCard extends StatelessWidget {
 
   const _TeamDetailCard({
     required this.team,
+    required this.onViewTasks,
     required this.onEdit,
     required this.onChangeLead,
     required this.onAddMember,
@@ -1257,6 +1339,11 @@ class _TeamDetailCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 children: [
+                  OutlinedButton.icon(
+                    onPressed: onViewTasks,
+                    icon: const Icon(Icons.assignment_outlined),
+                    label: const Text('Xem công việc'),
+                  ),
                   OutlinedButton.icon(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_outlined),

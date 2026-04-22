@@ -3,6 +3,7 @@ package capstone_1.Ecotrack_backend.controller.admin;
 import capstone_1.Ecotrack_backend.dto.request.environment.CreateEnvironmentTeamRequest;
 import capstone_1.Ecotrack_backend.dto.request.environment.UpdateEnvironmentTeamRequest;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamKpiResponse;
+import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamKpiTaskDetailResponse;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamLeadResponse;
 import capstone_1.Ecotrack_backend.dto.response.environment.EnvironmentTeamResponse;
 import capstone_1.Ecotrack_backend.service.environment.EnvironmentTeamManagementService;
@@ -64,5 +65,13 @@ public class AdminEnvironmentTeamController {
             @RequestParam(required = false) String fromAt,
             @RequestParam(required = false) String toAt) {
         return environmentTeamManagementService.getTeamKpis(fromAt, toAt);
+    }
+
+    @GetMapping("/{teamId}/kpi-task-details")
+    public List<EnvironmentTeamKpiTaskDetailResponse> getTeamKpiTaskDetails(
+            @PathVariable Long teamId,
+            @RequestParam(required = false) String fromAt,
+            @RequestParam(required = false) String toAt) {
+        return environmentTeamManagementService.getTeamKpiTaskDetails(teamId, fromAt, toAt);
     }
 }
