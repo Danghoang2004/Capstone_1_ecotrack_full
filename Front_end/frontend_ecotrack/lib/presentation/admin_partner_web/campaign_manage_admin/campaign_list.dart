@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/CampaignApi.dart';
@@ -24,8 +26,13 @@ class CampaignList extends StatefulWidget {
 }
 
 class _CampaignListState extends State<CampaignList> {
+  static const int _itemsPerPage = 5;
+
   late CampaignApi _campaignApi;
   late Future<List<Campaign>> _campaignsFuture;
+  final ScrollController _tableScrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -36,9 +43,77 @@ class _CampaignListState extends State<CampaignList> {
     _refreshList();
   }
 
+  @override
+  void dispose() {
+    _tableScrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _refreshList() {
     setState(() {
       _campaignsFuture = _campaignApi.fetchCampaigns();
+    });
+  }
+
+  List<Campaign> _filterCampaigns(List<Campaign> campaigns) {
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isEmpty) return campaigns;
+
+    return campaigns.where((campaign) {
+      return campaign.title.toLowerCase().contains(query) ||
+          campaign.location.toLowerCase().contains(query) ||
+          (campaign.partnerName ?? '').toLowerCase().contains(query) ||
+          campaign.startDate.toLowerCase().contains(query) ||
+          campaign.endDate.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  String _formatDate(String value) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    return '${parsed.day.toString().padLeft(2, '0')}/${parsed.month.toString().padLeft(2, '0')}/${parsed.year}';
+  }
+
+  String _formatMoney(int amount) {
+    final raw = amount.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < raw.length; i++) {
+      final remaining = raw.length - i;
+      buffer.write(raw[i]);
+      if (remaining > 1 && remaining % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return '${buffer.toString()} đ';
+  }
+
+  String _campaignStatusLabel(Campaign campaign) {
+    final now = DateTime.now();
+    final start = DateTime.tryParse(campaign.startDate) ?? now;
+    final end = DateTime.tryParse(campaign.endDate) ?? now;
+
+    if (now.isBefore(start)) return 'Sắp diễn ra';
+    if (now.isAfter(end)) return 'Đã kết thúc';
+    return 'Đang diễn ra';
+  }
+
+  Color _campaignStatusColor(String status) {
+    switch (status) {
+      case 'Đang diễn ra':
+        return Colors.green;
+      case 'Sắp diễn ra':
+        return Colors.blue;
+      case 'Đã kết thúc':
+        return Colors.grey;
+      default:
+        return AppColors.adminAccentDeep;
+    }
+  }
+
+  void _setPage(int page, int totalPages) {
+    setState(() {
+      _currentPage = page.clamp(1, totalPages) as int;
     });
   }
 
@@ -168,10 +243,7 @@ class _CampaignListState extends State<CampaignList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.showHeader) ...[
-          _buildHeader(),
-          const SizedBox(height: 24),
-        ],
+        if (widget.showHeader) ...[_buildHeader(), const SizedBox(height: 24)],
         _buildSearchBar(),
         const SizedBox(height: 20),
         FutureBuilder<List<Campaign>>(
@@ -190,15 +262,33 @@ class _CampaignListState extends State<CampaignList> {
             if (!snapshot.hasData || snapshot.data!.isEmpty)
               return const Center(child: Text("Không có chiến dịch nào"));
 
+            final filtered = _filterCampaigns(snapshot.data!);
+            final totalPages = math.max(
+              1,
+              (filtered.length / _itemsPerPage).ceil(),
+            );
+            final safePage = _currentPage.clamp(1, totalPages) as int;
+            final start = (safePage - 1) * _itemsPerPage;
+            final pageItems = filtered.skip(start).take(_itemsPerPage).toList();
+
+            if (filtered.isEmpty) {
+              return const Center(child: Text("Không tìm thấy chiến dịch nào"));
+            }
+
             return Column(
-              children: snapshot.data!
-                  .map(
-                    (campaign) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildCampaignCard(campaign),
-                    ),
-                  )
-                  .toList(),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildCampaignTable(pageItems),
+                if (filtered.length > _itemsPerPage) ...[
+                  const SizedBox(height: 14),
+                  _buildPagination(
+                    safePage: safePage,
+                    totalPages: totalPages,
+                    startIndex: start,
+                    totalItems: filtered.length,
+                  ),
+                ],
+              ],
             );
           },
         ),
@@ -226,7 +316,10 @@ class _CampaignListState extends State<CampaignList> {
             ),
             Text(
               "Tạo, chỉnh sửa và theo dõi các chiến dịch thực tế",
-              style: TextStyle(fontSize: 17, color: AppColors.adminTextSecondary),
+              style: TextStyle(
+                fontSize: 17,
+                color: AppColors.adminTextSecondary,
+              ),
             ),
           ],
         ),
@@ -254,6 +347,8 @@ class _CampaignListState extends State<CampaignList> {
 
   Widget _buildSearchBar() {
     return TextField(
+      controller: _searchController,
+      onChanged: (_) => setState(() => _currentPage = 1),
       decoration: InputDecoration(
         hintText: "Tìm kiếm chiến dịch...",
         prefixIcon: const Icon(Icons.search_rounded),
@@ -269,9 +364,237 @@ class _CampaignListState extends State<CampaignList> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.adminAccent, width: 1.4),
+          borderSide: const BorderSide(
+            color: AppColors.adminAccent,
+            width: 1.4,
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCampaignTable(List<Campaign> campaigns) {
+    const sidePadding = 8.0;
+    const titleWidth = 220.0;
+    const statusWidth = 120.0;
+    const locationWidth = 180.0;
+    const dateWidth = 120.0;
+    const participantWidth = 120.0;
+    const budgetWidth = 130.0;
+    const rewardWidth = 110.0;
+    const partnerWidth = 180.0;
+    const actionWidth = 120.0;
+
+    final tableWidth =
+        sidePadding * 2 +
+        titleWidth +
+        statusWidth +
+        locationWidth +
+        dateWidth +
+        dateWidth +
+        participantWidth +
+        budgetWidth +
+        rewardWidth +
+        partnerWidth +
+        actionWidth;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.adminSurface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.adminBorder),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Scrollbar(
+          controller: _tableScrollController,
+          thumbVisibility: true,
+          trackVisibility: true,
+          interactive: true,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          child: SingleChildScrollView(
+            controller: _tableScrollController,
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: tableWidth,
+              child: Column(
+                children: [
+                  Container(
+                    color: const Color(0xFFF1F3F6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: sidePadding,
+                      vertical: 10,
+                    ),
+                    child: const Row(
+                      children: [
+                        _TableHeaderCell('Chiến dịch', titleWidth),
+                        _TableHeaderCell('Trạng thái', statusWidth),
+                        _TableHeaderCell('Địa điểm', locationWidth),
+                        _TableHeaderCell('Bắt đầu', dateWidth),
+                        _TableHeaderCell('Kết thúc', dateWidth),
+                        _TableHeaderCell('Tham gia', participantWidth),
+                        _TableHeaderCell('Kinh phí', budgetWidth),
+                        _TableHeaderCell('Điểm thưởng', rewardWidth),
+                        _TableHeaderCell('Tổ chức', partnerWidth),
+                        _TableHeaderCell('Thao tác', actionWidth),
+                      ],
+                    ),
+                  ),
+                  ...campaigns.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final campaign = entry.value;
+                    final status = _campaignStatusLabel(campaign);
+                    final statusColor = _campaignStatusColor(status);
+                    final progress = campaign.maxParticipants > 0
+                        ? (campaign.currentParticipants /
+                                  campaign.maxParticipants)
+                              .clamp(0.0, 1.0)
+                        : 0.0;
+                    final isLast = index == campaigns.length - 1;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: sidePadding,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: index.isEven
+                            ? AppColors.adminSurface
+                            : const Color(0xFFFCFDFC),
+                        border: isLast
+                            ? null
+                            : Border(
+                                bottom: BorderSide(
+                                  color: AppColors.adminBorder,
+                                ),
+                              ),
+                      ),
+                      child: Row(
+                        children: [
+                          _tableCell(
+                            campaign.title,
+                            titleWidth,
+                            maxLines: 1,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          SizedBox(
+                            width: statusWidth,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  status,
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          _tableCell(campaign.location, locationWidth),
+                          _tableCell(
+                            _formatDate(campaign.startDate),
+                            dateWidth,
+                          ),
+                          _tableCell(_formatDate(campaign.endDate), dateWidth),
+                          _tableCell(
+                            '${campaign.currentParticipants}/${campaign.maxParticipants}',
+                            participantWidth,
+                          ),
+                          _tableCell(_formatMoney(15000000), budgetWidth),
+                          _tableCell(
+                            '${campaign.rewardPoints} điểm',
+                            rewardWidth,
+                          ),
+                          _tableCell(
+                            campaign.partnerName ?? 'Đang cập nhật...',
+                            partnerWidth,
+                          ),
+                          SizedBox(
+                            width: actionWidth,
+                            child: Row(
+                              children: [
+                                _tableActionButton(
+                                  icon: Icons.visibility_outlined,
+                                  color: AppColors.adminAccentSky,
+                                  onPressed: () => widget.onView(campaign.id),
+                                ),
+                                const SizedBox(width: 8),
+                                _tableActionButton(
+                                  icon: Icons.edit_note,
+                                  color: AppColors.adminTextSecondary,
+                                  onPressed: () => widget.onEdit(campaign.id),
+                                ),
+                                const SizedBox(width: 8),
+                                _tableActionButton(
+                                  icon: Icons.delete_outline,
+                                  color: Colors.redAccent,
+                                  onPressed: () => _deleteCampaign(campaign.id),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPagination({
+    required int safePage,
+    required int totalPages,
+    required int startIndex,
+    required int totalItems,
+  }) {
+    final endIndex = math.min(startIndex + _itemsPerPage, totalItems);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Trang $safePage/$totalPages',
+          style: const TextStyle(
+            color: AppColors.adminTextSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        Row(
+          children: [
+            OutlinedButton.icon(
+              onPressed: safePage == 1
+                  ? null
+                  : () => _setPage(safePage - 1, totalPages),
+              icon: const Icon(Icons.chevron_left),
+              label: const Text('Trước'),
+            ),
+            const SizedBox(width: 10),
+            OutlinedButton.icon(
+              onPressed: safePage >= totalPages
+                  ? null
+                  : () => _setPage(safePage + 1, totalPages),
+              icon: const Icon(Icons.chevron_right),
+              label: const Text('Sau'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -370,7 +693,10 @@ class _CampaignListState extends State<CampaignList> {
           Text(
             c.description ?? "Không có mô tả",
             maxLines: 2,
-            style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 14),
+            style: const TextStyle(
+              color: AppColors.adminTextSecondary,
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 12),
           _buildInfoRow(c),
@@ -552,6 +878,70 @@ class _CampaignListState extends State<CampaignList> {
             overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _tableCell(
+    String value,
+    double width, {
+    int maxLines = 1,
+    FontWeight fontWeight = FontWeight.w500,
+  }) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        value,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: AppColors.adminTextPrimary,
+          fontSize: 13,
+          fontWeight: fontWeight,
+          height: 1.25,
+        ),
+      ),
+    );
+  }
+
+  Widget _tableActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Material(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onPressed,
+        child: SizedBox(
+          width: 34,
+          height: 34,
+          child: Icon(icon, size: 18, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _TableHeaderCell extends StatelessWidget {
+  final String label;
+  final double width;
+
+  const _TableHeaderCell(this.label, this.width);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.adminTextPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

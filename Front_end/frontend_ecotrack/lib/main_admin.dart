@@ -146,7 +146,7 @@ class _AdminSplashScreenState extends State<AdminSplashScreen> {
           ],
         ),
       ),
-    );
+    );  
   }
 }
 

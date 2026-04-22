@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/ReportService.dart';
 import 'package:frontend_ecotrack/core/services/admin_environment_task_service.dart';
@@ -11,13 +13,17 @@ class AdminEnvironmentTaskPage extends StatefulWidget {
   const AdminEnvironmentTaskPage({super.key});
 
   @override
-  State<AdminEnvironmentTaskPage> createState() => _AdminEnvironmentTaskPageState();
+  State<AdminEnvironmentTaskPage> createState() =>
+      _AdminEnvironmentTaskPageState();
 }
 
 class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
+  static const int _taskRowsPerPage = 5;
+
   final AdminEnvironmentTaskService _service = AdminEnvironmentTaskService();
   final ReportServiceAdmin _reportService = ReportServiceAdmin();
   final TextEditingController _noteCtrl = TextEditingController();
+  final ScrollController _taskTableHorizontalController = ScrollController();
 
   List<EnvironmentCleanupTask> _tasks = [];
   List<Report> _assignableReports = [];
@@ -35,6 +41,7 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
   DateTime? _filterEndDate;
   TimeOfDay? _filterEndTime;
   String _selectedStatusFilter = 'ALL';
+  int _taskCurrentPage = 0;
 
   bool _isLoading = true;
   final Set<int> _expandedTaskIds = <int>{};
@@ -48,6 +55,7 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
   @override
   void dispose() {
     _noteCtrl.dispose();
+    _taskTableHorizontalController.dispose();
     super.dispose();
   }
 
@@ -82,13 +90,18 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         _tasks = tasks;
         _assignableReports = assignableReports;
         _teamLeads = teamLeads;
+        _taskCurrentPage = 0;
 
         if (_selectedReportId != null &&
-            !_assignableReports.any((report) => report.reportId == _selectedReportId)) {
+            !_assignableReports.any(
+              (report) => report.reportId == _selectedReportId,
+            )) {
           _selectedReportId = null;
         }
         if (_selectedTeamLeadId != null &&
-            !_teamLeads.any((teamLead) => teamLead.userId == _selectedTeamLeadId)) {
+            !_teamLeads.any(
+              (teamLead) => teamLead.userId == _selectedTeamLeadId,
+            )) {
           _selectedTeamLeadId = null;
         }
 
@@ -146,7 +159,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
       await _service.assignTask(
         reportId: _selectedReportId!,
         teamLeadUserId: _selectedTeamLeadId!,
-        assignmentNote: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+        assignmentNote: _noteCtrl.text.trim().isEmpty
+            ? null
+            : _noteCtrl.text.trim(),
         plannedStartAt: startAt.toIso8601String(),
         plannedEndAt: endAt.toIso8601String(),
         dueAt: endAt.toIso8601String(),
@@ -161,9 +176,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
       _noteCtrl.clear();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phân công thành công.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Phân công thành công.')));
       await _loadTasks();
     } catch (e) {
       if (!mounted) return;
@@ -207,7 +222,8 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
       final beforeEnd = end == null || !assignedAt.isAfter(end);
       final normalizedStatus = _normalizedStatusKey(task.status);
       final matchesStatus =
-          _selectedStatusFilter == 'ALL' || normalizedStatus == _selectedStatusFilter;
+          _selectedStatusFilter == 'ALL' ||
+          normalizedStatus == _selectedStatusFilter;
       return afterStart && beforeEnd && matchesStatus;
     }).toList();
   }
@@ -228,8 +244,8 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
       }
     }
 
-    final remaining = statuses.where((status) => !ordered.contains(status)).toList()
-      ..sort();
+    final remaining =
+        statuses.where((status) => !ordered.contains(status)).toList()..sort();
     ordered.addAll(remaining);
     return ordered;
   }
@@ -301,14 +317,25 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
       _filterEndDate = null;
       _filterEndTime = null;
       _selectedStatusFilter = 'ALL';
+      _taskCurrentPage = 0;
+    });
+  }
+
+  void _setTaskPage(int pageIndex, int totalPages) {
+    setState(() {
+      _taskCurrentPage = pageIndex.clamp(0, totalPages - 1) as int;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final visibleTasks = _filteredTasks;
-    final waitingConfirmCount = _tasks.where((task) => task.status == 'CLEANED_PENDING_CONFIRM').length;
-    final resolvedCount = _tasks.where((task) => task.status == 'RESOLVED').length;
+    final waitingConfirmCount = _tasks
+        .where((task) => task.status == 'CLEANED_PENDING_CONFIRM')
+        .length;
+    final resolvedCount = _tasks
+        .where((task) => task.status == 'RESOLVED')
+        .length;
 
     return Scaffold(
       backgroundColor: AppColors.adminBackground,
@@ -325,7 +352,10 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.adminAccentSoft,
                           borderRadius: BorderRadius.circular(999),
@@ -362,9 +392,24 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                         spacing: 12,
                         runSpacing: 12,
                         children: [
-                          _summaryCard('Tổng task', _tasks.length.toString(), Icons.assignment_turned_in_outlined, AppColors.adminAccent),
-                          _summaryCard('Chờ xác nhận', waitingConfirmCount.toString(), Icons.hourglass_top_rounded, AppColors.adminAccentSky),
-                          _summaryCard('Đã hoàn tất', resolvedCount.toString(), Icons.verified_rounded, AppColors.adminAccentWarm),
+                          _summaryCard(
+                            'Tổng task',
+                            _tasks.length.toString(),
+                            Icons.assignment_turned_in_outlined,
+                            AppColors.adminAccent,
+                          ),
+                          _summaryCard(
+                            'Chờ xác nhận',
+                            waitingConfirmCount.toString(),
+                            Icons.hourglass_top_rounded,
+                            AppColors.adminAccentSky,
+                          ),
+                          _summaryCard(
+                            'Đã hoàn tất',
+                            resolvedCount.toString(),
+                            Icons.verified_rounded,
+                            AppColors.adminAccentWarm,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 18),
@@ -382,19 +427,15 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                               child: Center(child: CircularProgressIndicator()),
                             )
                           : visibleTasks.isEmpty
-                              ? const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 40),
-                                  child: Center(
-                                    child: Text('Chưa có công việc môi trường nào.'),
-                                  ),
-                                )
-                              : ListView.separated(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: visibleTasks.length,
-                                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                  itemBuilder: (_, index) => _taskCard(visibleTasks[index]),
+                          ? const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40),
+                              child: Center(
+                                child: Text(
+                                  'Chưa có công việc môi trường nào.',
                                 ),
+                              ),
+                            )
+                          : _taskTable(visibleTasks),
                     ],
                   ),
                 ),
@@ -446,10 +487,7 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.adminSurface,
-            color.withValues(alpha: 0.08),
-          ],
+          colors: [AppColors.adminSurface, color.withValues(alpha: 0.08)],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.adminBorder),
@@ -506,10 +544,7 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.adminSurface,
-            AppColors.adminSurfaceSoft,
-          ],
+          colors: [AppColors.adminSurface, AppColors.adminSurfaceSoft],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.adminBorder),
@@ -590,7 +625,11 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                 runSpacing: 12,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  _inputField(_noteCtrl, 'Ghi chú phân công', maxWidth: compactWidth),
+                  _inputField(
+                    _noteCtrl,
+                    'Ghi chú phân công',
+                    maxWidth: compactWidth,
+                  ),
                   ElevatedButton.icon(
                     onPressed: _assignTask,
                     icon: const Icon(Icons.assignment_ind),
@@ -603,7 +642,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       elevation: 4,
-                      shadowColor: AppColors.adminAccentDeep.withValues(alpha: 0.28),
+                      shadowColor: AppColors.adminAccentDeep.withValues(
+                        alpha: 0.28,
+                      ),
                     ),
                   ),
                 ],
@@ -617,13 +658,14 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
 
   Widget _filterPanel() {
     final statusSuffix = _selectedStatusFilter == 'ALL'
-      ? ''
-      : ' · Trạng thái: ${_statusLabel(_selectedStatusFilter)}';
-    final hasActiveFilter = _filterStartDate != null ||
+        ? ''
+        : ' · Trạng thái: ${_statusLabel(_selectedStatusFilter)}';
+    final hasActiveFilter =
+        _filterStartDate != null ||
         _filterStartTime != null ||
         _filterEndDate != null ||
-      _filterEndTime != null ||
-      _selectedStatusFilter != 'ALL';
+        _filterEndTime != null ||
+        _selectedStatusFilter != 'ALL';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
@@ -631,14 +673,13 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.adminSurface,
-            Color(0xFFF4FBF8),
-          ],
+          colors: [AppColors.adminSurface, Color(0xFFF4FBF8)],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: hasActiveFilter ? AppColors.adminAccent : AppColors.adminBorder,
+          color: hasActiveFilter
+              ? AppColors.adminAccent
+              : AppColors.adminBorder,
         ),
       ),
       child: Column(
@@ -695,7 +736,10 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                   backgroundColor: AppColors.adminAccentWarm,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(116, 40),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 0,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -810,7 +854,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
     double height = 52,
     String placeholder = 'Chọn ngày',
   }) {
-    final text = value == null ? placeholder : DateFormat('dd/MM/yyyy').format(value);
+    final text = value == null
+        ? placeholder
+        : DateFormat('dd/MM/yyyy').format(value);
     return SizedBox(
       width: width,
       height: height,
@@ -826,7 +872,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.adminAccentDeep,
           side: const BorderSide(color: AppColors.adminBorderStrong),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
       ),
@@ -858,7 +906,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.adminAccentDeep,
           side: const BorderSide(color: AppColors.adminBorderStrong),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
       ),
@@ -902,7 +952,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
     final initialHour = ((_startTime?.hour ?? TimeOfDay.now().hour) + 1) % 24;
     final picked = await showTimePicker(
       context: context,
-      initialTime: _endTime ?? TimeOfDay(hour: initialHour, minute: _startTime?.minute ?? 0),
+      initialTime:
+          _endTime ??
+          TimeOfDay(hour: initialHour, minute: _startTime?.minute ?? 0),
     );
     if (picked == null || !mounted) return;
     setState(() => _endTime = picked);
@@ -1015,6 +1067,333 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
     );
   }
 
+  Widget _taskTable(List<EnvironmentCleanupTask> tasks) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalPages = math.max(
+          1,
+          (tasks.length / _taskRowsPerPage).ceil(),
+        );
+        final safePageIndex = math.min(_taskCurrentPage, totalPages - 1);
+        final startIndex = safePageIndex * _taskRowsPerPage;
+        final pageTasks = tasks
+            .skip(startIndex)
+            .take(_taskRowsPerPage)
+            .toList();
+
+        const sidePadding = 8.0;
+        const taskWidth = 72.0;
+        const titleWidth = 260.0;
+        const reportIdWidth = 96.0;
+        const leadWidth = 150.0;
+        const taskStatusWidth = 150.0;
+        const reportStatusWidth = 145.0;
+        const assignedWidth = 145.0;
+        const startWidth = 145.0;
+        const endWidth = 145.0;
+        const actionWidth = 126.0;
+        final tableWidth = math.max(
+          constraints.maxWidth,
+          sidePadding * 2 +
+              taskWidth +
+              titleWidth +
+              reportIdWidth +
+              leadWidth +
+              taskStatusWidth +
+              reportStatusWidth +
+              assignedWidth +
+              startWidth +
+              endWidth +
+              actionWidth,
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.adminSurface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.adminBorder),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Scrollbar(
+                  controller: _taskTableHorizontalController,
+                  thumbVisibility: true,
+                  trackVisibility: true,
+                  interactive: true,
+                  scrollbarOrientation: ScrollbarOrientation.bottom,
+                  child: SingleChildScrollView(
+                    controller: _taskTableHorizontalController,
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: tableWidth,
+                      child: Column(
+                        children: [
+                          Container(
+                            color: const Color(0xFFF1F3F6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: sidePadding,
+                              vertical: 9,
+                            ),
+                            child: Row(
+                              children: [
+                                _taskTableHeaderCell('Task', taskWidth),
+                                _taskTableHeaderCell('Báo cáo', titleWidth),
+                                _taskTableHeaderCell(
+                                  'Report ID',
+                                  reportIdWidth,
+                                ),
+                                _taskTableHeaderCell('Lead xử lý', leadWidth),
+                                _taskTableHeaderCell(
+                                  'Trạng thái task',
+                                  taskStatusWidth,
+                                ),
+                                _taskTableHeaderCell(
+                                  'Trạng thái report',
+                                  reportStatusWidth,
+                                ),
+                                _taskTableHeaderCell('Giao lúc', assignedWidth),
+                                _taskTableHeaderCell('Bắt đầu', startWidth),
+                                _taskTableHeaderCell('Kết thúc', endWidth),
+                                _taskTableHeaderCell('Thao tác', actionWidth),
+                              ],
+                            ),
+                          ),
+                          ...pageTasks.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final task = entry.value;
+                            final isLast = index == pageTasks.length - 1;
+                            final normalizedStatus = _normalizedStatusKey(
+                              task.status,
+                            );
+                            final statusColor = _statusColor(normalizedStatus);
+                            final statusLabel = _statusLabel(normalizedStatus);
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: sidePadding,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: index.isEven
+                                    ? AppColors.adminSurface
+                                    : const Color(0xFFFCFDFC),
+                                border: isLast
+                                    ? null
+                                    : Border(
+                                        bottom: BorderSide(
+                                          color: AppColors.adminBorder,
+                                        ),
+                                      ),
+                              ),
+                              child: Row(
+                                children: [
+                                  _taskTableCell('#${task.taskId}', taskWidth),
+                                  _taskTableCell(
+                                    task.reportTitle,
+                                    titleWidth,
+                                    maxLines: 1,
+                                  ),
+                                  _taskTableCell(
+                                    '${task.reportId}',
+                                    reportIdWidth,
+                                  ),
+                                  _taskTableCell(
+                                    task.teamLeadName ?? 'env_lead_01',
+                                    leadWidth,
+                                  ),
+                                  SizedBox(
+                                    width: taskStatusWidth,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 9,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: statusColor.withOpacity(0.14),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          statusLabel,
+                                          style: TextStyle(
+                                            color: statusColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  _taskTableCell(
+                                    _statusLabel(
+                                      _normalizedStatusKey(task.reportStatus),
+                                    ),
+                                    reportStatusWidth,
+                                  ),
+                                  _taskTableCell(
+                                    DateFormat(
+                                      'dd/MM/yyyy HH:mm',
+                                    ).format(task.assignedAt),
+                                    assignedWidth,
+                                  ),
+                                  _taskTableCell(
+                                    _formatTaskDate(task.plannedStartAt),
+                                    startWidth,
+                                  ),
+                                  _taskTableCell(
+                                    _formatTaskDate(task.plannedEndAt),
+                                    endWidth,
+                                  ),
+                                  SizedBox(
+                                    width: actionWidth,
+                                    child: Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: [
+                                        OutlinedButton(
+                                          onPressed: () =>
+                                              _showTaskDetailDialog(task),
+                                          style: OutlinedButton.styleFrom(
+                                            minimumSize: const Size(0, 30),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
+                                            side: const BorderSide(
+                                              color:
+                                                  AppColors.adminBorderStrong,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                          ),
+                                          child: const Text('Chi tiết'),
+                                        ),
+                                        if (task.status ==
+                                            'CLEANED_PENDING_CONFIRM')
+                                          ElevatedButton(
+                                            onPressed: () =>
+                                                _resolveTask(task.taskId),
+                                            style: ElevatedButton.styleFrom(
+                                              minimumSize: const Size(0, 30),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                  ),
+                                              backgroundColor:
+                                                  AppColors.adminAccent,
+                                              foregroundColor: Colors.white,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                            ),
+                                            child: const Text('Resolved'),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (tasks.length > _taskRowsPerPage)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Trang ${safePageIndex + 1}/$totalPages - Hiển thị ${startIndex + 1}-${math.min(startIndex + pageTasks.length, tasks.length)} trên ${tasks.length} task',
+                      style: const TextStyle(
+                        color: AppColors.adminTextSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: safePageIndex == 0
+                              ? null
+                              : () =>
+                                    _setTaskPage(safePageIndex - 1, totalPages),
+                          icon: const Icon(Icons.chevron_left),
+                          label: const Text('Trước'),
+                        ),
+                        const SizedBox(width: 10),
+                        OutlinedButton.icon(
+                          onPressed: safePageIndex >= totalPages - 1
+                              ? null
+                              : () =>
+                                    _setTaskPage(safePageIndex + 1, totalPages),
+                          icon: const Icon(Icons.chevron_right),
+                          label: const Text('Sau'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _taskTableHeaderCell(String value, double width) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        value,
+        style: const TextStyle(
+          color: AppColors.adminTextPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _taskTableCell(
+    String value,
+    double width, {
+    int maxLines = 1,
+    FontWeight fontWeight = FontWeight.w500,
+  }) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        value,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: AppColors.adminTextPrimary,
+          fontSize: 13,
+          fontWeight: fontWeight,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+
+  String _formatTaskDate(DateTime? dateTime) {
+    if (dateTime == null) return 'Chưa đặt';
+    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+  }
+
   Widget _taskCard(EnvironmentCleanupTask task) {
     final canResolve = task.status == 'CLEANED_PENDING_CONFIRM';
     final isExpanded = _expandedTaskIds.contains(task.taskId);
@@ -1080,7 +1459,10 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.14),
                       borderRadius: BorderRadius.circular(20),
@@ -1105,12 +1487,17 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                       });
                     },
                     icon: Icon(
-                      isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                      isExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
                     ),
                     label: Text(isExpanded ? 'Thu gọn' : 'Xem thêm'),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.adminAccentDeep,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                     ),
                   ),
                 ],
@@ -1124,7 +1511,8 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
             children: [
               _taskMetaChip(
                 icon: Icons.access_time_rounded,
-                label: 'Giao lúc: ${DateFormat("dd/MM/yyyy HH:mm").format(task.assignedAt)}',
+                label:
+                    'Giao lúc: ${DateFormat("dd/MM/yyyy HH:mm").format(task.assignedAt)}',
               ),
               _taskMetaChip(
                 icon: Icons.play_circle_outline_rounded,
@@ -1230,7 +1618,9 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           title: Text('Chi tiết Task #${task.taskId}'),
           content: SizedBox(
             width: 580,
@@ -1243,22 +1633,31 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                   _detailLine('Category', task.reportCategory),
                   _detailLine('Trạng thái task', task.status),
                   _detailLine('Trạng thái report', task.reportStatus),
-                  _detailLine('Giao lúc', DateFormat('HH:mm dd/MM/yyyy').format(task.assignedAt)),
+                  _detailLine(
+                    'Giao lúc',
+                    DateFormat('HH:mm dd/MM/yyyy').format(task.assignedAt),
+                  ),
                   _detailLine(
                     'Bắt đầu thực hiện',
                     task.plannedStartAt == null
                         ? 'Chưa đặt'
-                        : DateFormat('HH:mm dd/MM/yyyy').format(task.plannedStartAt!),
+                        : DateFormat(
+                            'HH:mm dd/MM/yyyy',
+                          ).format(task.plannedStartAt!),
                   ),
                   _detailLine(
                     'Kết thúc task',
                     task.plannedEndAt == null
                         ? 'Chưa đặt'
-                        : DateFormat('HH:mm dd/MM/yyyy').format(task.plannedEndAt!),
+                        : DateFormat(
+                            'HH:mm dd/MM/yyyy',
+                          ).format(task.plannedEndAt!),
                   ),
                   _detailLine(
                     'Ghi chú phân công',
-                    task.assignmentNote.isEmpty ? 'Không có' : task.assignmentNote,
+                    task.assignmentNote.isEmpty
+                        ? 'Không có'
+                        : task.assignmentNote,
                   ),
                   _detailLine(
                     'Ảnh sau xử lý',
@@ -1277,13 +1676,17 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                     'Hoàn tất lúc',
                     task.completedAt == null
                         ? 'Chưa hoàn tất'
-                        : DateFormat('HH:mm dd/MM/yyyy').format(task.completedAt!),
+                        : DateFormat(
+                            'HH:mm dd/MM/yyyy',
+                          ).format(task.completedAt!),
                   ),
                   _detailLine(
                     'Admin duyệt lúc',
                     task.resolvedAt == null
                         ? 'Chưa duyệt'
-                        : DateFormat('HH:mm dd/MM/yyyy').format(task.resolvedAt!),
+                        : DateFormat(
+                            'HH:mm dd/MM/yyyy',
+                          ).format(task.resolvedAt!),
                   ),
                 ],
               ),
