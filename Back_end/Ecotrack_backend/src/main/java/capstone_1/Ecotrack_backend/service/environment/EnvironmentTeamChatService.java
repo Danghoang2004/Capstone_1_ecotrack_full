@@ -13,6 +13,7 @@ import capstone_1.Ecotrack_backend.repository.EnvironmentTeamChatMessageReposito
 import capstone_1.Ecotrack_backend.repository.EnvironmentTeamChatReadStateRepository;
 import capstone_1.Ecotrack_backend.repository.EnvironmentTeamMemberRepository;
 import capstone_1.Ecotrack_backend.repository.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -135,17 +136,7 @@ public class EnvironmentTeamChatService {
             Collections.reverse(messages);
         }
 
-        Long latestReadMessageId;
-        if (!messages.isEmpty()) {
-            latestReadMessageId = messages.get(messages.size() - 1).getMessageId();
-        } else {
-            latestReadMessageId = environmentTeamChatMessageRepository
-                    .findTopByTeamTeamIdOrderByMessageIdDesc(team.getTeamId())
-                    .map(EnvironmentTeamChatMessage::getMessageId)
-                    .orElse(0L);
-        }
-
-        upsertReadState(team, currentUserId, latestReadMessageId);
+        // Skip read-state persistence in GET flow to support read-only DB connections.
 
         List<Long> activeMemberIds = loadActiveMemberIds(team.getTeamId());
         Map<Long, Long> memberReadMap = loadMemberReadProgress(team.getTeamId(), activeMemberIds);
@@ -184,25 +175,45 @@ public class EnvironmentTeamChatService {
     }
 
     private void upsertReadState(EnvironmentTeam team, Long userId, Long latestReadMessageId) {
-        EnvironmentTeamChatReadState readState = environmentTeamChatReadStateRepository
-                .findByTeamTeamIdAndUserId(team.getTeamId(), userId)
-                .orElseGet(EnvironmentTeamChatReadState::new);
-
-        if (readState.getReadId() == null) {
-            readState.setTeam(team);
-            readState.setUserId(userId);
-            readState.setLastReadMessageId(Math.max(0L, latestReadMessageId));
-            readState.setLastSeenAt(LocalDateTime.now());
-            environmentTeamChatReadStateRepository.save(readState);
+        if (team == null || team.getTeamId() == null || userId == null) {
             return;
         }
 
-        long currentValue = readState.getLastReadMessageId() == null ? 0L : readState.getLastReadMessageId();
-        if (latestReadMessageId > currentValue) {
-            readState.setLastReadMessageId(latestReadMessageId);
+        try {
+            EnvironmentTeamChatReadState readState = environmentTeamChatReadStateRepository
+                    .findByTeamTeamIdAndUserId(team.getTeamId(), userId)
+                    .orElseGet(EnvironmentTeamChatReadState::new);
+
+            if (readState.getReadId() == null) {
+                readState.setTeam(team);
+                readState.setUserId(userId);
+                readState.setLastReadMessageId(Math.max(0L, latestReadMessageId));
+                readState.setLastSeenAt(LocalDateTime.now());
+                environmentTeamChatReadStateRepository.save(readState);
+                return;
+            }
+
+            long currentValue = readState.getLastReadMessageId() == null ? 0L : readState.getLastReadMessageId();
+            if (latestReadMessageId > currentValue) {
+                readState.setLastReadMessageId(latestReadMessageId);
+            }
+            readState.setLastSeenAt(LocalDateTime.now());
+            environmentTeamChatReadStateRepository.save(readState);
+        } catch (DataIntegrityViolationException ex) {
+            EnvironmentTeamChatReadState existing = environmentTeamChatReadStateRepository
+                    .findByTeamTeamIdAndUserId(team.getTeamId(), userId)
+                    .orElse(null);
+            if (existing == null) {
+                return;
+            }
+
+            long currentValue = existing.getLastReadMessageId() == null ? 0L : existing.getLastReadMessageId();
+            if (latestReadMessageId > currentValue) {
+                existing.setLastReadMessageId(latestReadMessageId);
+            }
+            existing.setLastSeenAt(LocalDateTime.now());
+            environmentTeamChatReadStateRepository.save(existing);
         }
-        readState.setLastSeenAt(LocalDateTime.now());
-        environmentTeamChatReadStateRepository.save(readState);
     }
 
     private List<Long> loadActiveMemberIds(Long teamId) {

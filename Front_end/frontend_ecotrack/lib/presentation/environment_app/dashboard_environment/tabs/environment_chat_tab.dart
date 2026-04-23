@@ -9,8 +9,13 @@ import 'package:frontend_ecotrack/data/models/environment_my_team_info_model.dar
 
 class EnvironmentChatTab extends StatefulWidget {
   final EnvironmentMyTeamInfo? myTeamInfo;
+  final bool isActive;
 
-  const EnvironmentChatTab({super.key, required this.myTeamInfo});
+  const EnvironmentChatTab({
+    super.key,
+    required this.myTeamInfo,
+    required this.isActive,
+  });
 
   @override
   State<EnvironmentChatTab> createState() => _EnvironmentChatTabState();
@@ -29,15 +34,21 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
   Timer? _pollTimer;
   int _consecutiveErrors = 0;
   bool _isKickedOut = false;
+  bool _isPollingInProgress = false;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialMessages();
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => _pollNewMessages(),
-    );
+    _syncPollingState();
+  }
+
+  @override
+  void didUpdateWidget(covariant EnvironmentChatTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive != widget.isActive ||
+        oldWidget.myTeamInfo != widget.myTeamInfo) {
+      _syncPollingState();
+    }
   }
 
   @override
@@ -48,10 +59,41 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
     super.dispose();
   }
 
+  void _syncPollingState() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+
+    if (!widget.isActive || widget.myTeamInfo == null || _isKickedOut) {
+      return;
+    }
+
+    _consecutiveErrors = 0;
+    _loadInitialMessages();
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _pollNewMessages(),
+    );
+  }
+
+  String _readableErrorMessage(Object error) {
+    return error.toString().replaceFirst('Exception: ', '').trim();
+  }
+
+  bool _isTransientNetworkError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('socketexception') ||
+        message.contains('timeoutexception') ||
+        message.contains('clientexception') ||
+        message.contains('failed host lookup') ||
+        message.contains('connection refused') ||
+        message.contains('network is unreachable') ||
+        message.contains('timed out');
+  }
+
   Future<void> _loadInitialMessages() async {
     try {
       final messages = await _chatService.fetchMessages(limit: 80);
-      if (!mounted) return;
+      if (!mounted || !widget.isActive) return;
       setState(() {
         _messages = messages;
         _isLoading = false;
@@ -66,19 +108,26 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
         _handleMembershipRevoked(e.message);
         return;
       }
+      final message = _readableErrorMessage(e);
       setState(() {
         _isLoading = false;
-        _error = e.toString().replaceFirst('Exception: ', '');
+        _error = message;
       });
     }
   }
 
   Future<void> _pollNewMessages() async {
-    if (!mounted || _isKickedOut || _messages.isEmpty && _isLoading) return;
+    if (!mounted || !widget.isActive || _isKickedOut || _isPollingInProgress) {
+      return;
+    }
+
+    if (_messages.isEmpty && _isLoading) return;
+
+    _isPollingInProgress = true;
 
     try {
       final latestMessages = await _chatService.fetchMessages(limit: 80);
-      if (!mounted) return;
+      if (!mounted || !widget.isActive) return;
 
       final int? oldLastId = _messages.isEmpty
           ? null
@@ -98,7 +147,7 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
         _scrollToBottom();
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || !widget.isActive) return;
 
       // Check if user was kicked out
       if (e is MembershipRevokedException) {
@@ -106,13 +155,32 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
         return;
       }
 
+      final message = _readableErrorMessage(e);
+
+      if (!_isTransientNetworkError(e)) {
+        _pollTimer?.cancel();
+        if (_messages.isEmpty) {
+          setState(() {
+            _error = message;
+            _isLoading = false;
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+          );
+        }
+        return;
+      }
+
       // Increment error counter
       setState(() => _consecutiveErrors++);
 
-      // If 2+ consecutive poll errors, show error and auto-navigate after 3s
-      if (_consecutiveErrors >= 2) {
+      // If repeated poll errors persist, surface a connection warning.
+      if (_consecutiveErrors >= 4) {
         _handlePollFailure();
       }
+    } finally {
+      _isPollingInProgress = false;
     }
   }
 
@@ -132,8 +200,7 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.of(context).pop();
             },
             child: const Text('OK', style: TextStyle(color: Color(0xFF2F6F3E))),
           ),
@@ -143,7 +210,7 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
   }
 
   void _handlePollFailure() {
-    if (!mounted) return;
+    if (!mounted || !widget.isActive) return;
     _pollTimer?.cancel();
 
     showDialog(
@@ -163,8 +230,7 @@ class _EnvironmentChatTabState extends State<EnvironmentChatTab> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.of(context).pop();
             },
             child: const Text('OK', style: TextStyle(color: Color(0xFF2F6F3E))),
           ),

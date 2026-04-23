@@ -247,7 +247,7 @@ class _EnvironmentDashboardScreenState
         onOpenTaskNavigationMap: _openTaskNavigationMap,
         onOpenTaskReportPage: _openTaskReportPage,
       ),
-      EnvironmentChatTab(myTeamInfo: _myTeamInfo),
+      EnvironmentChatTab(myTeamInfo: _myTeamInfo, isActive: _selectedTab == 2),
       EnvironmentProfileTab(
         userName: _username,
         userRole: _roleLabel,
