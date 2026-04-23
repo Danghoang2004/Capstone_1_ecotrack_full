@@ -49,8 +49,13 @@ public class HotspotClusteringService {
                 List<WasteReport> allReports = reportRepository.findAll();
 
                 // 2. Filter báo cáo theo điều kiện
+                // ✅ FIX: Include both VERIFIED and CLEANED (match prediction filter logic)
                 List<HotspotClusterRequest.ReportCoordinate> coordinates = allReports.stream()
-                                .filter(r -> r.getStatus() == WasteReport.Status.VERIFIED) // Status VERIFIED
+                                .filter(r -> r.getGpsLat() != null && r.getGpsLong() != null) // ✅ NEW: GPS validation
+                                .filter(r -> r.getCreatedAt() != null) // ✅ NEW: Timestamp validation
+                                .filter(r -> r.getStatus() == WasteReport.Status.VERIFIED
+                                                || r.getStatus() == WasteReport.Status.CLEANED) // ✅ CHANGED: Include
+                                                                                                // CLEANED
                                 .filter(r -> fromDate == null || r.getCreatedAt().isAfter(fromDate)
                                                 || r.getCreatedAt().isEqual(fromDate)) // >= fromDate
                                 .filter(r -> toDate == null || r.getCreatedAt().isBefore(toDate)
@@ -100,12 +105,17 @@ public class HotspotClusteringService {
                         Integer min_samples) {
 
                 // 1. Lấy báo cáo trong vùng và thời gian
+                // ✅ FIX: Include both VERIFIED and CLEANED (match prediction filter logic)
                 List<WasteReport> reportsInArea = reportRepository.findAll().stream()
+                                .filter(r -> r.getGpsLat() != null && r.getGpsLong() != null) // ✅ NEW: GPS validation
+                                .filter(r -> r.getCreatedAt() != null) // ✅ NEW: Timestamp validation
                                 .filter(r -> r.getGpsLat().doubleValue() >= minLat &&
                                                 r.getGpsLat().doubleValue() <= maxLat &&
                                                 r.getGpsLong().doubleValue() >= minLng &&
                                                 r.getGpsLong().doubleValue() <= maxLng &&
-                                                r.getStatus() == WasteReport.Status.VERIFIED &&
+                                                (r.getStatus() == WasteReport.Status.VERIFIED
+                                                                || r.getStatus() == WasteReport.Status.CLEANED)
+                                                && // ✅ CHANGED: Include CLEANED
                                                 (fromDate == null || r.getCreatedAt().isAfter(fromDate)
                                                                 || r.getCreatedAt().isEqual(fromDate))
                                                 &&
@@ -157,8 +167,12 @@ public class HotspotClusteringService {
 
                 List<WasteReport> allReports = reportRepository.findAll();
 
+                // ✅ FIX 1: Add timestamp != null check
+                // ✅ FIX 2: Add ai_verified != false filter
                 List<HotspotPredictRequest.ReportPoint> reportPoints = allReports.stream()
                                 .filter(r -> r.getGpsLat() != null && r.getGpsLong() != null)
+                                .filter(r -> r.getCreatedAt() != null) // ✅ NEW: Skip null timestamps
+                                .filter(r -> r.getAiVerified() != Boolean.FALSE) // ✅ NEW: Skip ai_verified=false
                                 .filter(r -> fromDate == null || r.getCreatedAt().isAfter(fromDate)
                                                 || r.getCreatedAt().isEqual(fromDate))
                                 .filter(r -> toDate == null || r.getCreatedAt().isBefore(toDate)
@@ -176,7 +190,10 @@ public class HotspotClusteringService {
                                 .collect(Collectors.toList());
 
                 if (reportPoints.isEmpty()) {
-                        return new HotspotPredictResponse();
+                        HotspotPredictResponse response = new HotspotPredictResponse();
+                        response.setSuccess(false);
+                        response.setErrorMessage("Không có báo cáo nào để dự đoán");
+                        return response;
                 }
 
                 HotspotPredictRequest request = new HotspotPredictRequest(
@@ -193,10 +210,23 @@ public class HotspotClusteringService {
                                         FASTAPI_PREDICT_URL,
                                         request,
                                         HotspotPredictResponse.class);
-                        return response != null ? response : new HotspotPredictResponse();
+
+                        if (response == null) {
+                                HotspotPredictResponse errorResponse = new HotspotPredictResponse();
+                                errorResponse.setSuccess(false);
+                                errorResponse.setErrorMessage("FastAPI không trả về response");
+                                return errorResponse;
+                        }
+
+                        return response;
                 } catch (Exception e) {
                         System.err.println("Lỗi gọi FastAPI prediction: " + e.getMessage());
-                        return new HotspotPredictResponse();
+                        e.printStackTrace();
+
+                        HotspotPredictResponse errorResponse = new HotspotPredictResponse();
+                        errorResponse.setSuccess(false);
+                        errorResponse.setErrorMessage("Lỗi kết nối FastAPI: " + e.getMessage());
+                        return errorResponse;
                 }
         }
 
@@ -214,8 +244,11 @@ public class HotspotClusteringService {
                         Double dbscanEpsKm,
                         Integer dbscanMinSamples) {
 
+                // ✅ FIX: Same filtering as predictAllReports
                 List<HotspotPredictRequest.ReportPoint> reportPoints = reportRepository.findAll().stream()
                                 .filter(r -> r.getGpsLat() != null && r.getGpsLong() != null)
+                                .filter(r -> r.getCreatedAt() != null) // ✅ NEW: Skip null timestamps
+                                .filter(r -> r.getAiVerified() != Boolean.FALSE) // ✅ NEW: Skip ai_verified=false
                                 .filter(r -> r.getGpsLat().doubleValue() >= minLat
                                                 && r.getGpsLat().doubleValue() <= maxLat)
                                 .filter(r -> r.getGpsLong().doubleValue() >= minLng
@@ -237,7 +270,10 @@ public class HotspotClusteringService {
                                 .collect(Collectors.toList());
 
                 if (reportPoints.isEmpty()) {
-                        return new HotspotPredictResponse();
+                        HotspotPredictResponse response = new HotspotPredictResponse();
+                        response.setSuccess(false);
+                        response.setErrorMessage("Không có báo cáo nào trong vùng này để dự đoán");
+                        return response;
                 }
 
                 HotspotPredictRequest request = new HotspotPredictRequest(
@@ -254,10 +290,23 @@ public class HotspotClusteringService {
                                         FASTAPI_PREDICT_URL,
                                         request,
                                         HotspotPredictResponse.class);
-                        return response != null ? response : new HotspotPredictResponse();
+
+                        if (response == null) {
+                                HotspotPredictResponse errorResponse = new HotspotPredictResponse();
+                                errorResponse.setSuccess(false);
+                                errorResponse.setErrorMessage("FastAPI không trả về response");
+                                return errorResponse;
+                        }
+
+                        return response;
                 } catch (Exception e) {
                         System.err.println("Lỗi gọi FastAPI prediction theo vùng: " + e.getMessage());
-                        return new HotspotPredictResponse();
+                        e.printStackTrace();
+
+                        HotspotPredictResponse errorResponse = new HotspotPredictResponse();
+                        errorResponse.setSuccess(false);
+                        errorResponse.setErrorMessage("Lỗi kết nối FastAPI: " + e.getMessage());
+                        return errorResponse;
                 }
         }
 }

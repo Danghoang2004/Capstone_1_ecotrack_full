@@ -64,6 +64,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
   bool _mapInitializing = false;
   bool _mapInitialized = false;
   String _mapStatus = 'Đang khởi tạo Goong map...';
+  int _hotspotRequestSeq = 0;
 
   late final String _viewType;
   html.DivElement? _mapContainer;
@@ -507,6 +508,11 @@ class _AdminMapPageState extends State<AdminMapPage> {
         final points = _showPredictedHotspots
             ? _buildHeatPayload(_predictedHeatmapPoints, predicted: true)
             : _buildHeatPayload(_observedHeatmapPoints, predicted: false);
+        _logHeatPayloadDiagnostics(
+          mode: mode,
+          points: points,
+          predicted: _showPredictedHotspots,
+        );
         debugPrint(
           '[AdminMapPage._syncMapState] Sending ${points.length} heat points (${_showPredictedHotspots ? "predicted" : "observed"}) to JS',
         );
@@ -530,6 +536,11 @@ class _AdminMapPageState extends State<AdminMapPage> {
         );
         final String errorText = jsError?.toString() ?? '';
         if (errorText.isNotEmpty) {
+          _logPotentialIssue(
+            context: 'jsHostError',
+            message:
+                'JS host returned error while rendering heatmap/report data: $errorText',
+          );
           if (mounted) {
             setState(() {
               _mapStatus = 'Lỗi hiển thị hotspot: $errorText';
@@ -540,6 +551,18 @@ class _AdminMapPageState extends State<AdminMapPage> {
         }
       }
     } catch (e) {
+      _logException(
+        context: '_syncMapState',
+        error: e,
+        extra: {
+          'isHeatmapMode': _isHeatmapMode,
+          'showPredicted': _showPredictedHotspots,
+          'observedPoints': _observedHeatmapPoints.length,
+          'predictedPoints': _predictedHeatmapPoints.length,
+          'reports': _reports.length,
+          'groupedReports': _groupedReports.length,
+        },
+      );
       debugPrint('Lỗi đồng bộ dữ liệu map: $e');
       if (mounted) {
         setState(() {
@@ -674,11 +697,24 @@ class _AdminMapPageState extends State<AdminMapPage> {
     debugPrint(
       '[AdminMapPage._setHeatmapView] predicted=$predicted, _mapReady=$_mapReady, _mapInitialized=$_mapInitialized',
     );
+    _logMapStateSnapshot(context: '_setHeatmapView');
     _fetchHotspots();
   }
 
   Future<void> _fetchHotspots() async {
-    if (_isLoadingHotspots || !_isHeatmapMode) return;
+    if (_isLoadingHotspots || !_isHeatmapMode) {
+      _logPotentialIssue(
+        context: '_fetchHotspots:skip',
+        message:
+            'Skipped fetch: isLoadingHotspots=$_isLoadingHotspots, isHeatmapMode=$_isHeatmapMode',
+      );
+      return;
+    }
+
+    final int reqId = ++_hotspotRequestSeq;
+    final DateTime startedAt = DateTime.now();
+    final Stopwatch timer = Stopwatch()..start();
+    _logHotspotRequestStart(reqId: reqId, startedAt: startedAt);
 
     _isLoadingHotspots = true;
     try {
@@ -698,6 +734,12 @@ class _AdminMapPageState extends State<AdminMapPage> {
       final clusterResult = await clusterFuture;
       final predictResult = await predictFuture;
 
+      _logHotspotApiResult(
+        reqId: reqId,
+        clusterResult: clusterResult,
+        predictResult: predictResult,
+      );
+
       debugPrint(
         '[AdminMapPage._fetchHotspots] cluster=${clusterResult.hotspots.length}, '
         'predictedZones=${predictResult.predictedHotspots7Days.length}, '
@@ -708,21 +750,32 @@ class _AdminMapPageState extends State<AdminMapPage> {
       if (!mounted) return;
 
       setState(() {
+        _logZonesSummary(
+          reqId: reqId,
+          label: 'clusterResult.hotspots',
+          zones: clusterResult.hotspots,
+          isPredicted: false,
+        );
+
         _observedHeatmapPoints = _buildClusterDataPoints(
           clusterResult.hotspots,
           isPredicted: false,
+        );
+        _logHeatPointsSummary(
+          reqId: reqId,
+          label: 'observedHeatmapPoints',
+          points: _observedHeatmapPoints,
+          predicted: false,
         );
         debugPrint(
           '[AdminMapPage._fetchHotspots] Built ${_observedHeatmapPoints.length} observed heat points from ${clusterResult.hotspots.length} clusters',
         );
 
+        // Keep hotspot source strict: observed heatmap must come from hotspot API only.
+        // Do not fallback to report list data, otherwise hotspot view can look like report view.
         if (_observedHeatmapPoints.isEmpty) {
           debugPrint(
-            '[AdminMapPage._fetchHotspots] Observed points empty, building fallback from ${_reports.length} reports',
-          );
-          _observedHeatmapPoints = _buildFallbackHeatmapFromAllReports();
-          debugPrint(
-            '[AdminMapPage._fetchHotspots] Fallback generated ${_observedHeatmapPoints.length} points',
+            '[AdminMapPage._fetchHotspots] Observed points empty from hotspot API; no report-data fallback is applied',
           );
         }
 
@@ -732,9 +785,69 @@ class _AdminMapPageState extends State<AdminMapPage> {
                 predictResult.predictedHotspots7Days,
                 isPredicted: true,
               );
+        _logZonesSummary(
+          reqId: reqId,
+          label: 'predictResult.predictedHotspots7Days',
+          zones: predictResult.predictedHotspots7Days,
+          isPredicted: true,
+        );
+        _logHeatPointsSummary(
+          reqId: reqId,
+          label: 'predictedHeatmapPoints',
+          points: _predictedHeatmapPoints,
+          predicted: true,
+        );
+
+        _logObservedPredictedSimilarity(reqId: reqId);
         debugPrint(
           '[AdminMapPage._fetchHotspots] Using ${_predictedHeatmapPoints.length} predicted heat points (${predictResult.heatmapPoints.isNotEmpty ? "from heatmapPoints" : "from zones"})',
         );
+
+        if (_predictedHeatmapPoints.isEmpty) {
+          _logPotentialIssue(
+            context: '_fetchHotspots:predictedEmpty',
+            message:
+                'Predicted heatmap points are empty. Possible causes: API returned no heatmap_points, predicted zones all have predictedCount7d<=0, or backend/model filtering too strict.',
+          );
+        }
+
+        // ✅ NEW: Check for prediction API errors
+        if (!predictResult.success) {
+          if (predictResult.errorMessage != null) {
+            _mapStatus = 'Lỗi dự đoán: ${predictResult.errorMessage}';
+          } else {
+            _mapStatus = 'Lỗi dự đoán: Không thể kết nối tới AI model';
+          }
+          debugPrint(
+            '[AdminMapPage._fetchHotspots] Prediction API error: ${predictResult.errorMessage}',
+          );
+        } else if (predictResult.confidenceScore != null &&
+            predictResult.confidenceScore! < 0.4) {
+          // ✅ NEW: Warn about low confidence predictions
+          _mapStatus =
+              'Cảnh báo: Dự đoán có độ tin cậy thấp (${(predictResult.confidenceScore! * 100).toStringAsFixed(0)}%)';
+        }
+
+        if (_observedHeatmapPoints.isEmpty) {
+          _logPotentialIssue(
+            context: '_fetchHotspots:observedEmpty',
+            message:
+                'Observed hotspot points are empty from cluster API. Possible causes: no VERIFIED reports in bounds or DBSCAN produced no cluster.',
+          );
+        }
+
+        // ✅ NEW: Check for cluster API errors
+        if (!clusterResult.success) {
+          if (clusterResult.errorMessage != null) {
+            debugPrint(
+              '[AdminMapPage._fetchHotspots] Cluster API error: ${clusterResult.errorMessage}',
+            );
+          } else {
+            debugPrint(
+              '[AdminMapPage._fetchHotspots] Cluster API failed without error message',
+            );
+          }
+        }
 
         if (_showPredictedHotspots && _predictedHeatmapPoints.isEmpty) {
           _mapStatus = 'Chưa có dữ liệu dự đoán để hiển thị';
@@ -752,6 +865,18 @@ class _AdminMapPageState extends State<AdminMapPage> {
       );
       _syncMapState();
     } catch (e) {
+      _logException(
+        context: '_fetchHotspots',
+        error: e,
+        extra: {
+          'requestId': reqId,
+          'elapsedMs': timer.elapsedMilliseconds,
+          'isHeatmapMode': _isHeatmapMode,
+          'showPredicted': _showPredictedHotspots,
+          'mapReady': _mapReady,
+          'mapInitialized': _mapInitialized,
+        },
+      );
       debugPrint('Lỗi fetch hotspot: $e');
       if (mounted) {
         setState(() {
@@ -761,8 +886,197 @@ class _AdminMapPageState extends State<AdminMapPage> {
         _mapStatus = 'Lỗi tải hotspot: $e';
       }
     } finally {
+      timer.stop();
+      debugPrint(
+        '[AdminMapPage._fetchHotspots][$reqId] completed in ${timer.elapsedMilliseconds}ms',
+      );
       _isLoadingHotspots = false;
     }
+  }
+
+  void _logHotspotRequestStart({
+    required int reqId,
+    required DateTime startedAt,
+  }) {
+    debugPrint(
+      '[AdminMapPage._fetchHotspots][$reqId] start at ${startedAt.toIso8601String()} | mode=${_showPredictedHotspots ? "predicted" : "observed"} | reports=${_reports.length} | grouped=${_groupedReports.length}',
+    );
+    _logMapStateSnapshot(context: '_fetchHotspots:start#$reqId');
+  }
+
+  void _logHotspotApiResult({
+    required int reqId,
+    required ClusterHotspotApiResponse clusterResult,
+    required PredictHotspotApiResponse predictResult,
+  }) {
+    debugPrint(
+      '[AdminMapPage._fetchHotspots][$reqId] API result | clusterSuccess=${clusterResult.success}, clusterHotspots=${clusterResult.hotspots.length}, predictedSuccess=${predictResult.success}, predictedZones=${predictResult.predictedHotspots7Days.length}, predictedHeatmap=${predictResult.heatmapPoints.length}',
+    );
+
+    if (!clusterResult.success) {
+      _logPotentialIssue(
+        context: '_fetchHotspots:clusterApi',
+        message: 'Cluster API success=false',
+      );
+    }
+    if (!predictResult.success) {
+      _logPotentialIssue(
+        context: '_fetchHotspots:predictApi',
+        message: 'Predict API success=false',
+      );
+    }
+  }
+
+  void _logHeatPointsSummary({
+    required int reqId,
+    required String label,
+    required List<PredictedHeatmapPoint> points,
+    required bool predicted,
+  }) {
+    if (points.isEmpty) {
+      debugPrint('[AdminMapPage._diag][$reqId][$label] empty points');
+      return;
+    }
+
+    final double minIntensity = points
+        .map((p) => p.intensity)
+        .reduce((a, b) => a < b ? a : b);
+    final double maxIntensity = points
+        .map((p) => p.intensity)
+        .reduce((a, b) => a > b ? a : b);
+    final num totalCount = points.fold<num>(
+      0,
+      (sum, p) => sum + (predicted ? p.predictedCount7d : p.reportCount),
+    );
+
+    debugPrint(
+      '[AdminMapPage._diag][$reqId][$label] count=${points.length}, intensity=[${minIntensity.toStringAsFixed(3)}..${maxIntensity.toStringAsFixed(3)}], totalCount=$totalCount',
+    );
+
+    final sample = points.take(3).map((p) {
+      return {
+        'lat': p.lat,
+        'lng': p.lng,
+        'intensity': p.intensity,
+        'pred7d': p.predictedCount7d,
+        'reportCount': p.reportCount,
+      };
+    }).toList();
+    debugPrint('[AdminMapPage._diag][$reqId][$label] sample=$sample');
+  }
+
+  void _logZonesSummary({
+    required int reqId,
+    required String label,
+    required List<HotspotZone> zones,
+    required bool isPredicted,
+  }) {
+    if (zones.isEmpty) {
+      debugPrint('[AdminMapPage._diag][$reqId][$label] empty zones');
+      return;
+    }
+
+    final total = zones.fold<int>(0, (sum, z) {
+      return sum + (isPredicted ? (z.predictedCount7d ?? 0) : z.reportCount);
+    });
+    debugPrint(
+      '[AdminMapPage._diag][$reqId][$label] zones=${zones.length}, totalCount=$total',
+    );
+
+    final sample = zones.take(3).map((z) {
+      return {
+        'clusterId': z.clusterId,
+        'centerLat': z.centerLat,
+        'centerLng': z.centerLng,
+        'reportCount': z.reportCount,
+        'predictedCount7d': z.predictedCount7d,
+        'riskScore': z.riskScore,
+      };
+    }).toList();
+    debugPrint('[AdminMapPage._diag][$reqId][$label] sample=$sample');
+  }
+
+  void _logObservedPredictedSimilarity({required int reqId}) {
+    if (_observedHeatmapPoints.isEmpty || _predictedHeatmapPoints.isEmpty) {
+      debugPrint(
+        '[AdminMapPage._diag][$reqId][similarity] skipped (observed=${_observedHeatmapPoints.length}, predicted=${_predictedHeatmapPoints.length})',
+      );
+      return;
+    }
+
+    String key(PredictedHeatmapPoint p) =>
+        '${p.lat.toStringAsFixed(3)}:${p.lng.toStringAsFixed(3)}';
+
+    final observedSet = _observedHeatmapPoints.map(key).toSet();
+    final predictedSet = _predictedHeatmapPoints.map(key).toSet();
+    final overlap = observedSet.intersection(predictedSet).length;
+    final union = observedSet.union(predictedSet).length;
+    final double jaccard = union == 0 ? 0.0 : overlap / union;
+
+    final observedTop = _observedHeatmapPoints.toList()
+      ..sort((a, b) => b.reportCount.compareTo(a.reportCount));
+    final predictedTop = _predictedHeatmapPoints.toList()
+      ..sort((a, b) => b.predictedCount7d.compareTo(a.predictedCount7d));
+
+    final int oTop = observedTop.isNotEmpty ? observedTop.first.reportCount : 0;
+    final int pTop = predictedTop.isNotEmpty
+        ? predictedTop.first.predictedCount7d
+        : 0;
+
+    debugPrint(
+      '[AdminMapPage._diag][$reqId][similarity] overlap=$overlap union=$union jaccard=${jaccard.toStringAsFixed(3)} | observedTop=$oTop predictedTop=$pTop',
+    );
+
+    if (jaccard >= 0.70) {
+      _logPotentialIssue(
+        context: '_fetchHotspots:similarity',
+        message:
+            'Observed and predicted heatmaps are highly similar (jaccard=${jaccard.toStringAsFixed(3)}). Potential causes: AI heuristic fallback, short horizon=7, homogeneous data distribution, or heavy overlap in hotspots.',
+      );
+    }
+  }
+
+  void _logHeatPayloadDiagnostics({
+    required String mode,
+    required List<Map<String, dynamic>> points,
+    required bool predicted,
+  }) {
+    if (points.isEmpty) {
+      debugPrint(
+        '[AdminMapPage._diag][payload] mode=$mode predicted=$predicted empty payload',
+      );
+      return;
+    }
+
+    final intensities = points
+        .map((p) => (p['intensity'] as num?)?.toDouble() ?? 0.0)
+        .toList();
+    final minI = intensities.reduce((a, b) => a < b ? a : b);
+    final maxI = intensities.reduce((a, b) => a > b ? a : b);
+    debugPrint(
+      '[AdminMapPage._diag][payload] mode=$mode predicted=$predicted size=${points.length} intensity=[${minI.toStringAsFixed(3)}..${maxI.toStringAsFixed(3)}]',
+    );
+  }
+
+  void _logPotentialIssue({required String context, required String message}) {
+    debugPrint('[AdminMapPage][WARN][$context] $message');
+  }
+
+  void _logException({
+    required String context,
+    required Object error,
+    Map<String, Object?>? extra,
+  }) {
+    debugPrint('[AdminMapPage][ERROR][$context] $error');
+    if (extra != null && extra.isNotEmpty) {
+      debugPrint('[AdminMapPage][ERROR][$context][extra] $extra');
+    }
+  }
+
+  void _logMapStateSnapshot({required String context}) {
+    debugPrint(
+      '[AdminMapPage][STATE][$context] mapReady=$_mapReady mapInitialized=$_mapInitialized isHeatmap=$_isHeatmapMode showPredicted=$_showPredictedHotspots loadingReports=$_isLoadingReports loadingHotspots=$_isLoadingHotspots reports=${_reports.length} groups=${_groupedReports.length} observed=${_observedHeatmapPoints.length} predicted=${_predictedHeatmapPoints.length}',
+    );
   }
 
   List<PredictedHeatmapPoint> _buildFallbackHeatmapFromAllReports() {

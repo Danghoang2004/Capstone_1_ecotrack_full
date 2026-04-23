@@ -63,8 +63,15 @@ class PredictedHeatmapPoint {
 class ClusterHotspotApiResponse {
   final bool success;
   final List<HotspotZone> hotspots;
+  final String? errorMessage; // ✅ NEW: Error message if request fails
+  final double? confidenceScore; // ✅ NEW: Confidence score of the prediction
 
-  ClusterHotspotApiResponse({required this.success, required this.hotspots});
+  ClusterHotspotApiResponse({
+    required this.success,
+    required this.hotspots,
+    this.errorMessage,
+    this.confidenceScore,
+  });
 
   factory ClusterHotspotApiResponse.fromJson(Map<String, dynamic> json) {
     final List<dynamic> raw =
@@ -75,6 +82,10 @@ class ClusterHotspotApiResponse {
           .whereType<Map<String, dynamic>>()
           .map(HotspotZone.fromJson)
           .toList(),
+      errorMessage: json['error_message'] ?? json['errorMessage'],
+      confidenceScore: _parseDouble(
+        json['confidence_score'] ?? json['confidenceScore'],
+      ),
     );
   }
 }
@@ -83,11 +94,15 @@ class PredictHotspotApiResponse {
   final bool success;
   final List<HotspotZone> predictedHotspots7Days;
   final List<PredictedHeatmapPoint> heatmapPoints;
+  final String? errorMessage; // ✅ NEW: Error message if prediction fails
+  final double? confidenceScore; // ✅ NEW: Confidence score of the prediction
 
   PredictHotspotApiResponse({
     required this.success,
     required this.predictedHotspots7Days,
     required this.heatmapPoints,
+    this.errorMessage,
+    this.confidenceScore,
   });
 
   factory PredictHotspotApiResponse.fromJson(Map<String, dynamic> json) {
@@ -109,6 +124,10 @@ class PredictHotspotApiResponse {
           .whereType<Map<String, dynamic>>()
           .map(PredictedHeatmapPoint.fromJson)
           .toList(),
+      errorMessage: json['error_message'] ?? json['errorMessage'],
+      confidenceScore: _parseDouble(
+        json['confidence_score'] ?? json['confidenceScore'],
+      ),
     );
   }
 }

@@ -171,6 +171,8 @@ public class HotspotPredictResponse {
     }
 
     private Boolean success;
+    private String errorMessage; // ✅ NEW: Error message if prediction fails
+    private Double confidenceScore; // ✅ NEW: 0-1 score indicating reliability
     private List<HotspotZone> predicted_hotspots_7_days;
     private List<GridRisk> risk_score_by_grid;
     private List<HeatmapPoint> heatmap_points;
@@ -183,6 +185,22 @@ public class HotspotPredictResponse {
 
     public void setSuccess(Boolean success) {
         this.success = success;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public Double getConfidenceScore() {
+        return confidenceScore;
+    }
+
+    public void setConfidenceScore(Double confidenceScore) {
+        this.confidenceScore = confidenceScore;
     }
 
     public List<HotspotZone> getPredicted_hotspots_7_days() {
