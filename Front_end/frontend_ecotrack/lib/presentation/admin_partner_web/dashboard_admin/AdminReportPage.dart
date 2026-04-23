@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/ReportService.dart';
@@ -21,10 +23,26 @@ class _AdminReportPageState extends State<AdminReportPage> {
   List<Report> _reports = [];
   List<Report> _filteredReports = [];
   bool _isLoading = true;
+  int _currentPage = 1;
+
+  static const int _itemsPerPage = 10;
 
   // Bộ lọc
   String _selectedStatus = 'ALL';
   String _selectedLevel = 'ALL';
+
+  int get _totalPages =>
+      math.max(1, (_filteredReports.length / _itemsPerPage).ceil());
+
+  List<Report> get _currentPageReports {
+    final start = (_currentPage - 1) * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, _filteredReports.length);
+
+    if (start >= _filteredReports.length || start < 0) {
+      return const [];
+    }
+    return _filteredReports.sublist(start, end);
+  }
 
   @override
   void initState() {
@@ -63,6 +81,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
 
         return statusMatch && searchMatch;
       }).toList();
+      _currentPage = 1;
     });
   }
 
@@ -70,19 +89,167 @@ class _AdminReportPageState extends State<AdminReportPage> {
     bool success = await _reportService.updateReportStatus(reportId, newStatus);
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Cập nhật thành công!")));
+        _showStatusTableDialog(reportId, newStatus);
         _fetchReports();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Lỗi cập nhật!"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorDialog();
       }
     }
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'PENDING':
+        return 'Chờ xử lý';
+      case 'VERIFIED':
+        return 'Đã xác minh';
+      case 'CLEANED':
+        return 'Đã dọn dẹp';
+      case 'REJECTED':
+        return 'Đã từ chối';
+      default:
+        return status;
+    }
+  }
+
+  void _showStatusTableDialog(int reportId, String newStatus) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: Color(0xFF169B52)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Cập nhật trạng thái thành công',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.adminTextPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.adminBorder),
+                  ),
+                  child: Table(
+                    border: TableBorder.symmetric(
+                      inside: BorderSide(color: AppColors.adminBorder),
+                    ),
+                    columnWidths: const {
+                      0: FlexColumnWidth(1),
+                      1: FlexColumnWidth(2),
+                    },
+                    children: [
+                      const TableRow(
+                        decoration: BoxDecoration(color: Color(0xFFF4F6F8)),
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Text(
+                              'Trường',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.adminTextPrimary,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Text(
+                              'Giá trị',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.adminTextPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Text('Task ID'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Text('#$reportId'),
+                          ),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Text('Trạng thái mới'),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Text(_statusLabel(newStatus)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Đóng'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.error_outline_rounded, color: Color(0xFFD32F2F)),
+              SizedBox(width: 8),
+              Text('Lỗi cập nhật'),
+            ],
+          ),
+          content: const Text(
+            'Không thể cập nhật trạng thái task. Vui lòng thử lại.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -98,7 +265,10 @@ class _AdminReportPageState extends State<AdminReportPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.adminAccentSoft,
                     borderRadius: BorderRadius.circular(999),
@@ -144,14 +314,12 @@ class _AdminReportPageState extends State<AdminReportPage> {
                           child: Text("Không tìm thấy báo cáo nào"),
                         ),
                       )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _filteredReports.length,
-                        separatorBuilder: (ctx, index) =>
-                            const SizedBox(height: 16),
-                        itemBuilder: (ctx, index) =>
-                            _buildReportItem(_filteredReports[index]),
+                    : Column(
+                        children: [
+                          _buildReportTable(),
+                          const SizedBox(height: 14),
+                          _buildPagination(),
+                        ],
                       ),
               ],
             ),
@@ -236,10 +404,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.adminSurface,
-            color.withValues(alpha: 0.08),
-          ],
+          colors: [AppColors.adminSurface, color.withValues(alpha: 0.08)],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.adminBorder),
@@ -293,10 +458,12 @@ class _AdminReportPageState extends State<AdminReportPage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final useInlineFilters = constraints.maxWidth >= 1040;
+        final compactFilters = constraints.maxWidth < 760;
 
         return Column(
           children: [
             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.adminSurface,
                 borderRadius: BorderRadius.circular(18),
@@ -324,39 +491,64 @@ class _AdminReportPageState extends State<AdminReportPage> {
                   ),
                   if (useInlineFilters) ...[
                     const SizedBox(width: 12),
-                    _buildDropdownButton(
-                      value: _selectedStatus,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'ALL',
-                          child: Text("Tất cả trạng thái"),
-                        ),
-                        DropdownMenuItem(value: 'PENDING', child: Text("Chờ xử lý")),
-                        DropdownMenuItem(value: 'VERIFIED', child: Text("Đã xác minh")),
-                        DropdownMenuItem(value: 'CLEANED', child: Text("Đã dọn dẹp")),
-                        DropdownMenuItem(value: 'REJECTED', child: Text("Đã từ chối")),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() {
-                            _selectedStatus = val;
-                            _filterReports();
-                          });
-                        }
-                      },
+                    Flexible(
+                      child: _buildDropdownButton(
+                        value: _selectedStatus,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'ALL',
+                            child: Text("Tất cả trạng thái"),
+                          ),
+                          DropdownMenuItem(
+                            value: 'PENDING',
+                            child: Text("Chờ xử lý"),
+                          ),
+                          DropdownMenuItem(
+                            value: 'VERIFIED',
+                            child: Text("Đã xác minh"),
+                          ),
+                          DropdownMenuItem(
+                            value: 'CLEANED',
+                            child: Text("Đã dọn dẹp"),
+                          ),
+                          DropdownMenuItem(
+                            value: 'REJECTED',
+                            child: Text("Đã từ chối"),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selectedStatus = val;
+                              _filterReports();
+                            });
+                          }
+                        },
+                      ),
                     ),
                     const SizedBox(width: 10),
-                    _buildDropdownButton(
-                      value: _selectedLevel,
-                      items: const [
-                        DropdownMenuItem(value: 'ALL', child: Text("Tất cả mức độ")),
-                        DropdownMenuItem(value: 'HIGH', child: Text("Nghiêm trọng")),
-                        DropdownMenuItem(value: 'MEDIUM', child: Text("Trung bình")),
-                        DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedLevel = val);
-                      },
+                    Flexible(
+                      child: _buildDropdownButton(
+                        value: _selectedLevel,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'ALL',
+                            child: Text("Tất cả mức độ"),
+                          ),
+                          DropdownMenuItem(
+                            value: 'HIGH',
+                            child: Text("Nghiêm trọng"),
+                          ),
+                          DropdownMenuItem(
+                            value: 'MEDIUM',
+                            child: Text("Trung bình"),
+                          ),
+                          DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedLevel = val);
+                        },
+                      ),
                     ),
                     const SizedBox(width: 12),
                   ],
@@ -365,41 +557,134 @@ class _AdminReportPageState extends State<AdminReportPage> {
             ),
             if (!useInlineFilters) ...[
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildDropdownButton(
-                    value: _selectedStatus,
-                    items: const [
-                      DropdownMenuItem(value: 'ALL', child: Text("Tất cả trạng thái")),
-                      DropdownMenuItem(value: 'PENDING', child: Text("Chờ xử lý")),
-                      DropdownMenuItem(value: 'VERIFIED', child: Text("Đã xác minh")),
-                      DropdownMenuItem(value: 'CLEANED', child: Text("Đã dọn dẹp")),
-                      DropdownMenuItem(value: 'REJECTED', child: Text("Đã từ chối")),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedStatus = val;
-                          _filterReports();
-                        });
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  _buildDropdownButton(
-                    value: _selectedLevel,
-                    items: const [
-                      DropdownMenuItem(value: 'ALL', child: Text("Tất cả mức độ")),
-                      DropdownMenuItem(value: 'HIGH', child: Text("Nghiêm trọng")),
-                      DropdownMenuItem(value: 'MEDIUM', child: Text("Trung bình")),
-                      DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedLevel = val);
-                    },
-                  ),
-                ],
-              ),
+              compactFilters
+                  ? Column(
+                      children: [
+                        _buildDropdownButton(
+                          value: _selectedStatus,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'ALL',
+                              child: Text("Tất cả trạng thái"),
+                            ),
+                            DropdownMenuItem(
+                              value: 'PENDING',
+                              child: Text("Chờ xử lý"),
+                            ),
+                            DropdownMenuItem(
+                              value: 'VERIFIED',
+                              child: Text("Đã xác minh"),
+                            ),
+                            DropdownMenuItem(
+                              value: 'CLEANED',
+                              child: Text("Đã dọn dẹp"),
+                            ),
+                            DropdownMenuItem(
+                              value: 'REJECTED',
+                              child: Text("Đã từ chối"),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedStatus = val;
+                                _filterReports();
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        _buildDropdownButton(
+                          value: _selectedLevel,
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'ALL',
+                              child: Text("Tất cả mức độ"),
+                            ),
+                            DropdownMenuItem(
+                              value: 'HIGH',
+                              child: Text("Nghiêm trọng"),
+                            ),
+                            DropdownMenuItem(
+                              value: 'MEDIUM',
+                              child: Text("Trung bình"),
+                            ),
+                            DropdownMenuItem(value: 'LOW', child: Text("Thấp")),
+                          ],
+                          onChanged: (val) {
+                            if (val != null)
+                              setState(() => _selectedLevel = val);
+                          },
+                        ),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(
+                          child: _buildDropdownButton(
+                            value: _selectedStatus,
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'ALL',
+                                child: Text("Tất cả trạng thái"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'PENDING',
+                                child: Text("Chờ xử lý"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'VERIFIED',
+                                child: Text("Đã xác minh"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'CLEANED',
+                                child: Text("Đã dọn dẹp"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'REJECTED',
+                                child: Text("Đã từ chối"),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedStatus = val;
+                                  _filterReports();
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _buildDropdownButton(
+                            value: _selectedLevel,
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'ALL',
+                                child: Text("Tất cả mức độ"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'HIGH',
+                                child: Text("Nghiêm trọng"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'MEDIUM',
+                                child: Text("Trung bình"),
+                              ),
+                              DropdownMenuItem(
+                                value: 'LOW',
+                                child: Text("Thấp"),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null)
+                                setState(() => _selectedLevel = val);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
             ],
           ],
         );
@@ -414,7 +699,6 @@ class _AdminReportPageState extends State<AdminReportPage> {
   }) {
     return Container(
       height: 48,
-      constraints: const BoxConstraints(minWidth: 180),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: AppColors.adminSurface,
@@ -426,8 +710,250 @@ class _AdminReportPageState extends State<AdminReportPage> {
           value: value,
           items: items,
           onChanged: onChanged,
+          isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
           style: const TextStyle(color: Colors.black87, fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportTable() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tableWidth = constraints.maxWidth < 1220
+            ? 1220.0
+            : constraints.maxWidth;
+        const sidePadding = 16.0;
+        const idWidth = 120.0;
+        const leadWidth = 170.0;
+        const taskStateWidth = 210.0;
+        const reportStateWidth = 210.0;
+        const timeWidth = 180.0;
+        final titleWidth =
+            tableWidth -
+            (sidePadding * 2) -
+            idWidth -
+            leadWidth -
+            taskStateWidth -
+            reportStateWidth -
+            timeWidth;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.adminSurface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.adminBorder),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Column(
+                  children: [
+                    Container(
+                      color: const Color(0xFFF1F3F6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: sidePadding,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          _buildTableHeaderCell("Task ID", idWidth),
+                          _buildTableHeaderCell("Báo cáo", titleWidth),
+                          _buildTableHeaderCell("Lead xử lý", leadWidth),
+                          _buildTableHeaderCell(
+                            "Trạng thái task",
+                            taskStateWidth,
+                          ),
+                          _buildTableHeaderCell(
+                            "Trạng thái report",
+                            reportStateWidth,
+                          ),
+                          _buildTableHeaderCell("Giao lúc", timeWidth),
+                        ],
+                      ),
+                    ),
+                    ..._currentPageReports.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final report = entry.value;
+                      final isLast = index == _currentPageReports.length - 1;
+
+                      return InkWell(
+                        onTap: () => _showDetailDialog(report),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: sidePadding,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: index.isEven
+                                ? AppColors.adminSurface
+                                : const Color(0xFFFCFDFC),
+                            border: isLast
+                                ? null
+                                : Border(
+                                    bottom: BorderSide(
+                                      color: AppColors.adminBorder,
+                                    ),
+                                  ),
+                          ),
+                          child: Row(
+                            children: [
+                              _buildTableCell("#${report.reportId}", idWidth),
+                              _buildTableCell(
+                                report.title,
+                                titleWidth,
+                                maxLines: 1,
+                              ),
+                              _buildTableCell("env_lead_01", leadWidth),
+                              SizedBox(
+                                width: taskStateWidth,
+                                child: _buildTaskStateBadge(report.status),
+                              ),
+                              _buildTableCell(
+                                report.status,
+                                reportStateWidth,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              _buildTableCell(
+                                DateFormat(
+                                  'dd/MM/yyyy HH:mm',
+                                ).format(report.createdAt),
+                                timeWidth,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPagination() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text(
+          "Trang $_currentPage/$_totalPages",
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.adminTextSecondary,
+          ),
+        ),
+        const SizedBox(width: 10),
+        IconButton(
+          tooltip: 'Trang trước',
+          onPressed: _currentPage > 1
+              ? () => setState(() => _currentPage -= 1)
+              : null,
+          icon: const Icon(Icons.chevron_left_rounded),
+        ),
+        IconButton(
+          tooltip: 'Trang sau',
+          onPressed: _currentPage < _totalPages
+              ? () => setState(() => _currentPage += 1)
+              : null,
+          icon: const Icon(Icons.chevron_right_rounded),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTableHeaderCell(String title, double width) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: AppColors.adminTextPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableCell(
+    String text,
+    double width, {
+    int maxLines = 1,
+    FontWeight fontWeight = FontWeight.w500,
+  }) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        text,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: fontWeight,
+          color: AppColors.adminTextPrimary,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTaskStateBadge(String status) {
+    late final Color bg;
+    late final Color text;
+    late final String label;
+
+    switch (status) {
+      case 'CLEANED':
+        bg = const Color(0xFFDAF4E6);
+        text = const Color(0xFF169B52);
+        label = "Đã làm";
+        break;
+      case 'VERIFIED':
+        bg = const Color(0xFFE3F0FF);
+        text = const Color(0xFF0A66C2);
+        label = "Đang làm";
+        break;
+      case 'PENDING':
+        bg = const Color(0xFFFFF0DD);
+        text = const Color(0xFFED8B00);
+        label = "Chờ xử lý";
+        break;
+      case 'REJECTED':
+        bg = const Color(0xFFFFE5E5);
+        text = const Color(0xFFD32F2F);
+        label = "Từ chối";
+        break;
+      default:
+        bg = const Color(0xFFEFEFEF);
+        text = Colors.black54;
+        label = status;
+        break;
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: text,
+          ),
         ),
       ),
     );
@@ -495,7 +1021,9 @@ class _AdminReportPageState extends State<AdminReportPage> {
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.adminTextPrimary,
-                      side: const BorderSide(color: AppColors.adminBorderStrong),
+                      side: const BorderSide(
+                        color: AppColors.adminBorderStrong,
+                      ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -546,7 +1074,6 @@ class _AdminReportPageState extends State<AdminReportPage> {
               ],
             ],
           ),
-
         ],
       ),
     );
@@ -654,7 +1181,9 @@ class _AdminReportPageState extends State<AdminReportPage> {
           backgroundColor: AppColors.adminAccentSky,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
         child: const Text("Xác nhận"),
       );
@@ -665,7 +1194,9 @@ class _AdminReportPageState extends State<AdminReportPage> {
           backgroundColor: AppColors.adminAccent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
         ),
         child: const Text("Đã dọn xong"),
       );
