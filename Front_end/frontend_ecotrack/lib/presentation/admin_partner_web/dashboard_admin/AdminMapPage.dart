@@ -1096,6 +1096,15 @@ class _AdminMapPageState extends State<AdminMapPage> {
   }
 
   Widget _buildMapLegend() {
+    final String legendTitle;
+    if (!_isHeatmapMode) {
+      legendTitle = 'Chú thích: Báo cáo rác thải';
+    } else if (_showPredictedHotspots) {
+      legendTitle = 'Chú thích: Dự đoán điểm nóng 7 ngày tới';
+    } else {
+      legendTitle = 'Chú thích: Khu vực điểm nóng';
+    }
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -1109,9 +1118,9 @@ class _AdminMapPageState extends State<AdminMapPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Chú thích',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          Text(
+            legendTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 8),
           if (_isHeatmapMode) ...[

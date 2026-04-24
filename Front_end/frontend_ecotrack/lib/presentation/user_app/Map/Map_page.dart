@@ -1283,6 +1283,7 @@ class _MapPageState extends State<MapPage> {
 
   String _buildMobileGoongHostHtml() {
     final encodedPinDataUri = jsonEncode(_pinDataUri);
+    final encodedGoongApiKey = jsonEncode(dotenv.env['GOONG_API_KEY'] ?? '');
     return '''<!DOCTYPE html>
 <html>
 <head>
@@ -1319,6 +1320,7 @@ class _MapPageState extends State<MapPage> {
   <script>
     (function () {
       const PIN_DATA_URI = $encodedPinDataUri;
+      const GOONG_API_KEY = $encodedGoongApiKey;
       const state = {
         map: null,
         ready: false,
@@ -1328,6 +1330,7 @@ class _MapPageState extends State<MapPage> {
         markers: [],
         popup: null,
         reportEventsBound: false,
+        heatEventsBound: false,
         imageOverlay: null,
         imageOverlayImg: null,
       };
@@ -1387,6 +1390,38 @@ class _MapPageState extends State<MapPage> {
           .replaceAll('>', '&gt;')
           .replaceAll('"', '&quot;')
           .replaceAll("'", '&#39;');
+      }
+
+      async function reverseGeocodeAreaName(lat, lng) {
+        if (!GOONG_API_KEY) return null;
+        try {
+          const url = 'https://rsapi.goong.io/Geocode?latlng=' + encodeURIComponent(lat + ',' + lng) + '&api_key=' + encodeURIComponent(GOONG_API_KEY);
+          const response = await fetch(url);
+          if (!response.ok) return null;
+          const data = await response.json();
+          if (!data || !Array.isArray(data.results) || data.results.length === 0) {
+            return null;
+          }
+          const first = data.results[0] || {};
+          return first.formatted_address || first.address || first.name || null;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function buildHeatPopupHtml(lat, lng, count, intensity, areaName) {
+        const addressLine = areaName
+          ? '<div style="font-size:12px;color:#4b5563;">Khu vực: <strong>' + escapeHtml(areaName) + '</strong></div>'
+          : '<div style="font-size:12px;color:#6b7280;">Khu vực: <strong>Đang tải địa chỉ...</strong></div>';
+
+        return ''
+          + '<div style="padding:10px;font-family:Arial,sans-serif;">'
+          + '  <div style="font-weight:700;font-size:14px;color:#1f2937;margin-bottom:6px;">Khu vực điểm nóng</div>'
+          + addressLine
+          + '  <div style="font-size:12px;color:#4b5563;margin-top:4px;">Vị trí: <strong>' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</strong></div>'
+          + '  <div style="font-size:12px;color:#4b5563;margin-top:4px;">Số báo cáo trong khu vực: <strong>' + count + '</strong></div>'
+          + '  <div style="font-size:12px;color:#4b5563;margin-top:4px;">Mức độ điểm nóng: <strong>' + (intensity * 100).toFixed(0) + '%</strong></div>'
+          + '</div>';
       }
 
       function ensureImageOverlay() {
@@ -1662,6 +1697,55 @@ class _MapPageState extends State<MapPage> {
               'circle-stroke-width': 2,
               'circle-stroke-opacity': 0.92,
             }
+          });
+        }
+
+        if (!state.heatEventsBound) {
+          state.heatEventsBound = true;
+
+          state.map.on('click', 'goong-heat-circle', (event) => {
+            if (!event.features || event.features.length === 0) return;
+
+            const feature = event.features[0];
+            const props = feature.properties || {};
+            const coords = feature.geometry && feature.geometry.coordinates
+              ? feature.geometry.coordinates
+              : null;
+
+            if (!coords) return;
+
+            if (state.popup) {
+              state.popup.remove();
+              state.popup = null;
+            }
+
+            const count = Number(props.count || 0);
+            const intensity = Number(props.intensity || 0);
+            const lat = Number(coords[1]);
+            const lng = Number(coords[0]);
+
+            state.popup = new maplibregl.Popup({
+              offset: 16,
+              closeButton: true,
+              closeOnClick: true,
+              maxWidth: '320px'
+            })
+              .setLngLat(coords)
+              .setHTML(buildHeatPopupHtml(lat, lng, count, intensity, null))
+              .addTo(state.map);
+
+            reverseGeocodeAreaName(lat, lng).then((areaName) => {
+              if (!areaName || !state.popup) return;
+              state.popup.setHTML(buildHeatPopupHtml(lat, lng, count, intensity, areaName));
+            });
+          });
+
+          state.map.on('mouseenter', 'goong-heat-circle', () => {
+            state.map.getCanvas().style.cursor = 'pointer';
+          });
+
+          state.map.on('mouseleave', 'goong-heat-circle', () => {
+            state.map.getCanvas().style.cursor = '';
           });
         }
       }
