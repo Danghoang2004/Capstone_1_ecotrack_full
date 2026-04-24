@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 // ignore: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:js' as js;
 // ignore: deprecated_member_use, avoid_web_libraries_in_flutter
@@ -32,6 +33,7 @@ class _AdminMapPageState extends State<AdminMapPage> {
   static const double _initialZoom = 16.2;
   static const int _popupDetailLimit = 5;
   static const int _popupDescriptionLimit = 60;
+  static const int _maxPredictedPointsOnMap = 30;
   static const Set<String> _mapVisibleReportStatuses = {'VERIFIED', 'CLEANED'};
   static const Color _reportPendingColor = Color(0xFFF44336);
   static const Color _reportVerifiedColor = Color(0xFFFB8C00);
@@ -699,45 +701,83 @@ class _AdminMapPageState extends State<AdminMapPage> {
 
       if (!mounted) return;
 
+      debugPrint('[AdminMapPage._fetchHotspots] Building observed points...');
+      var observedPoints = _buildClusterDataPoints(
+        clusterResult.hotspots,
+        isPredicted: false,
+      );
+      debugPrint(
+        '[AdminMapPage._fetchHotspots] Built ${observedPoints.length} observed heat points from ${clusterResult.hotspots.length} clusters',
+      );
+
+      if (observedPoints.isEmpty) {
+        debugPrint(
+          '[AdminMapPage._fetchHotspots] Observed points empty, building fallback from ${_reports.length} reports',
+        );
+        observedPoints = _buildFallbackHeatmapFromAllReports();
+        debugPrint(
+          '[AdminMapPage._fetchHotspots] Fallback generated ${observedPoints.length} points',
+        );
+      }
+
+      debugPrint('[AdminMapPage._fetchHotspots] Building predicted points...');
+      var predictedPoints = _buildClusterDataPoints(
+        predictResult.predictedHotspots7Days,
+        isPredicted: true,
+      );
+
+      if (predictedPoints.isEmpty && predictResult.heatmapPoints.isNotEmpty) {
+        final nonZeroPredictedPoints = predictResult.heatmapPoints
+            .where((point) => point.predictedCount7d > 0 || point.intensity > 0)
+            .toList();
+        debugPrint(
+          '[AdminMapPage._fetchHotspots] Predicted zones empty, fallback candidates=${nonZeroPredictedPoints.length}',
+        );
+
+        if (nonZeroPredictedPoints.isNotEmpty) {
+          nonZeroPredictedPoints.sort(
+            (a, b) => b.predictedCount7d.compareTo(a.predictedCount7d),
+          );
+          predictedPoints = nonZeroPredictedPoints
+              .take(_maxPredictedPointsOnMap)
+              .toList();
+        }
+      }
+
+      debugPrint(
+        '[AdminMapPage._fetchHotspots] Using ${predictedPoints.length} predicted heat points (${predictResult.predictedHotspots7Days.isNotEmpty ? "from zones" : "from clustered heatmap fallback"})',
+      );
+
+      if (predictedPoints.length > _maxPredictedPointsOnMap) {
+        predictedPoints.sort(
+          (a, b) => b.predictedCount7d.compareTo(a.predictedCount7d),
+        );
+        predictedPoints = predictedPoints
+            .take(_maxPredictedPointsOnMap)
+            .toList();
+        debugPrint(
+          '[AdminMapPage._fetchHotspots] Trimmed predicted points to ${predictedPoints.length} for faster rendering',
+        );
+      }
+
+      final String nextMapStatus;
+      if (_showPredictedHotspots && predictedPoints.isEmpty) {
+        nextMapStatus = 'Chưa có dữ liệu dự đoán để hiển thị';
+      } else if (!_showPredictedHotspots && observedPoints.isEmpty) {
+        nextMapStatus = 'Chưa có hotspot thực tế trong vùng hiện tại';
+      } else {
+        nextMapStatus = _showPredictedHotspots
+            ? 'Hiển thị vùng dự đoán (${predictedPoints.length} điểm)'
+            : 'Hiển thị hotspot thực tế (${observedPoints.length} điểm)';
+      }
+
       setState(() {
-        _observedHeatmapPoints = _buildClusterDataPoints(
-          clusterResult.hotspots,
-          isPredicted: false,
-        );
-        debugPrint(
-          '[AdminMapPage._fetchHotspots] Built ${_observedHeatmapPoints.length} observed heat points from ${clusterResult.hotspots.length} clusters',
-        );
-
-        if (_observedHeatmapPoints.isEmpty) {
-          debugPrint(
-            '[AdminMapPage._fetchHotspots] Observed points empty, building fallback from ${_reports.length} reports',
-          );
-          _observedHeatmapPoints = _buildFallbackHeatmapFromAllReports();
-          debugPrint(
-            '[AdminMapPage._fetchHotspots] Fallback generated ${_observedHeatmapPoints.length} points',
-          );
-        }
-
-        _predictedHeatmapPoints = predictResult.heatmapPoints.isNotEmpty
-            ? predictResult.heatmapPoints
-            : _buildClusterDataPoints(
-                predictResult.predictedHotspots7Days,
-                isPredicted: true,
-              );
-        debugPrint(
-          '[AdminMapPage._fetchHotspots] Using ${_predictedHeatmapPoints.length} predicted heat points (${predictResult.heatmapPoints.isNotEmpty ? "from heatmapPoints" : "from zones"})',
-        );
-
-        if (_showPredictedHotspots && _predictedHeatmapPoints.isEmpty) {
-          _mapStatus = 'Chưa có dữ liệu dự đoán để hiển thị';
-        } else if (!_showPredictedHotspots && _observedHeatmapPoints.isEmpty) {
-          _mapStatus = 'Chưa có hotspot thực tế trong vùng hiện tại';
-        } else {
-          _mapStatus = _showPredictedHotspots
-              ? 'Hiển thị vùng dự đoán (${_predictedHeatmapPoints.length} điểm)'
-              : 'Hiển thị hotspot thực tế (${_observedHeatmapPoints.length} điểm)';
-        }
+        _observedHeatmapPoints = observedPoints;
+        _predictedHeatmapPoints = predictedPoints;
+        _mapStatus = nextMapStatus;
       });
+
+      await Future<void>.delayed(Duration.zero);
 
       debugPrint(
         '[AdminMapPage._fetchHotspots] Calling _syncMapState with _mapReady=$_mapReady',

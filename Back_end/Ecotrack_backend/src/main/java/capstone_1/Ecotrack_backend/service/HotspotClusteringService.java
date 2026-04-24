@@ -185,7 +185,7 @@ public class HotspotClusteringService {
                                 gridSizeM != null ? gridSizeM : 200,
                                 topPercent != null ? topPercent : 0.10,
                                 minPredictedCount != null ? minPredictedCount : 3,
-                                dbscanEpsKm != null ? dbscanEpsKm : 0.35,
+                                dbscanEpsKm != null ? dbscanEpsKm : 0.5,
                                 dbscanMinSamples != null ? dbscanMinSamples : 2);
 
                 try {
@@ -246,7 +246,7 @@ public class HotspotClusteringService {
                                 gridSizeM != null ? gridSizeM : 200,
                                 topPercent != null ? topPercent : 0.10,
                                 minPredictedCount != null ? minPredictedCount : 3,
-                                dbscanEpsKm != null ? dbscanEpsKm : 0.35,
+                                dbscanEpsKm != null ? dbscanEpsKm : 0.5,
                                 dbscanMinSamples != null ? dbscanMinSamples : 2);
 
                 try {
