@@ -34,7 +34,7 @@ class HotspotService {
     int gridSizeM = 200,
     double topPercent = 0.1,
     int minPredictedCount = 3,
-    double dbscanEpsKm = 0.35,
+    double dbscanEpsKm = 0.5,
     int dbscanMinSamples = 2,
   }) async {
     final path =
@@ -82,7 +82,7 @@ class HotspotService {
     int gridSizeM = 200,
     double topPercent = 0.1,
     int minPredictedCount = 3,
-    double dbscanEpsKm = 0.35,
+    double dbscanEpsKm = 0.5,
     int dbscanMinSamples = 2,
   }) async {
     final path =
