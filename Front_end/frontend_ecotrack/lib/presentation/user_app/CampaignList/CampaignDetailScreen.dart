@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:frontend_ecotrack/core/services/CampaignRepository.dart';
 import 'package:frontend_ecotrack/core/services/api_client.dart';
 import 'package:frontend_ecotrack/data/models/CampaignDetailModel.dart';
+import 'package:frontend_ecotrack/presentation/user_app/CampaignList/CampaignChatScreen.dart';
 
 class CampaignDetailScreen extends StatefulWidget {
   final int campaignId;
@@ -64,7 +65,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: const BoxDecoration(
-                    color: Color(0xFF2E7D32),
+                    color: Color(0xFF79A98A),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check, color: Colors.white, size: 40),
@@ -111,7 +112,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E7D32),
+                      backgroundColor: const Color(0xFF79A98A),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -167,14 +168,28 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
     }
   }
 
+  void _openCampaignChat(CampaignDetailModel campaign, int participantCount) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CampaignChatScreen(
+          campaignId: campaign.id,
+          campaignTitle: campaign.title,
+          participantCount: participantCount,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4FBF8),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E7D32),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black87,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -182,7 +197,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 20,
-            color: Colors.white,
+            color: Colors.black87,
           ),
         ),
         centerTitle: true,
@@ -208,7 +223,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                     onPressed: _loadCampaign,
                     child: const Text(
                       "Thử lại",
-                      style: TextStyle(color: Colors.green),
+                      style: TextStyle(color: Color(0xFF2E7D32)),
                     ),
                   ),
                 ],
@@ -217,7 +232,8 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
           }
 
           final c = snapshot.data!;
-          final effectiveParticipants = _participantOverride != null &&
+          final effectiveParticipants =
+              _participantOverride != null &&
                   _participantOverride! > c.participantCount
               ? _participantOverride!
               : c.participantCount;
@@ -274,12 +290,12 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                 const SizedBox(height: 6),
                 Row(
                   children: const [
-                    Icon(Icons.verified, color: Colors.green, size: 16),
+                    Icon(Icons.verified, color: Color(0xFF2E7D32), size: 16),
                     SizedBox(width: 6),
                     Text(
                       "EcoVietnam tổ chức",
                       style: TextStyle(
-                        color: Colors.green,
+                        color: Color(0xFF2E7D32),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -308,7 +324,11 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                _participants(effectiveParticipants, c.maxParticipants, progress),
+                _participants(
+                  effectiveParticipants,
+                  c.maxParticipants,
+                  progress,
+                ),
                 const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
@@ -354,13 +374,14 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   ) {
     final bool isFull = effectiveParticipants >= c.maxParticipants;
     final bool canJoin = !effectiveJoined && !isFull && !_isJoining;
+    final bool canOpenChat = effectiveJoined && !_isJoining;
 
     String buttonText = "Tham gia chiến dịch";
     Color buttonColor = const Color(0xFF2E7D32);
 
     if (effectiveJoined) {
-      buttonText = "Đã tham gia";
-      buttonColor = Colors.grey;
+      buttonText = "Vào phòng chat";
+      buttonColor = const Color(0xFF2E7D32);
     } else if (isFull) {
       buttonText = "Đã đủ số lượng";
       buttonColor = Colors.orange;
@@ -375,7 +396,9 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       child: SizedBox(
         height: 50,
         child: ElevatedButton(
-            onPressed: canJoin
+          onPressed: canOpenChat
+              ? () => _openCampaignChat(c, effectiveParticipants)
+              : canJoin
               ? () => _handleJoinCampaign(effectiveParticipants)
               : null,
           style: ElevatedButton.styleFrom(
@@ -411,7 +434,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   Widget _iconText(IconData icon, int value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey[700]),
+        Icon(icon, size: 18, color: Colors.green.shade700),
         const SizedBox(width: 4),
         Text(
           "$value",
@@ -427,7 +450,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
   Widget _dateRange(String startDate, String endDate) {
     return Row(
       children: [
-        Icon(Icons.calendar_today, size: 18, color: Colors.grey[700]),
+        Icon(Icons.calendar_today, size: 18, color: Colors.green.shade700),
         const SizedBox(width: 4),
         Text(
           endDate,
@@ -447,11 +470,12 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7F1EA)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(title, style: TextStyle(fontSize: 12, color: Colors.green.shade700)),
           const SizedBox(height: 6),
           Text(
             value,
@@ -470,6 +494,7 @@ class _CampaignDetailScreenState extends State<CampaignDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7F1EA)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
