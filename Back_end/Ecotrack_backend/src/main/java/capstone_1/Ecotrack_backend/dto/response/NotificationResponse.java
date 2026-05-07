@@ -15,6 +15,7 @@ public class NotificationResponse {
     private String type; // CAMPAIGN / REWARD / ...
     private boolean read;
     private String createdAt; // ISO string
+    private String targetType;
 
     public static NotificationResponse fromEntity(Notification n) {
         return new NotificationResponse(
@@ -23,7 +24,8 @@ public class NotificationResponse {
                 n.getMessage(),
                 n.getNotificationType().name(),
                 n.isRead(),
-                n.getCreatedAt() == null ? null : n.getCreatedAt().toString());
+                n.getCreatedAt() == null ? null : n.getCreatedAt().toString(),
+                n.getTargetType());
     }
 
     public static NotificationResponse fromEntityWithRead(Notification n, boolean read) {
@@ -33,6 +35,7 @@ public class NotificationResponse {
                 n.getMessage(),
                 n.getNotificationType().name(),
                 read,
-                n.getCreatedAt() == null ? null : n.getCreatedAt().toString());
+                n.getCreatedAt() == null ? null : n.getCreatedAt().toString(),
+                n.getTargetType());
     }
 }
