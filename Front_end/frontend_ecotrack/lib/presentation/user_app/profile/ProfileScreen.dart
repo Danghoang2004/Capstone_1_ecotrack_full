@@ -27,8 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _viewFuture = _userService.getProfileView();
-    _badgesFuture = _userService
-        .getAllBadges(); // Khởi tạo gọi dữ liệu huy hiệu
+    _badgesFuture = _userService.getBadgeProgressBadges();
   }
 
   @override
@@ -214,7 +213,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (result == true) {
                         setState(() {
                           _viewFuture = _userService.getProfileView();
-                          _badgesFuture = _userService.getAllBadges();
+                          _badgesFuture = _userService.getBadgeProgressBadges();
                         });
                       }
                     },
@@ -485,12 +484,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
 
-        // Lấy dữ liệu thật từ Backend (API /api/user/badges/all)
+        // Lấy dữ liệu thật từ Backend (API /api/user/badges/progress)
         List<BadgeModel> realBadges = snapshot.data ?? [];
 
         realBadges.sort((a, b) {
-          final aUnlocked = a.awardedAt != null;
-          final bUnlocked = b.awardedAt != null;
+          final aUnlocked = a.isClaimed;
+          final bUnlocked = b.isClaimed;
           if (aUnlocked && !bUnlocked) return -1;
           if (!aUnlocked && bUnlocked) return 1;
           return 0;
@@ -591,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAchievementFromBadge(BadgeModel b) {
-    final isUnlocked = b.awardedAt != null;
+    final isUnlocked = b.isClaimed;
     final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
     String? imageUrl;
     if (b.iconUrl != null && b.iconUrl!.isNotEmpty) {
