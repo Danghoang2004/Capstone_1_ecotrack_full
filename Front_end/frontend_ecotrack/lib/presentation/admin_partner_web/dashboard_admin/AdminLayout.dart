@@ -9,6 +9,7 @@ import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminEnvironmentTeamPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminMapPage.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/dashboard_admin/AdminReportPage.dart';
+import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/environment_user_management/screens/environment_user_management_screen.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_management/screens/user_management_screen.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_header.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_sidebar.dart';
@@ -31,19 +32,21 @@ class _AdminLayoutState extends State<AdminLayout> {
   static const Map<String, int> _menuIndex = {
     'dashboard': 0,
     'users': 1,
-    'reports': 2,
-    'environment_tasks': 3,
-    'environment_teams': 4,
-    'map': 5,
-    'campaign': 6,
-    'quiz': 7,
-    'notifications': 8,
+    'environment_users': 2,
+    'reports': 3,
+    'environment_tasks': 4,
+    'environment_teams': 5,
+    'map': 6,
+    'campaign': 7,
+    'quiz': 8,
+    'notifications': 9,
   };
 
   List<Widget> _buildPages() {
     return [
       const AdminDashboardDataScreen(),
       const UserManagementScreen(),
+      const EnvironmentUserManagementScreen(),
       const AdminReportPage(),
       AdminEnvironmentTaskPage(
         key: ValueKey('environment_tasks_$_environmentTasksPageVersion'),

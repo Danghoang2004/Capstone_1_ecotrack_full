@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:frontend_ecotrack/data/models/ProfileView.dart';
+import 'package:frontend_ecotrack/data/models/ProfileView.dart'
+    show ProfileView, BadgeModel, ActivityModel;
 import '../../../core/services/user_service.dart' hide UnauthorizedException;
 import 'package:frontend_ecotrack/core/errors/unauthorized_exception.dart';
 
@@ -12,12 +13,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const Color _pageBg = Color(0xFFF4FBF8);
-  static const Color _surfaceCard = Color(0xFFFCFEFC);
-  static const Color _surfaceBorder = Color(0xFFE0ECE3);
-  static const Color _titleText = Color(0xFF22372A);
-  static const Color _mutedText = Color(0xFF6A7D71);
+  static const Color _pageBg = Color(0xFFFAFDFC);
+  static const Color _cardBg = Color(0xFFFFFFFF);
   static const Color _primaryGreen = Color(0xFF2F7D4B);
+  static const Color _accentGreen = Color(0xFF1F8F53);
+  static const Color _textDark = Color(0xFF1A3A2E);
+  static const Color _textMuted = Color(0xFF6A8A7A);
+  static const Color _borderLight = Color(0xFFE8F0EC);
 
   late Future<ProfileView> _viewFuture;
   late Future<List<BadgeModel>> _badgesFuture;
@@ -39,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+              child: CircularProgressIndicator(color: _primaryGreen),
             );
           }
 
@@ -67,58 +69,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // =================== UI CHÍNH ===================
-
   Widget _buildProfileContent(ProfileView view) {
     return CustomScrollView(
-      slivers: <Widget>[
-        _buildSliverAppBar(view),
+      slivers: [
+        SliverAppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          floating: true,
+          snap: true,
+          centerTitle: true,
+          title: const Text(
+            'Hồ sơ cá nhân',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: _textDark,
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: _textDark, size: 22),
+              onPressed: () async {
+                final result = await Navigator.pushNamed(
+                  context,
+                  '/editprofile',
+                  arguments: view,
+                );
+                if (result == true) {
+                  setState(() {
+                    _viewFuture = _userService.getProfileView();
+                    _badgesFuture = _userService.getAllBadges();
+                  });
+                }
+              },
+            ),
+          ],
+        ),
         SliverToBoxAdapter(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-            color: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildStatsGrid(view),
-                const SizedBox(height: 10),
-
+                _buildProfileHeader(view),
+                const SizedBox(height: 20),
+                _buildProgressCard(view),
+                const SizedBox(height: 20),
+                _buildStatsHorizontal(view),
+                const SizedBox(height: 20),
                 _buildAchievementsSection(context),
-                const SizedBox(height: 10),
-
+                const SizedBox(height: 20),
                 _buildRecentActivitySection(view.recentActivities),
-                const SizedBox(height: 10),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/ranking');
-                    },
-                    icon: const Icon(
-                      Icons.emoji_events_outlined,
-                      color: Colors.white,
-                    ),
-                    label: const Text(
-                      "Xem bảng xếp hạng",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _primaryGreen,
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 20),
+                _buildRankingButton(),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -127,7 +131,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Skeleton
   Widget _buildProfileSkeleton() {
     final placeholder = ProfileView(
       userId: 0,
@@ -150,10 +153,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return _buildProfileContent(placeholder);
   }
 
-  // =================== HEADER / APPBAR ===================
-
-  SliverAppBar _buildSliverAppBar(ProfileView view) {
-    final String? avatarNetworkUrl = _resolveAvatarUrl(view.avatarUrl);
+  Widget _buildProfileHeader(ProfileView view) {
+    final String? avatarUrl = _resolveAvatarUrl(view.avatarUrl);
     final displayName = view.fullName.isNotEmpty
         ? view.fullName
         : (view.username.isNotEmpty ? view.username : 'Người dùng');
@@ -224,262 +225,276 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                _buildProfileAvatar(avatarNetworkUrl),
-                const SizedBox(height: 8),
                 Text(
                   displayName,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w700,
-                    shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: _textDark,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                const SizedBox(height: 4),
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 6),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade600,
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      colors: [_accentGreen, _primaryGreen],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    "Cấp độ: ${view.levelName ?? 'Thành viên mới'}",
+                    'Cấp độ: ${view.levelName ?? 'Thành viên mới'}',
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),
+                const SizedBox(height: 6),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: Colors.white,
-                      size: 14,
-                    ),
+                    const Icon(Icons.location_on, size: 14, color: _textMuted),
                     const SizedBox(width: 4),
-                    Text(
-                      view.location ?? 'Chưa cập nhật địa điểm',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
+                    Expanded(
+                      child: Text(
+                        view.location ?? 'Chưa cập nhật',
+                        style: const TextStyle(fontSize: 12, color: _textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 11),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Tiến độ lên cấp',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '${view.points} / ${view.maxPoints} XP',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: percent,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.greenAccent,
-                          ),
-                          minHeight: 6,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =================== STATS GRID ===================
-  Widget _buildStatsGrid(ProfileView view) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.2,
-      children: [
-        _statCard(
-          accentColor: const Color(0xFF1F8F53),
-          surfaceTint: const Color(0xFFD8F1E1),
-          iconBg: const Color(0xFFCDEEDB),
-          icon: Icons.eco,
-          title: view.points.toString(),
-          subtitle: 'Eco Points',
-        ),
-        _statCard(
-          accentColor: const Color(0xFFE07A00),
-          surfaceTint: const Color(0xFFFFE6C9),
-          iconBg: const Color(0xFFFFDDAF),
-          icon: Icons.camera_alt,
-          title: view.reportCount.toString(),
-          subtitle: 'Báo cáo rác',
-        ),
-        _statCard(
-          accentColor: const Color(0xFF3F4FBE),
-          surfaceTint: const Color(0xFFDCE1FF),
-          iconBg: const Color(0xFFC8D0FF),
-          icon: Icons.people,
-          title: view.groupCount.toString(),
-          subtitle: 'Chiến dịch',
-        ),
-        _statCard(
-          accentColor: const Color(0xFFD85B39),
-          surfaceTint: const Color(0xFFFFDFD6),
-          iconBg: const Color(0xFFFFCFC0),
-          icon: Icons.leaderboard,
-          title: view.rank != null ? '#${view.rank}' : '-',
-          subtitle: 'Xếp hạng',
-        ),
-      ],
-    );
-  }
-
-  Widget _statCard({
-    required Color accentColor,
-    required Color surfaceTint,
-    required Color iconBg,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [surfaceTint, surfaceTint.withOpacity(0.55)],
-        ),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: accentColor.withOpacity(0.22),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-          const BoxShadow(
-            color: Color(0x10FFFFFF),
-            blurRadius: 4,
-            offset: Offset(0, -1),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: accentColor, size: 18),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFF5B6D63),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: accentColor,
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
-                height: 1,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.45),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
+    );
+  }
+
+  Widget _buildProgressCard(ProfileView view) {
+    final double min = (view.minPoints ?? 0).toDouble();
+    final double max = (view.maxPoints ?? 100).toDouble();
+    final double cur = view.points.toDouble();
+    double percent = max > min
+        ? ((cur - min) / (max - min)).clamp(0.0, 1.0)
+        : 1.0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _accentGreen.withOpacity(0.1),
+            _primaryGreen.withOpacity(0.05),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryGreen.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Tiến độ lên cấp',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: _textDark,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: _accentGreen.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '${view.points} / ${view.maxPoints} XP',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _accentGreen,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: LinearProgressIndicator(
+              value: percent,
+              backgroundColor: Colors.grey.withOpacity(0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(_accentGreen),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${(percent * 100).toStringAsFixed(0)}% hoàn thành',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: _textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Còn ${(view.maxPoints - view.points).toString()} XP',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: _accentGreen,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  // =================== HUY HIỆU (100% DỮ LIỆU THẬT) ===================
+  Widget _buildStatsHorizontal(ProfileView view) {
+    return SizedBox(
+      height: 107,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        children: [
+          _buildStatItem(
+            icon: Icons.eco,
+            label: 'Eco Points',
+            value: view.points.toString(),
+            accentColor: const Color(0xFF1F8F53),
+            bgColor: const Color(0xFFE3F7ED),
+          ),
+          const SizedBox(width: 10),
+          _buildStatItem(
+            icon: Icons.camera_alt,
+            label: 'Báo cáo',
+            value: view.reportCount.toString(),
+            accentColor: const Color(0xFFE07A00),
+            bgColor: const Color(0xFFFFF3E0),
+          ),
+          const SizedBox(width: 10),
+          _buildStatItem(
+            icon: Icons.people,
+            label: 'Chiến dịch',
+            value: view.groupCount.toString(),
+            accentColor: const Color(0xFF3F4FBE),
+            bgColor: const Color(0xFFEBF0FF),
+          ),
+          const SizedBox(width: 10),
+          _buildStatItem(
+            icon: Icons.leaderboard,
+            label: 'Xếp hạng',
+            value: view.rank != null ? '#${view.rank}' : '-',
+            accentColor: const Color(0xFFD85B39),
+            bgColor: const Color(0xFFFFE4DD),
+          ),
+          const SizedBox(width: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color accentColor,
+    required Color bgColor,
+  }) {
+    return Container(
+      width: 100,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: accentColor, size: 18),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: accentColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: _textMuted,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAchievementsSection(BuildContext context) {
     return FutureBuilder<List<BadgeModel>>(
       future: _badgesFuture,
       builder: (context, snapshot) {
-        // Đang chờ dữ liệu API
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            height: 150,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _surfaceCard,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: _surfaceBorder),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0x1A284737),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: CircularProgressIndicator(color: _primaryGreen),
+          return _buildSectionContainer(
+            title: 'Huy hiệu thành tích',
+            onViewAll: () => Navigator.pushNamed(context, '/badge_list'),
+            child: const SizedBox(
+              height: 80,
+              child: Center(child: CircularProgressIndicator()),
             ),
           );
         }
@@ -495,93 +510,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return 0;
         });
 
-        final effective = realBadges.take(3).toList();
+        final featured = badges.first;
+        final others = badges.skip(1).take(4).toList();
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: _surfaceCard,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _surfaceBorder),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0x1A284737),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
+        return _buildSectionContainer(
+          title: 'Huy hiệu thành tích',
+          onViewAll: () => Navigator.pushNamed(context, '/badge_list'),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Huy hiệu thành tích',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _titleText,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/badge_list');
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 4.0,
-                        horizontal: 8.0,
-                      ),
-                      child: Text(
-                        "Xem tất cả >",
-                        style: TextStyle(
-                          color: _primaryGreen,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Render Grid
-              if (effective.isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: effective
-                      .take(3)
-                      .map(
-                        (e) => Expanded(child: _buildAchievementFromBadge(e)),
-                      )
-                      .toList(),
-                ),
-                if (effective.length > 3) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: effective
-                        .skip(3)
-                        .map(
-                          (e) => Expanded(child: _buildAchievementFromBadge(e)),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ] else ...[
-                const Center(
-                  child: Text(
-                    "Chưa có huy hiệu nào",
-                    style: TextStyle(color: _mutedText, fontSize: 13),
-                  ),
-                ),
-              ],
+              _buildFeaturedBadge(featured),
+              const SizedBox(height: 8), // ⬅ giảm spacing
+              _buildBadgeHorizontal(others),
             ],
           ),
         );
@@ -599,114 +538,173 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : '$baseUrl/images/${b.iconUrl}';
     }
 
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: isUnlocked ? Colors.green.shade50 : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: !isUnlocked
-                ? const Icon(Icons.lock, color: Colors.amber, size: 28)
-                : (imageUrl != null
-                      ? Image.network(
-                          imageUrl,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.star,
-                            color: Colors.green,
-                            size: 28,
-                          ),
-                        )
-                      : const Icon(Icons.star, color: Colors.green, size: 28)),
-          ),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: isUnlocked
+            ? _accentGreen.withOpacity(0.12)
+            : const Color(0xFFEDEDED),
+        border: Border.all(
+          color: isUnlocked
+              ? _accentGreen.withOpacity(0.4)
+              : Colors.grey.withOpacity(0.2),
         ),
-        const SizedBox(height: 6),
-        Text(
-          b.badgeName.isNotEmpty ? b.badgeName : 'Huy hiệu',
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 11,
-            color: Colors.black87,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          b.description ?? (isUnlocked ? 'Thường' : 'Khóa'),
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey, fontSize: 9),
-        ),
-      ],
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isUnlocked
+                  ? _accentGreen.withOpacity(0.2)
+                  : Colors.grey.withOpacity(0.25),
+            ),
+            child: Icon(
+              isUnlocked ? Icons.emoji_events : Icons.lock,
+              color: isUnlocked ? _accentGreen : Colors.grey.shade600,
+              size: 22,
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  badge.badgeName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isUnlocked ? "Đã đạt được" : "Chưa mở khóa",
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isUnlocked ? _accentGreen : Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // =================== HOẠT ĐỘNG GẦN ĐÂY ===================
+  Widget _buildBadgeHorizontal(List<BadgeModel> badges) {
+    return SizedBox(
+      height: 90,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: badges.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final badge = badges[index];
+          final isUnlocked = badge.awardedAt != null;
+
+          return Container(
+            width: 77,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: isUnlocked
+                  ? _accentGreen.withOpacity(0.12)
+                  : const Color(0xFFF1F1F1),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isUnlocked ? Icons.emoji_events : Icons.lock,
+                  size: 18,
+                  color: isUnlocked ? _accentGreen : Colors.grey.shade500,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  badge.badgeName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600,
+                    color: isUnlocked ? _textDark : Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyBadge() {
+    return _buildSectionContainer(
+      title: 'Huy hiệu thành tích',
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Icon(Icons.emoji_events, size: 36, color: _accentGreen),
+          const SizedBox(height: 6),
+          Text(
+            "Chưa có huy hiệu nào",
+            style: TextStyle(color: _textMuted, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRecentActivitySection(List<ActivityModel> activities) {
     if (activities.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: _surfaceCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _surfaceBorder),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0x1A284737),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Hoạt động gần đây',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: _titleText,
-                letterSpacing: 0.3,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF4FAF6),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE3EEE7)),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: const Color(0xFFDDEFE4),
-                    child: const Icon(Icons.event_note, color: _primaryGreen),
+      return _buildSectionContainer(
+        title: 'Hoạt động gần đây',
+        onViewAll: null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: _accentGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      "Chưa có hoạt động",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: _mutedText,
-                        fontSize: 13,
-                      ),
-                    ),
+                  child: const Icon(
+                    Icons.event_note,
+                    color: _primaryGreen,
+                    size: 28,
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Chưa có hoạt động',
+                  style: TextStyle(
+                    color: _textMuted,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
     }
@@ -717,73 +715,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _parseDateTime(b.createdAt).compareTo(_parseDateTime(a.createdAt)),
       );
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: _surfaceCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _surfaceBorder),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x1A284737),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return _buildSectionContainer(
+      title: 'Hoạt động gần đây',
+      onViewAll: () => Navigator.pushNamed(context, '/activity_history'),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Hoạt động gần đây',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: _titleText,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/activity_history');
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                  child: Text(
-                    "Xem tất cả >",
-                    style: TextStyle(
-                      color: _primaryGreen,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...latestActivities.take(3).map((a) {
-            final isGain = a.points >= 0;
-            final pointsText = "${isGain ? '+' : ''}${a.points} điểm";
+        children: latestActivities.take(3).map((activity) {
+          final isGain = activity.points >= 0;
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF4FAF6),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE3EEE7), width: 1),
+                color: isGain
+                    ? const Color(0xFFF0FAF5)
+                    : const Color(0xFFFFF5F2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isGain
+                      ? const Color(0xFFD4EFE4)
+                      : const Color(0xFFFFDFD6),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Color(0x333A8E59),
-                    child: Icon(Icons.history, color: _primaryGreen, size: 20),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isGain
+                          ? _accentGreen.withOpacity(0.2)
+                          : const Color(0xFFD85B39).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isGain ? Icons.trending_up : Icons.trending_down,
+                      color: isGain ? _accentGreen : const Color(0xFFD85B39),
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -791,19 +761,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          a.description,
+                          activity.description,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: _titleText,
+                            color: _textDark,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          "${_formatDate(a.createdAt)} • ${_timeAgo(a.createdAt)}",
-                          style: TextStyle(color: _mutedText, fontSize: 10),
+                          '${_formatDate(activity.createdAt)} • ${_timeAgo(activity.createdAt)}',
+                          style: const TextStyle(
+                            color: _textMuted,
+                            fontSize: 10,
+                          ),
                         ),
                       ],
                     ),
@@ -811,36 +784,181 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 9,
-                      vertical: 4,
+                      horizontal: 10,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: isGain
-                          ? const Color(0xFFE4F4EA)
-                          : const Color(0xFFFBE4DF),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: isGain
-                            ? const Color(0xFFCAE7D4)
-                            : const Color(0xFFF1CAC1),
-                      ),
+                          ? _accentGreen.withOpacity(0.15)
+                          : const Color(0xFFD85B39).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      pointsText,
+                      '${isGain ? '+' : ''}${activity.points}',
                       style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: isGain
-                            ? const Color(0xFF266F45)
-                            : const Color(0xFFB3472D),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isGain ? _accentGreen : const Color(0xFFD85B39),
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          }).toList(),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSectionContainer({
+    required String title,
+    required Widget child,
+    VoidCallback? onViewAll,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: _textDark,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                if (onViewAll != null)
+                  GestureDetector(
+                    onTap: onViewAll,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 4.0,
+                        horizontal: 8.0,
+                      ),
+                      child: Text(
+                        'Xem tất cả >',
+                        style: TextStyle(
+                          color: _accentGreen,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRankingButton() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_primaryGreen, _accentGreen],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryGreen.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.pushNamed(context, '/ranking');
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.emoji_events, color: Colors.white, size: 20),
+                SizedBox(width: 10),
+                Text(
+                  'Xem bảng xếp hạng',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileAvatar(String? avatarUrl) {
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(color: _accentGreen.withOpacity(0.3), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: avatarUrl == null
+            ? Container(
+                color: const Color(0xFFF1F6F3),
+                child: const Icon(Icons.person, size: 40, color: Colors.grey),
+              )
+            : Image.network(
+                avatarUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: const Color(0xFFF1F6F3),
+                    child: const Icon(
+                      Icons.person,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -890,45 +1008,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     return '$baseUrl/$value';
-  }
-
-  Widget _buildProfileAvatar(String? avatarUrl) {
-    return Container(
-      width: 84,
-      height: 84,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-        border: Border.all(color: Colors.white, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipOval(
-        child: avatarUrl == null
-            ? Container(
-                color: const Color(0xFFF1F6F3),
-                child: const Icon(Icons.person, size: 48, color: Colors.grey),
-              )
-            : Image.network(
-                avatarUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: const Color(0xFFF1F6F3),
-                    child: const Icon(
-                      Icons.person,
-                      size: 48,
-                      color: Colors.grey,
-                    ),
-                  );
-                },
-              ),
-      ),
-    );
   }
 }

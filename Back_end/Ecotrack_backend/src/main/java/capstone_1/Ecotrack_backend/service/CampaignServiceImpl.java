@@ -11,11 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
 public class CampaignServiceImpl implements CampaignService {
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+
     @Autowired
     private CampaignLikeRepository likeRepo;
 
@@ -124,7 +127,7 @@ public class CampaignServiceImpl implements CampaignService {
         sendJoinCampaignEmail(user, campaign);
     }
 
-    public List<CampaignResponse> getActiveCampaigns() {
+    public List<CampaignResponse> getActiveCampaigns(Long userId) {
         LocalDate today = LocalDate.now();
 
         return campaignRepository.findActiveCampaigns().stream()
@@ -135,22 +138,29 @@ public class CampaignServiceImpl implements CampaignService {
                         daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
                     }
 
+                        boolean joined = userId != null
+                            && participantRepo.existsById_CampaignIdAndId_UserId(c.getCampaignId(), userId);
+
                     return new CampaignResponse(
                             c.getCampaignId(),
                             c.getTitle(),
                             c.getDescription(),
                             c.getImageUrl(),
-                            c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                            c.getStartDate() + " "
+                                + c.getStartTime().format(TIME_FORMATTER)
+                                + " - "
+                                + c.getEndTime().format(TIME_FORMATTER),
                             campaignRepository.countParticipants(c.getCampaignId()),
                             c.getLocationAddress(),
                             c.getRewardPoints(),
-                            (int) (daysLeft < 0 ? 0 : daysLeft) // Thêm trường này vào Response
+                            (int) (daysLeft < 0 ? 0 : daysLeft), // Thêm trường này vào Response
+                            joined
                     );
                 })
                 .toList();
     }
 
-    public List<CampaignResponse> getUpcomingCampaigns() {
+                public List<CampaignResponse> getUpcomingCampaigns(Long userId) {
         LocalDate today = LocalDate.now();
 
         return campaignRepository.findUpcomingCampaigns().stream()
@@ -161,16 +171,23 @@ public class CampaignServiceImpl implements CampaignService {
                         daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
                     }
 
+                        boolean joined = userId != null
+                            && participantRepo.existsById_CampaignIdAndId_UserId(c.getCampaignId(), userId);
+
                     return new CampaignResponse(
                             c.getCampaignId(),
                             c.getTitle(),
                             c.getDescription(),
                             c.getImageUrl(),
-                            c.getStartDate() + " " + c.getStartTime() + " - " + c.getEndTime(),
+                            c.getStartDate() + " "
+                                + c.getStartTime().format(TIME_FORMATTER)
+                                + " - "
+                                + c.getEndTime().format(TIME_FORMATTER),
                             campaignRepository.countParticipants(c.getCampaignId()),
                             c.getLocationAddress(),
                             c.getRewardPoints(),
-                            (int) (daysLeft < 0 ? 0 : daysLeft) // Gán giá trị vào DTO
+                            (int) (daysLeft < 0 ? 0 : daysLeft), // Gán giá trị vào DTO
+                            joined
                     );
                 })
                 .toList();

@@ -152,11 +152,21 @@ class _AdminHeaderState extends State<AdminHeader> {
         child: TextField(
           controller: _searchController,
           textAlignVertical: TextAlignVertical.center,
-          style: const TextStyle(fontSize: 14, color: AppColors.adminTextPrimary),
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppColors.adminTextPrimary,
+          ),
           decoration: const InputDecoration(
             hintText: 'Tìm kiếm mọi thứ...',
-            hintStyle: TextStyle(color: AppColors.adminTextSecondary, fontSize: 14),
-            prefixIcon: Icon(Icons.search, size: 20, color: AppColors.adminTextSecondary),
+            hintStyle: TextStyle(
+              color: AppColors.adminTextSecondary,
+              fontSize: 14,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              size: 20,
+              color: AppColors.adminTextSecondary,
+            ),
             prefixIconConstraints: BoxConstraints(minWidth: 48, minHeight: 48),
 
             border: InputBorder.none,
@@ -244,8 +254,8 @@ class _AdminHeaderState extends State<AdminHeader> {
     return Row(
       children: [
         Container(
-              width: compact ? 36 : 42,
-              height: compact ? 36 : 42,
+          width: compact ? 36 : 42,
+          height: compact ? 36 : 42,
           decoration: BoxDecoration(
             gradient: AppColors.adminHeroGradient,
             borderRadius: BorderRadius.circular(14),
@@ -406,6 +416,7 @@ class _AdminHeaderState extends State<AdminHeader> {
 
   Widget _buildNotificationItem(NotificationModel item) {
     bool isUnread = !item.isRead;
+    final String audienceLabel = _audienceLabel(item.targetType);
     return InkWell(
       onTap: () => _markAsRead(item.id),
       borderRadius: BorderRadius.circular(12),
@@ -455,6 +466,27 @@ class _AdminHeaderState extends State<AdminHeader> {
                     DateFormat('HH:mm • dd/MM/yyyy').format(item.createdAt),
                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                   ),
+                  if (audienceLabel.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF5EAC24).withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        audienceLabel,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E7D32),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -505,6 +537,25 @@ class _AdminHeaderState extends State<AdminHeader> {
         return const Color(0xFF2ECC71); // Xanh lá tươi cho chiến dịch
       default:
         return const Color(0xFF3498DB); // Xanh dương cho thông tin khác
+    }
+  }
+
+  String _audienceLabel(String? targetType) {
+    final normalized = (targetType ?? '').trim().toUpperCase();
+    switch (normalized) {
+      case 'ROLE_USER':
+      case 'USER':
+        return 'Người dùng';
+      case 'ROLE_ENVIRONMENT':
+      case 'ENVIRONMENT':
+        return 'Đội môi trường';
+      case 'ROLE_ALL':
+      case 'GLOBAL':
+      case 'ALL':
+      case '':
+        return '';
+      default:
+        return normalized;
     }
   }
 
