@@ -133,6 +133,65 @@ class UserService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getAllEnvironmentUsers() async {
+    final response = await apiClient.get("/api/admin/environment/users");
+
+    if (response.statusCode == 401) {
+      return [];
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception("Lỗi server: ${response.statusCode}");
+    }
+
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+    return List<Map<String, dynamic>>.from(body);
+  }
+
+  Future<void> updateEnvironmentUser(int userId, Map<String, dynamic> data) async {
+    final response = await apiClient.put("/api/admin/environment/users/$userId", data);
+
+    if (response.statusCode == 401) {
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
+      throw Exception(error);
+    }
+  }
+
+  Future<void> deleteEnvironmentUser(int userId) async {
+    final response = await apiClient.delete("/api/admin/environment/users/$userId");
+
+    if (response.statusCode == 401) {
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
+      throw Exception(error);
+    }
+  }
+
+  Future<void> deleteEnvironmentUsers(List<int> userIds) async {
+    final response = await apiClient.post("/api/admin/environment/users/bulk/delete", {
+      'userIds': userIds,
+    });
+
+    if (response.statusCode == 401) {
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
+      throw Exception(error);
+    }
+  }
+
   Future<void> updateProfileFull({
     required String fullName,
     required String location,

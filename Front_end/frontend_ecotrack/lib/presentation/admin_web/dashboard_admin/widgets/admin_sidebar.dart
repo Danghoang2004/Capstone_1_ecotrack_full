@@ -73,6 +73,14 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   onTap: widget.onNavigate,
                 ),
                 _MenuItem(
+                  icon: Icons.eco_outlined,
+                  label: 'Tài Khoản Môi Trường',
+                  keyName: 'environment_users',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
+                _MenuItem(
                   icon: Icons.assignment_outlined,
                   label: 'Quản Lý Báo Cáo',
                   keyName: 'reports',
