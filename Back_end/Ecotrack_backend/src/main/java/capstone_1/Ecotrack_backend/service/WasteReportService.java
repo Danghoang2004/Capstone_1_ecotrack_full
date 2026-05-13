@@ -58,7 +58,8 @@ public class WasteReportService {
         long reportsToday = reportRepository.countByUserIdAndCreatedAtAfter(userId, startOfDay);
 
         if (reportsToday >= MAX_REPORTS_PER_DAY) {
-            throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY + " lần). Hãy quay lại vào ngày mai nhé!");
+            throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY
+                    + " lần). Hãy quay lại vào ngày mai nhé!");
         }
 
         WasteReport lastReport = reportRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
@@ -66,7 +67,8 @@ public class WasteReportService {
         if (lastReport != null) {
             long minutesSinceLast = Duration.between(lastReport.getCreatedAt(), LocalDateTime.now()).toMinutes();
             if (minutesSinceLast < COOLDOWN_MINUTES) {
-                throw new RuntimeException("Vui lòng chờ thêm " + (COOLDOWN_MINUTES - minutesSinceLast) + " phút trước khi gửi báo cáo tiếp theo.");
+                throw new RuntimeException("Vui lòng chờ thêm " + (COOLDOWN_MINUTES - minutesSinceLast)
+                        + " phút trước khi gửi báo cáo tiếp theo.");
             }
         }
 
@@ -85,7 +87,9 @@ public class WasteReportService {
             reportData.setAiAnalyzedImageUrl(data.getOutputImage());
             try {
                 reportData.setAiAnalysisJson(objectMapper.writeValueAsString(data.getTypePercentage()));
-            } catch (Exception e) { reportData.setAiAnalysisJson("{}"); }
+            } catch (Exception e) {
+                reportData.setAiAnalysisJson("{}");
+            }
 
             if (data.isWaste() && data.getOverallConfidence() >= AI_CONFIDENCE_THRESHOLD) {
                 isEligibleForPoints = true;
@@ -99,7 +103,6 @@ public class WasteReportService {
             isEligibleForPoints = false;
         }
         WasteReport saved = reportRepository.save(reportData);
-
 
         if (isEligibleForPoints) {
             processPointsAndNotification(saved, true);
@@ -162,21 +165,20 @@ public class WasteReportService {
             userPointsRepository.save(userPoints);
 
             notificationService.createNotification(
-                    report.getUserId(), NotificationType.CAMPAIGN, "Cộng 10 điểm!",
-                    "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId()
-            );
+                    report.getUserId(), NotificationType.CAMPAIGN, " +10 điểm đạt được!",
+                    "Awesome! Báo cáo của bạn được xác thực. Bạn đang giúp làm sạch môi trường ", "REPORT",
+                    report.getReportId());
         } else {
             String message = "";
             if (report.getStatus() == WasteReport.Status.REJECTED) {
-                message = "AI không phát hiện thấy rác trong ảnh này hoặc độ rõ nét thấp.";
+                message = "Ảnh chưa rõ ràng hoặc không phát hiện rác. Hãy thử lại với ảnh sáng hơn nhé ";
             } else {
-                message = "Báo cáo đang chờ nhân viên kiểm duyệt thủ công.";
+                message = "Đang kiểm duyệt. Chúng mình sẽ xác nhận trong tối đa 24h ";
             }
 
             notificationService.createNotification(
-                    report.getUserId(), NotificationType.SYSTEM, "Báo cáo chưa được duyệt",
-                    message, "REPORT", report.getReportId()
-            );
+                    report.getUserId(), NotificationType.SYSTEM, " Đang xử lý",
+                    message, "REPORT", report.getReportId());
         }
     }
 
@@ -188,11 +190,11 @@ public class WasteReportService {
         return reportRepository.findAllByOrderByCreatedAtDesc();
     }
 
-
     public boolean updateReportStatus(Long reportId, String newStatusStr) {
         // 1. Tìm báo cáo
         WasteReport report = reportRepository.findById(reportId).orElse(null);
-        if (report == null) return false;
+        if (report == null)
+            return false;
 
         try {
             // 2. Convert String sang Enum
@@ -201,21 +203,21 @@ public class WasteReportService {
             reportRepository.save(report);
 
             // 3. Gửi thông báo cho User sở hữu báo cáo đó
-            String title = "Cập nhật trạng thái báo cáo";
+            String title = "📋 Cập nhật báo cáo";
             String message = "";
 
             switch (newStatus) {
                 case VERIFIED:
-                    message = "Báo cáo '" + report.getTitle() + "' của bạn đã được Admin xác thực.";
+                    message = " Báo cáo \"" + report.getTitle() + "\" xác thực thành công! Cảm ơn bạn 💚";
                     break;
                 case REJECTED:
-                    message = "Báo cáo '" + report.getTitle() + "' đã bị từ chối.";
+                    message = "Báo cáo \"" + report.getTitle() + "\" không được chấp nhận. Bạn có thể thử lại nhé!";
                     break;
                 case CLEANED:
-                    message = "Tuyệt vời! Khu vực bạn báo cáo đã được dọn dẹp sạch sẽ.";
+                    message = "Tuyệt vời! Khu vực \"" + report.getTitle() + "\" đã được dọn sạch. Cảm ơn bạn!";
                     break;
                 default:
-                    message = "Trạng thái báo cáo của bạn đã thay đổi thành " + newStatusStr;
+                    message = "Trạng thái báo cáo đã cập nhật: " + newStatusStr;
             }
 
             notificationService.createNotification(
@@ -224,12 +226,10 @@ public class WasteReportService {
                     title,
                     message,
                     "REPORT",
-                    report.getReportId()
-            );
+                    report.getReportId());
 
             return true;
         } catch (IllegalArgumentException e) {
-            // Lỗi nếu gửi lên status không tồn tại trong Enum
             return false;
         }
     }
