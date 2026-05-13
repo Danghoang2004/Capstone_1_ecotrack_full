@@ -1,5 +1,6 @@
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 import 'dart:async';
+import 'dart:convert';
 
 class NotificationMessage {
   final String id;
@@ -43,11 +44,22 @@ class RealtimeNotificationService {
   final StreamController<bool> _connectionController =
       StreamController<bool>.broadcast();
 
+  final StreamController<Map<String, dynamic>> _leaderboardController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  final StreamController<Map<String, dynamic>> _campaignController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
   Stream<NotificationMessage> get notifications =>
       _notificationController.stream;
   Stream<bool> get connectionStatus => _connectionController.stream;
 
-  bool get isConnected => _stompClient.isConnected;
+  Stream<Map<String, dynamic>> get leaderboardUpdates =>
+      _leaderboardController.stream;
+  Stream<Map<String, dynamic>> get campaignUpdates =>
+      _campaignController.stream;
+
+  bool get isConnected => _stompClient.isActive;
 
   RealtimeNotificationService({required String baseUrl, required String token})
     : _baseUrl = baseUrl,
@@ -61,8 +73,8 @@ class RealtimeNotificationService {
         onStompError: _onStompError,
         onWebSocketError: (error) => _onWebSocketError(error),
         onDisconnect: _onDisconnect,
-        heartbeatOutgoing: 20000,
-        heartbeatIncoming: 20000,
+        heartbeatOutgoing: Duration(seconds: 20),
+        heartbeatIncoming: Duration(seconds: 20),
       ),
     );
 
@@ -88,31 +100,61 @@ class RealtimeNotificationService {
         }
       },
     );
+
+    _stompClient.subscribe(
+      destination: '/topic/leaderboard/individual',
+      callback: (frame) {
+        try {
+          if (frame.body != null) {
+            final json = _parseJson(frame.body!);
+            _leaderboardController.add(json);
+            print('🏆 Leaderboard updated');
+          }
+        } catch (e) {
+          print('❌ Error parsing leaderboard: $e');
+        }
+      },
+    );
+
+    _stompClient.subscribe(
+      destination: '/topic/campaign/>/participants',
+      callback: (frame) {
+        try {
+          if (frame.body != null) {
+            final json = _parseJson(frame.body!);
+            _campaignController.add(json);
+            print('👥 Campaign participants updated');
+          }
+        } catch (e) {
+          print('❌ Error parsing campaign update: $e');
+        }
+      },
+    );
   }
 
   void _onStompError(StompFrame frame) {
-    print('❌ STOMP Error: ${frame.body}');
+    print(' STOMP Error: ${frame.body}');
     _connectionController.add(false);
   }
 
   void _onWebSocketError(dynamic error) {
-    print('❌ WebSocket Error: $error');
+    print(' WebSocket Error: $error');
     _connectionController.add(false);
   }
 
   void _onDisconnect(StompFrame frame) {
-    print('❌ Disconnected');
+    print(' Disconnected');
     _connectionController.add(false);
   }
 
   void disconnect() {
-    if (_stompClient.isConnected) {
+    if (_stompClient.isActive) {
       _stompClient.deactivate();
     }
   }
 
   void sendPing() {
-    if (_stompClient.isConnected) {
+    if (_stompClient.isActive) {
       _stompClient.send(destination: '/app/notifications/ping', body: '{}');
     }
   }
@@ -125,5 +167,7 @@ class RealtimeNotificationService {
     disconnect();
     _notificationController.close();
     _connectionController.close();
+    _leaderboardController.close();
+    _campaignController.close();
   }
 }
