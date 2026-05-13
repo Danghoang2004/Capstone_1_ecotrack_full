@@ -17,4 +17,5 @@ public class CampaignResponse {
     private String location;
     private Integer rewardPoints;
     private Integer daysRemaining;
+    private boolean joined;
 }

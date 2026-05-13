@@ -5,7 +5,6 @@ import 'package:frontend_ecotrack/data/models/CampaignModel.dart';
 class CampaignTakesPlaceController extends ChangeNotifier {
   final CampaignRepository repo;
 
-  static final Set<int> _joinedCampaignIds = <int>{};
   static final Map<int, int> _participantOverrides = <int, int>{};
 
   CampaignTakesPlaceController(this.repo);
@@ -34,12 +33,10 @@ class CampaignTakesPlaceController extends ChangeNotifier {
     final mergedParticipants = overrideCount != null && overrideCount > c.participants
         ? overrideCount
         : c.participants;
-    final mergedJoined = c.joined || _joinedCampaignIds.contains(c.id);
-    return c.copyWith(participants: mergedParticipants, joined: mergedJoined);
+    return c.copyWith(participants: mergedParticipants);
   }
 
   void markCampaignJoined(int campaignId, {int? participants}) {
-    _joinedCampaignIds.add(campaignId);
     if (participants != null) {
       final prev = _participantOverrides[campaignId];
       _participantOverrides[campaignId] =
