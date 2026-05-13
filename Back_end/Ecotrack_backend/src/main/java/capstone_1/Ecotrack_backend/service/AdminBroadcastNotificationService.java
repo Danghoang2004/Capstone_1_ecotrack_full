@@ -15,6 +15,11 @@ import java.util.Locale;
 @Service
 public class AdminBroadcastNotificationService {
 
+    private static final String ROLE_USER = "ROLE_USER";
+    private static final String ROLE_PARTNER = "ROLE_PARTNER";
+    private static final String ROLE_ENVIRONMENT = "ROLE_ENVIRONMENT";
+    private static final String ROLE_ALL = "ROLE_ALL";
+
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
 
@@ -33,13 +38,18 @@ public class AdminBroadcastNotificationService {
             Long targetId,
             String adminPrincipal) {
         NotificationType notificationType = parseType(notificationTypeRaw);
+        String audienceType = normalizeAudience(targetType);
 
         User admin = userRepository.findByEmail(adminPrincipal)
                 .orElseGet(() -> userRepository.findByUsername(adminPrincipal)
                         .orElseThrow(() -> new RuntimeException("Admin not found")));
 
-        long userCount = userRepository.count();
-        if (userCount == 0) {
+        long recipientCount = userRepository.findAll().stream()
+                .filter(user -> isRecipientForAudience(user, audienceType))
+                .map(User::getId)
+                .distinct()
+                .count();
+        if (recipientCount == 0) {
             return new BroadcastAllNotificationResult(0, notificationType.name());
         }
 
@@ -48,13 +58,40 @@ public class AdminBroadcastNotificationService {
         master.setNotificationType(notificationType);
         master.setTitle(title);
         master.setMessage(message);
-        master.setTargetType(targetType);
+        master.setTargetType(audienceType);
         master.setTargetId(targetId);
         master.setCreatedByUserId(admin.getId());
         master.setSourceScope(NotificationSourceScope.ADMIN_BROADCAST_MASTER);
         notificationRepository.save(master);
 
-        return new BroadcastAllNotificationResult(Math.toIntExact(userCount), notificationType.name());
+        return new BroadcastAllNotificationResult(Math.toIntExact(recipientCount), notificationType.name());
+    }
+
+    private boolean isRecipientForAudience(User user, String audienceType) {
+        if (ROLE_ALL.equals(audienceType)) {
+            return hasRole(user, ROLE_USER) || hasRole(user, ROLE_PARTNER) || hasRole(user, ROLE_ENVIRONMENT);
+        }
+        return hasRole(user, audienceType);
+    }
+
+    private boolean hasRole(User user, String roleName) {
+        return user.getRoles() != null
+                && user.getRoles().stream().anyMatch(role -> roleName.equalsIgnoreCase(role.getName()));
+    }
+
+    private String normalizeAudience(String rawAudience) {
+        if (rawAudience == null || rawAudience.isBlank()) {
+            return ROLE_USER;
+        }
+
+        String audience = rawAudience.trim().toUpperCase(Locale.ROOT);
+        return switch (audience) {
+            case "USER" -> ROLE_USER;
+            case "PARTNER" -> ROLE_PARTNER;
+            case "ENVIRONMENT" -> ROLE_ENVIRONMENT;
+            case "GLOBAL", "ALL", ROLE_ALL -> ROLE_ALL;
+            default -> audience.startsWith("ROLE_") ? audience : "ROLE_" + audience;
+        };
     }
 
     private NotificationType parseType(String raw) {
