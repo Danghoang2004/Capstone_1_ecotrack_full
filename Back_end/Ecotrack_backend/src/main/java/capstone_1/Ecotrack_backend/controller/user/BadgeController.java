@@ -2,6 +2,7 @@ package capstone_1.Ecotrack_backend.controller.user;
 
 import capstone_1.Ecotrack_backend.dto.response.ApiBadgeResponse;
 import capstone_1.Ecotrack_backend.dto.response.BadgeResponse;
+import capstone_1.Ecotrack_backend.dto.response.BadgeProgressResponse;
 import capstone_1.Ecotrack_backend.service.BadgeService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,21 @@ public class BadgeController {
         try {
             List<BadgeResponse> data = badgeService.getUserEarnedBadges(userId);
             return ResponseEntity.ok(ApiBadgeResponse.success("Lấy danh sách huy hiệu đã đạt thành công", data));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(ApiBadgeResponse.error(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/progress")
+    public ResponseEntity<ApiBadgeResponse<BadgeProgressResponse>> getBadgeProgress(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).body(ApiBadgeResponse.error("Unauthorized"));
+        }
+
+        try {
+            BadgeProgressResponse data = badgeService.getBadgeProgressWithCurrentPoints(userId);
+            return ResponseEntity.ok(ApiBadgeResponse.success("Lấy tiến độ huy hiệu thành công", data));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ApiBadgeResponse.error(e.getMessage()));
         }

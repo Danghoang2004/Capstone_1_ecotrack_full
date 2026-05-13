@@ -132,7 +132,9 @@ class BadgeModel {
   final String? iconUrl;
   final String? description;
   final String? requirement;
+  final int pointsRequired;
   final String? awardedAt;
+  final bool isClaimed;
 
   BadgeModel({
     required this.badgeId,
@@ -140,7 +142,9 @@ class BadgeModel {
     this.iconUrl,
     this.description,
     this.requirement,
+    required this.pointsRequired,
     this.awardedAt,
+    required this.isClaimed,
   });
 
   factory BadgeModel.fromJson(Map<String, dynamic> json) {
@@ -150,7 +154,9 @@ class BadgeModel {
       iconUrl: json['iconUrl'],
       description: json['description'],
       requirement: json['requirement'],
+      pointsRequired: json['pointsRequired'] ?? 0,
       awardedAt: json['awardedAt'],
+      isClaimed: json['isClaimed'] ?? (json['awardedAt'] != null),
     );
   }
 }

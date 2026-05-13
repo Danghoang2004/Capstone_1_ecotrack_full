@@ -32,6 +32,8 @@ public class CheckinService {
     private UserPointsRepository userPointsRepository;
     @Autowired
     private PointTransactionRepository pointTransactionRepository;
+    @Autowired
+    private BadgeCheckService badgeCheckService;
 
     @Transactional
     public Checkin processCheckin(Long userId, Long campaignId) {
@@ -86,6 +88,8 @@ public class CheckinService {
             transaction.setPoints(points);
             transaction.setDescription("Check-in chiến dịch: " + campaign.getTitle());
             pointTransactionRepository.save(transaction);
+
+            badgeCheckService.checkAndAwardBadges(userId);
         }
 
         return savedCheckin;

@@ -19,8 +19,8 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
   @override
   void initState() {
     super.initState();
-    // Gọi API lấy danh sách huy hiệu
-    _badgesFuture = _userService.getAllBadges();
+    // Gọi API lấy tiến độ huy hiệu (bao gồm claimed + unclaimed)
+    _badgesFuture = _userService.getBadgeProgressBadges();
   }
 
   @override
@@ -63,12 +63,8 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
           final allBadges = snapshot.data ?? [];
 
           // Phân loại
-          final earnedBadges = allBadges
-              .where((b) => b.awardedAt != null)
-              .toList();
-          final lockedBadges = allBadges
-              .where((b) => b.awardedAt == null)
-              .toList();
+          final earnedBadges = allBadges.where((b) => b.isClaimed).toList();
+          final lockedBadges = allBadges.where((b) => !b.isClaimed).toList();
 
           List<BadgeModel> displayBadges;
           if (_selectedTabIndex == 1)
@@ -156,7 +152,7 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
 
   // Thẻ Huy hiệu chuẩn Figma
   Widget _buildBadgeCard(BadgeModel badge) {
-    final isLocked = badge.awardedAt == null;
+    final isLocked = !badge.isClaimed;
 
     // Xử lý đường dẫn ảnh từ Backend
     final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
@@ -231,18 +227,16 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
           ),
           const SizedBox(height: 4),
 
-          // Độ hiếm
+          // Mô tả
           Text(
             isLocked ? "Chưa mở khóa" : (badge.description ?? "Thường"),
             style: const TextStyle(color: Colors.grey, fontSize: 11),
           ),
           const SizedBox(height: 4),
 
-          // Ngày nhận hoặc Yêu cầu
+          // Điểm yêu cầu hoặc Ngày nhận
           Text(
-            isLocked
-                ? (badge.requirement ?? "Cố gắng lên!")
-                : (badge.awardedAt ?? ""),
+            isLocked ? "${badge.pointsRequired} điểm" : (badge.awardedAt ?? ""),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isLocked ? Colors.grey : const Color(0xFF2E7D32),

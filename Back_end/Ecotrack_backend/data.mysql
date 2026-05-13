@@ -1136,3 +1136,52 @@ SELECT
 FROM tmp_seed20 s
 JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
 
+-- ================================================================
+-- Badges
+-- ================================================================
+ALTER TABLE badges
+ADD COLUMN points_required INT NOT NULL DEFAULT 0 AFTER requirement;
+
+INSERT INTO badges (badge_name, description, icon_url, requirement, points_required) VALUES
+('Eco Starter', 'Bạn đã bắt đầu hành trình bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-starter.png', 'Đạt 50 điểm', 50),
+('Eco Warrior', 'Bạn là một chiến binh bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-warrior.png', 'Đạt 100 điểm', 100),
+('Green Guardian', 'Bạn là người bảo vệ xanh', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/green-guardian.png', 'Đạt 250 điểm', 250),
+('Eco Champion', 'Bạn là nhà vô địch bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-champion.png', 'Đạt 500 điểm', 500),
+('Planet Hero', 'Bạn là anh hùng của hành tinh', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/planet-hero.png', 'Đạt 1000 điểm', 1000),
+('Nature Lover', 'Bạn yêu thiên nhiên và bảo vệ nó', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/nature-lover.png', 'Đạt 150 điểm', 150),
+('Climate Guardian', 'Bạn là người bảo vệ khí hậu toàn cầu', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/climate-guardian.png', 'Đạt 350 điểm', 350),
+('Waste Warrior', 'Bạn chiến đấu chống lại rác thải', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/waste-warrior.png', 'Đạt 200 điểm', 200),
+('Sustainability Master', 'Bạn là bậc thầy của phát triển bền vững', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/sustainability-master.png', 'Đạt 750 điểm', 750),
+('Legendary Protector', 'Bạn là huyền thoại bảo vệ Trái Đất', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/legendary-protector.png', 'Đạt 1500 điểm', 1500);
+INSERT INTO badges (badge_name, description, icon_url, requirement, points_required) VALUES
+('Khởi đầu xanh', 'Bạn đã bắt đầu hành trình bảo vệ môi trường', '/badges/badge_100.png', 'Đạt 100 điểm', 100),
+('Người tích cực', 'Thường xuyên tham gia hoạt động bảo vệ môi trường', '/badges/badge_150.png', 'Đạt 150 điểm', 150),
+('Chiến sĩ xanh', 'Đã hoàn thành những chiến dịch bảo vệ môi trường', '/badges/badge_200.png', 'Đạt 200 điểm', 200),
+('Người tiên phong', 'Dẫn đầu trong cộng đồng bảo vệ môi trường', '/badges/badge_250.png', 'Đạt 250 điểm', 250),
+('Hùng binh xanh', 'Sức mạnh của chiến binh môi trường', '/badges/badge_300.png', 'Đạt 300 điểm', 300),
+('Tâm thống lĩnh', 'Dẫn lối cho cộng đồng bảo vệ môi trường', '/badges/badge_350.png', 'Đạt 350 điểm', 350),
+('Vua tái chế', 'Master của tái chế - đạt đỉnh cao trong tái chế rác thải', '/badges/badge_400.png', 'Đạt 400 điểm', 400),
+('Thần sứ xanh', 'Sứ giả của việc bảo vệ môi trường', '/badges/badge_450.png', 'Đạt 450 điểm', 450),
+('Hành tinh xanh', 'Bảo vệ hành tinh chúng ta với toàn tâm', '/badges/badge_500.png', 'Đạt 500 điểm', 500),
+('Thuyền trưởng biển cả', 'Người bảo vệ biển và đại dương', '/badges/badge_550.png', 'Đạt 550 điểm', 550),
+('Hiệp sĩ rừng', 'Người bảo vệ rừng và tài nguyên thiên nhiên', '/badges/badge_600.png', 'Đạt 600 điểm', 600),
+('Kiện tướng môi trường', 'Nhà vô địch bảo vệ môi trường', '/badges/badge_650.png', 'Đạt 650 điểm', 650),
+('Danh nhân xanh', 'Nhân vật nổi tiếng trong cộng đồng bảo vệ môi trường', '/badges/badge_700.png', 'Đạt 700 điểm', 700),
+('Anh hùng thế kỷ', 'Anh hùng của thế hệ bảo vệ môi trường', '/badges/badge_750.png', 'Đạt 750 điểm', 750),
+('Bậc thầy thiên nhiên', 'Người thành thạo về thiên nhiên và bảo vệ môi trường', '/badges/badge_800.png', 'Đạt 800 điểm', 800),
+('Triệu phú xanh', 'Tích lũy được hàng triệu điểm xanh', '/badges/badge_850.png', 'Đạt 850 điểm', 850),
+('Vệ thần bảo vệ', 'Bảo vệ bất tử cho trái đất', '/badges/badge_900.png', 'Đạt 900 điểm', 900),
+('Cứu thế vũ trụ', 'Nhân vật cứu mệnh vũ trụ', '/badges/badge_950.png', 'Đạt 950 điểm', 950),
+('Vô địch vĩnh cửu', 'Đạt mức tối cao - Vô địch vĩnh cửu', '/badges/badge_1000.png', 'Đạt 1000 điểm', 1000),
+('Huyền thoại trái đất', 'Huyền thoại của trái đất - Mức cao nhất', '/badges/badge_1050.png', 'Đạt 1050 điểm', 1050);
+
+UPDATE badges SET points_required = 100 WHERE badge_id = 1;
+UPDATE badges SET points_required = 150 WHERE badge_id = 2;
+UPDATE badges SET points_required = 200 WHERE badge_id = 3;
+UPDATE badges SET points_required = 250 WHERE badge_id = 4;
+UPDATE badges SET points_required = 300 WHERE badge_id = 5;
+UPDATE badges SET points_required = 350 WHERE badge_id = 6;
+UPDATE badges SET points_required = 400 WHERE badge_id = 7;
+UPDATE badges SET points_required = 450 WHERE badge_id = 8;
+UPDATE badges SET points_required = 500 WHERE badge_id = 9;
+UPDATE badges SET points_required = 550 WHERE badge_id = 10;

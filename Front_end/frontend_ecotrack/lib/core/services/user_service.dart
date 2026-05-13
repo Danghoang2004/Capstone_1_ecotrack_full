@@ -288,6 +288,45 @@ class UserService {
       return [];
     }
   }
+
+  // Lấy tiến độ huy hiệu của user (bao gồm badges đã đạt và chưa đạt)
+  Future<Map<String, dynamic>> getBadgeProgress() async {
+    // 1. Gọi API với authentication token
+    final response = await apiClient.get("/api/user/badges/progress");
+
+    // 2. Xử lý lỗi Token hết hạn
+    if (response.statusCode == 401) {
+      throw UnauthorizedException("Token expired");
+    }
+
+    // 3. Xử lý lỗi Server
+    if (response.statusCode != 200) {
+      throw Exception("Lỗi server: ${response.statusCode}");
+    }
+
+    // 4. Parse dữ liệu thành JSON
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+
+    // 5. Trỏ đúng vào key 'data' - giờ data là object chứa currentPoints + badges
+    if (body['success'] == true && body['data'] != null) {
+      return body['data'];
+    } else {
+      return {'currentPoints': 0, 'badges': []};
+    }
+  }
+
+  // Helper method để extract badges từ progress response
+  Future<List<BadgeModel>> getBadgeProgressBadges() async {
+    final progressData = await getBadgeProgress();
+    final badgesData = progressData['badges'] as List<dynamic>? ?? [];
+    return badgesData.map((json) => BadgeModel.fromJson(json)).toList();
+  }
+
+  // Helper method để lấy current points
+  Future<int> getCurrentBadgePoints() async {
+    final progressData = await getBadgeProgress();
+    return progressData['currentPoints'] as int? ?? 0;
+  }
 }
 
 class UnauthorizedException implements Exception {
