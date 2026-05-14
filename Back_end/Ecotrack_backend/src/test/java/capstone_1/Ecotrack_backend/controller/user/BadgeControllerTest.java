@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -35,9 +36,6 @@ class BadgeControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @MockBean
     private BadgeService badgeService;
 
@@ -48,9 +46,9 @@ class BadgeControllerTest {
         @Test
         @DisplayName("Trả về 200 và data là list BadgeResponse")
         void getAllBadges_returns200WithData() throws Exception {
-            List<BadgeResponse> data = List.of(
-                    new BadgeResponse(1L, "Starter", "/icon1.png", "Desc 1", "Req 1", null),
-                    new BadgeResponse(2L, "Hero", "/icon2.png", "Desc 2", "Req 2", null)
+            List<BadgeResponse> data = Arrays.asList(
+                    new BadgeResponse(1L, "Starter", "/icon1.png", "Desc 1", "Req 1", 0, null, false),
+                    new BadgeResponse(2L, "Hero", "/icon2.png", "Desc 2", "Req 2", 0, null, false)
             );
             when(badgeService.getAllBadges()).thenReturn(data);
 
@@ -85,9 +83,9 @@ class BadgeControllerTest {
         @DisplayName("User hợp lệ → 200 và data là list BadgeResponse")
         void getMyBadges_whenUserIdPresent_returns200WithData() throws Exception {
             Long userId = 10L;
-            List<BadgeResponse> data = List.of(
-                    new BadgeResponse(1L, "Starter", "/icon1.png", "Desc 1", "Req 1", "2025-03-01T10:00:00"),
-                    new BadgeResponse(2L, "Hero", "/icon2.png", "Desc 2", "Req 2", "2025-03-02T11:30:00")
+            List<BadgeResponse> data = Arrays.asList(
+                    new BadgeResponse(1L, "Starter", "/icon1.png", "Desc 1", "Req 1", 0, "2025-03-01T10:00:00", true),
+                    new BadgeResponse(2L, "Hero", "/icon2.png", "Desc 2", "Req 2", 0, "2025-03-02T11:30:00", true)
             );
 
             when(badgeService.getUserEarnedBadges(userId)).thenReturn(data);

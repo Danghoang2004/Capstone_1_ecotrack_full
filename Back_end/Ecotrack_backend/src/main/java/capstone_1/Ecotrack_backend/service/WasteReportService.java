@@ -34,6 +34,8 @@ public class WasteReportService {
     private UserRepository userRepository;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private AdminRealtimeSseService adminRealtimeSseService;
 
     // RestTemplate để gọi API Python
     private final RestTemplate restTemplate = new RestTemplate();
@@ -109,6 +111,8 @@ public class WasteReportService {
         } else {
             processPointsAndNotification(saved, false);
         }
+
+        adminRealtimeSseService.publishReportCreated(saved);
         return saved;
     }
 
@@ -227,6 +231,8 @@ public class WasteReportService {
                     message,
                     "REPORT",
                     report.getReportId());
+
+            adminRealtimeSseService.publishReportStatusUpdated(report);
 
             return true;
         } catch (IllegalArgumentException e) {

@@ -128,6 +128,31 @@ class ApiClient {
     return await request.send();
   }
 
+  Future<http.StreamedResponse> putMultipartBytes(
+    String path,
+    Map<String, String> fields,
+    Map<String, Uint8List> files,
+    String fileName,
+  ) async {
+    final token = await storage.read(key: 'jwt_token');
+
+    var request = http.MultipartRequest("PUT", Uri.parse('$baseUrl$path'));
+
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    fields.forEach((key, value) => request.fields[key] = value);
+
+    for (var file in files.entries) {
+      request.files.add(
+        http.MultipartFile.fromBytes(file.key, file.value, filename: fileName),
+      );
+    }
+
+    return await request.send();
+  }
+
   dynamic decodeUtf8Json(http.Response response) {
     return jsonDecode(utf8.decode(response.bodyBytes));
   }

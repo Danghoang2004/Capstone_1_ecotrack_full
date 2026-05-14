@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -16,10 +18,15 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
   late AdminQuizRepository _repo;
   List<dynamic> _quizzes = [];
   bool _isLoading = true;
+  bool _isRefreshing = false;
+  Timer? _refreshTimer;
+  DateTime? _lastSyncedAt;
 
   final Color _primaryColor = const Color(0xFF5EAC24);
   final Color _dangerColor = const Color(0xFFE53935);
   final Color _editColor = const Color(0xFF1E88E5);
+
+  static const Duration _refreshInterval = Duration(seconds: 60);
 
   @override
   void initState() {
@@ -28,23 +35,43 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
       ApiClient(storage: const FlutterSecureStorage()),
     );
     _loadData();
+    _startAutoRefresh();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _loadData(silent: true);
+    });
+  }
+
+  Future<void> _loadData({bool silent = false}) async {
+    if (!mounted || _isRefreshing) return;
+    setState(() => _isRefreshing = true);
     try {
       final data = await _repo.fetchAllQuizzes();
-      setState(() {
-        _quizzes = data;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() {
+          _quizzes = data;
+          _isLoading = false;
+          _lastSyncedAt = DateTime.now();
+        });
+      }
+    } catch (e) {
+      if (mounted && !silent) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Lỗi tải dữ liệu: $e")));
       }
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
     }
   }
 
@@ -349,7 +376,10 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                     icon: const Icon(Icons.add, size: 20),
                     label: const Text(
                       "Thêm bộ đề mới",
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.adminAccentDeep,
@@ -362,7 +392,9 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 4,
-                      shadowColor: AppColors.adminAccentDeep.withValues(alpha: 0.28),
+                      shadowColor: AppColors.adminAccentDeep.withValues(
+                        alpha: 0.28,
+                      ),
                     ),
                   ),
                 ],
@@ -370,7 +402,9 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
               const SizedBox(height: 28),
               Expanded(
                 child: _isLoading
-                    ? Center(child: CircularProgressIndicator(color: _primaryColor))
+                    ? Center(
+                        child: CircularProgressIndicator(color: _primaryColor),
+                      )
                     : _quizzes.isEmpty
                     ? Center(
                         child: Column(
@@ -418,20 +452,26 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: (isPublished ? _primaryColor : Colors.orange)
-                                        .withOpacity(0.12),
+                                    color:
+                                        (isPublished
+                                                ? _primaryColor
+                                                : Colors.orange)
+                                            .withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Icon(
                                     Icons.help_outline_rounded,
-                                    color: isPublished ? _primaryColor : Colors.orange,
+                                    color: isPublished
+                                        ? _primaryColor
+                                        : Colors.orange,
                                     size: 34,
                                   ),
                                 ),
                                 const SizedBox(width: 20),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         quiz['title'] ?? "Không tên",
@@ -456,7 +496,9 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                                                 ? Icons.check_circle_outline
                                                 : Icons.edit_note,
                                             quiz['status'] ?? "DRAFT",
-                                            isPublished ? _primaryColor : Colors.grey,
+                                            isPublished
+                                                ? _primaryColor
+                                                : Colors.grey,
                                           ),
                                         ],
                                       ),
@@ -470,7 +512,9 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
                                           color: _editColor.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Icon(
                                           Icons.edit_outlined,
@@ -479,7 +523,9 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                                       ),
                                       tooltip: "Chỉnh sửa",
                                       onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
                                             content: Text(
                                               "Chức năng chỉnh sửa Quiz ID ${quiz['id']} đang phát triển",
@@ -494,7 +540,9 @@ class _AdminQuizPageState extends State<AdminQuizPage> {
                                         padding: const EdgeInsets.all(6),
                                         decoration: BoxDecoration(
                                           color: _dangerColor.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Icon(
                                           Icons.delete_outline,

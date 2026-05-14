@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -23,9 +24,13 @@ class _AdminReportPageState extends State<AdminReportPage> {
   List<Report> _reports = [];
   List<Report> _filteredReports = [];
   bool _isLoading = true;
+  bool _isRefreshing = false;
+  DateTime? _lastSyncedAt;
+  Timer? _refreshTimer;
   int _currentPage = 1;
 
   static const int _itemsPerPage = 10;
+  static const Duration _refreshInterval = Duration(seconds: 35);
 
   // Bộ lọc
   String _selectedStatus = 'ALL';
@@ -48,9 +53,25 @@ class _AdminReportPageState extends State<AdminReportPage> {
   void initState() {
     super.initState();
     _fetchReports();
+    _startAutoRefresh();
   }
 
-  Future<void> _fetchReports() async {
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _fetchReports(silent: true);
+    });
+  }
+
+  Future<void> _fetchReports({bool silent = false}) async {
+    if (!mounted || _isRefreshing) return;
+    setState(() => _isRefreshing = true);
     try {
       final data = await _reportService.fetchAllReports();
       if (mounted) {
@@ -58,10 +79,13 @@ class _AdminReportPageState extends State<AdminReportPage> {
           _reports = data;
           _filterReports();
           _isLoading = false;
+          _lastSyncedAt = DateTime.now();
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && !silent) setState(() => _isLoading = false);
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
     }
   }
 
