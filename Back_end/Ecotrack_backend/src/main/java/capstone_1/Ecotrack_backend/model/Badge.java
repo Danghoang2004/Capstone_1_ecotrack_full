@@ -39,6 +39,11 @@ public class Badge {
         this.pointsRequired = pointsRequired;
     }
 
+    // Backwards-compatible constructor used in some tests/callers that don't pass pointsRequired
+    public Badge(Long badgeId, String badgeName, String description, String iconUrl, String requirement) {
+        this(badgeId, badgeName, description, iconUrl, requirement, 0);
+    }
+
     public Long getBadgeId() {
         return badgeId;
     }

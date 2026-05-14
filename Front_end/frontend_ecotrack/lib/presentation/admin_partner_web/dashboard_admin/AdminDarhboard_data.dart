@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/admin_dashboard_api.dart';
@@ -20,11 +22,66 @@ class AdminDashboardDataScreen extends StatefulWidget {
 class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
   final AdminDashboardApi _api = AdminDashboardApi();
   late Future<DashboardSummary> _futureDashboard;
+  Timer? _refreshTimer;
+  bool _isRefreshing = false;
+  DateTime? _lastUpdatedAt;
+
+  static const Duration _refreshInterval = Duration(seconds: 45);
 
   @override
   void initState() {
     super.initState();
     _futureDashboard = _api.fetchDashboard();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _refreshDashboard(silent: true);
+    });
+  }
+
+  Future<void> _refreshDashboard({required bool silent}) async {
+    if (!mounted || _isRefreshing) {
+      return;
+    }
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    final future = _api.fetchDashboard();
+    setState(() {
+      _futureDashboard = future;
+    });
+
+    try {
+      await future;
+      if (mounted) {
+        setState(() {
+          _lastUpdatedAt = DateTime.now();
+        });
+      }
+    } catch (_) {
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không thể làm mới dữ liệu dashboard.')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -98,6 +155,38 @@ class _AdminDashboardDataScreenState extends State<AdminDashboardDataScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeroBanner(data),
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (_lastUpdatedAt != null)
+                    Text(
+                      'Làm mới lần cuối: ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(_lastUpdatedAt!))}',
+                      style: const TextStyle(
+                        color: AppColors.adminTextSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  FilledButton.tonalIcon(
+                    onPressed: _isRefreshing
+                        ? null
+                        : () => _refreshDashboard(silent: false),
+                    icon: _isRefreshing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded),
+                    label: Text(_isRefreshing ? 'Đang cập nhật' : 'Làm mới'),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 22),
             Wrap(
               spacing: 16,

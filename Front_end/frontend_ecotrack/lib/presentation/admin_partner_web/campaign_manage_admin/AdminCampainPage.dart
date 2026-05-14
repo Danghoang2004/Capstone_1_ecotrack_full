@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/campaign_dashboard.dart';
@@ -16,6 +18,32 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
   CampaignPanel panel = CampaignPanel.none;
   int? selectedId;
   int _refreshKey = 0;
+  Timer? _autoRefreshTimer;
+  bool _isAutoRefreshing = false;
+
+  static const Duration _autoRefreshInterval = Duration(seconds: 55);
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(_autoRefreshInterval, (_) {
+      if (!_isAutoRefreshing && mounted) {
+        setState(() => _isAutoRefreshing = true);
+        refreshData();
+      }
+    });
+  }
 
   void openCreate() => setState(() {
     panel = CampaignPanel.create;
@@ -97,7 +125,9 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                           elevation: 4,
-                          shadowColor: AppColors.adminAccentDeep.withValues(alpha: 0.28),
+                          shadowColor: AppColors.adminAccentDeep.withValues(
+                            alpha: 0.28,
+                          ),
                         ),
                       ),
                     ],

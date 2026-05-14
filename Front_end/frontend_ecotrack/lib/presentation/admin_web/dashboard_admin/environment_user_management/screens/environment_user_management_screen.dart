@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_management/widgets/filter/user_filter_bar.dart';
@@ -11,23 +13,59 @@ class EnvironmentUserManagementScreen extends StatefulWidget {
   const EnvironmentUserManagementScreen({super.key});
 
   @override
-  State<EnvironmentUserManagementScreen> createState() => _EnvironmentUserManagementScreenState();
+  State<EnvironmentUserManagementScreen> createState() =>
+      _EnvironmentUserManagementScreenState();
 }
 
-class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagementScreen> {
-  late final EnvironmentUserManagementController controller = EnvironmentUserManagementController();
+class _EnvironmentUserManagementScreenState
+    extends State<EnvironmentUserManagementScreen> {
+  late final EnvironmentUserManagementController controller =
+      EnvironmentUserManagementController();
+  Timer? _refreshTimer;
+  bool _isRefreshing = false;
+  DateTime? _lastSyncedAt;
+
+  static const Duration _refreshInterval = Duration(seconds: 48);
 
   @override
   void initState() {
     super.initState();
     controller.searchController.addListener(_onSearchChanged);
     _loadUsers();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    controller.searchController.removeListener(_onSearchChanged);
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _loadUsers();
+    });
   }
 
   Future<void> _loadUsers() async {
-    await controller.loadUsers();
-    if (mounted) {
-      setState(() {});
+    if (!mounted || _isRefreshing) {
+      return;
+    }
+    setState(() => _isRefreshing = true);
+    try {
+      await controller.loadUsers();
+      if (mounted) {
+        setState(() {
+          _lastSyncedAt = DateTime.now();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
     }
   }
 
@@ -79,7 +117,10 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi khi xóa: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Lỗi khi xóa: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -125,18 +166,14 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi khi xóa: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Lỗi khi xóa: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
     }
-  }
-
-  @override
-  void dispose() {
-    controller.searchController.removeListener(_onSearchChanged);
-    controller.dispose();
-    super.dispose();
   }
 
   @override
@@ -151,7 +188,9 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
         builder: (context, constraints) {
           return Center(
             child: Container(
-              constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 1400),
+              constraints: BoxConstraints(
+                maxWidth: isMobile ? double.infinity : 1400,
+              ),
               margin: EdgeInsets.symmetric(
                 horizontal: isMobile ? 12 : 24,
                 vertical: isMobile ? 12 : 20,
@@ -179,7 +218,10 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
                       totalUsers: controller.users.length,
                     ),
                     SizedBox(height: isMobile ? 18 : 28),
-                    UserSearchBar(controller: controller.searchController, isMobile: isMobile),
+                    UserSearchBar(
+                      controller: controller.searchController,
+                      isMobile: isMobile,
+                    ),
                     SizedBox(height: isMobile ? 14 : 20),
                     Expanded(
                       child: CustomScrollView(
@@ -209,9 +251,13 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
                               isMobile: isMobile,
                             ),
                           ),
-                          SliverToBoxAdapter(child: SizedBox(height: isMobile ? 12 : 16)),
+                          SliverToBoxAdapter(
+                            child: SizedBox(height: isMobile ? 12 : 16),
+                          ),
                           if (controller.isLoading)
-                            const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
+                            const SliverFillRemaining(
+                              child: Center(child: CircularProgressIndicator()),
+                            )
                           else if (controller.error != null)
                             SliverFillRemaining(
                               child: Center(
@@ -226,18 +272,26 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
                               child: Center(
                                 child: Text(
                                   'Không tìm thấy tài khoản môi trường',
-                                  style: TextStyle(color: AppColors.adminTextSecondary, fontSize: 16),
+                                  style: TextStyle(
+                                    color: AppColors.adminTextSecondary,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                             )
                           else
                             SliverList(
-                              delegate: SliverChildBuilderDelegate((context, index) {
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
                                 final user = controller.filteredUsers[index];
                                 final userId = user['id'] as int;
                                 return Padding(
                                   padding: EdgeInsets.only(
-                                    bottom: index == controller.filteredUsers.length - 1
+                                    bottom:
+                                        index ==
+                                            controller.filteredUsers.length - 1
                                         ? (isMobile ? 16 : 24)
                                         : (isMobile ? 12 : 16),
                                   ),
@@ -245,7 +299,9 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
                                     user: user,
                                     isMobile: isMobile,
                                     isTablet: isTablet,
-                                    isSelected: controller.isUserSelected(userId),
+                                    isSelected: controller.isUserSelected(
+                                      userId,
+                                    ),
                                     onSelectionChanged: (value) {
                                       setState(() {
                                         controller.toggleUserSelection(userId);
@@ -259,12 +315,13 @@ class _EnvironmentUserManagementScreenState extends State<EnvironmentUserManagem
                                     onEdit: () {
                                       showDialog(
                                         context: context,
-                                        builder: (context) => EditEnvironmentUserDialog(
-                                          user: user,
-                                          onUpdated: () {
-                                            _loadUsers();
-                                          },
-                                        ),
+                                        builder: (context) =>
+                                            EditEnvironmentUserDialog(
+                                              user: user,
+                                              onUpdated: () {
+                                                _loadUsers();
+                                              },
+                                            ),
                                       );
                                     },
                                     onDelete: () => _handleDeleteUser(user),

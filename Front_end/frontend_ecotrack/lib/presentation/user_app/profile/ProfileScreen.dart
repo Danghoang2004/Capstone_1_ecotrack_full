@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 if (result == true) {
                   setState(() {
                     _viewFuture = _userService.getProfileView();
-                    _badgesFuture = _userService.getAllBadges();
+                    _badgesFuture = _userService.getBadgeProgressBadges();
                   });
                 }
               },
@@ -159,71 +159,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ? view.fullName
         : (view.username.isNotEmpty ? view.username : 'Người dùng');
 
-    final double min = (view.minPoints ?? 0).toDouble();
-    final double max = (view.maxPoints ?? 100).toDouble();
-    final double cur = view.points.toDouble();
-    double percent = max > min
-        ? ((cur - min) / (max - min)).clamp(0.0, 1.0)
-        : 1.0;
-
-    return SliverAppBar(
-      expandedHeight: 250.0,
-      floating: false,
-      pinned: true,
-      backgroundColor: _primaryGreen,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/images/anhprofile.jpg',
-              fit: BoxFit.cover,
-              errorBuilder: (context, _, __) => Container(
-                alignment: Alignment.center,
-                color: const Color(0xFF4CAF50),
-                child: const Text(
-                  'Ảnh không tìm thấy',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 28,
-              right: 12,
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.white),
-                    onPressed: () async {
-                      final result = await Navigator.pushNamed(
-                        context,
-                        '/editprofile',
-                        arguments: view,
-                      );
-                      if (result == true) {
-                        setState(() {
-                          _viewFuture = _userService.getProfileView();
-                          _badgesFuture = _userService.getBadgeProgressBadges();
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.end,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _borderLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildProfileAvatar(avatarUrl),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   displayName,
@@ -499,12 +455,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         }
 
-        // Lấy dữ liệu thật từ Backend (API /api/user/badges/progress)
-        List<BadgeModel> realBadges = snapshot.data ?? [];
+        final badges = snapshot.data ?? [];
 
-        realBadges.sort((a, b) {
-          final aUnlocked = a.isClaimed;
-          final bUnlocked = b.isClaimed;
+        if (badges.isEmpty) {
+          return _buildEmptyBadge();
+        }
+
+        // sort unlocked first
+        badges.sort((a, b) {
+          final aUnlocked = a.awardedAt != null;
+          final bUnlocked = b.awardedAt != null;
           if (aUnlocked && !bUnlocked) return -1;
           if (!aUnlocked && bUnlocked) return 1;
           return 0;
@@ -528,15 +488,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAchievementFromBadge(BadgeModel b) {
-    final isUnlocked = b.isClaimed;
-    final String baseUrl = dotenv.env['API_BASE_URL'] ?? '';
-    String? imageUrl;
-    if (b.iconUrl != null && b.iconUrl!.isNotEmpty) {
-      imageUrl = b.iconUrl!.startsWith('http')
-          ? b.iconUrl
-          : '$baseUrl/images/${b.iconUrl}';
-    }
+  Widget _buildFeaturedBadge(BadgeModel badge) {
+    final isUnlocked = badge.awardedAt != null;
 
     return Container(
       padding: const EdgeInsets.all(10),

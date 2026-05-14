@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import '../controllers/user_management_controller.dart';
@@ -16,18 +18,51 @@ class UserManagementScreen extends StatefulWidget {
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
   late final UserManagementController controller = UserManagementController();
+  Timer? _refreshTimer;
+  bool _isRefreshing = false;
+  DateTime? _lastSyncedAt;
+
+  static const Duration _refreshInterval = Duration(seconds: 50);
 
   @override
   void initState() {
     super.initState();
     controller.searchController.addListener(_onSearchChanged);
     _loadUsers();
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    controller.searchController.removeListener(_onSearchChanged);
+    controller.dispose();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _loadUsers();
+    });
   }
 
   Future<void> _loadUsers() async {
-    await controller.loadUsers();
-    if (mounted) {
-      setState(() {});
+    if (!mounted || _isRefreshing) {
+      return;
+    }
+    setState(() => _isRefreshing = true);
+    try {
+      await controller.loadUsers();
+      if (mounted) {
+        setState(() {
+          _lastSyncedAt = DateTime.now();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
     }
   }
 
@@ -139,13 +174,6 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   @override
-  void dispose() {
-    controller.searchController.removeListener(_onSearchChanged);
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
@@ -181,7 +209,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    UserManagementHeader(isMobile: isMobile, isTablet: isTablet),
+                    UserManagementHeader(
+                      isMobile: isMobile,
+                      isTablet: isTablet,
+                    ),
                     SizedBox(height: isMobile ? 18 : 28),
                     UserSearchBar(
                       controller: controller.searchController,
@@ -254,7 +285,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                 final userId = user['id'] as int;
                                 return Padding(
                                   padding: EdgeInsets.only(
-                                    bottom: index == controller.filteredUsers.length - 1
+                                    bottom:
+                                        index ==
+                                            controller.filteredUsers.length - 1
                                         ? (isMobile ? 16 : 24)
                                         : (isMobile ? 12 : 16),
                                   ),
@@ -262,7 +295,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                     user: user,
                                     isMobile: isMobile,
                                     isTablet: isTablet,
-                                    isSelected: controller.isUserSelected(userId),
+                                    isSelected: controller.isUserSelected(
+                                      userId,
+                                    ),
                                     onSelectionChanged: (value) {
                                       setState(() {
                                         controller.toggleUserSelection(userId);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:frontend_ecotrack/core/services/admin_environment_team_service.dart';
@@ -24,6 +26,9 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
   List<EnvironmentTeamUserOption> _users = [];
   bool _isLoading = true;
   bool _isSubmitting = false;
+  bool _isRefreshing = false;
+  Timer? _refreshTimer;
+  DateTime? _lastSyncedAt;
   String? _error;
   int? _selectedTaskTeamId;
   String? _selectedTaskTeamName;
@@ -34,11 +39,14 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
     end: DateTime.now(),
   );
 
+  static const Duration _refreshInterval = Duration(seconds: 50);
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadDashboard();
+    _startAutoRefresh();
   }
 
   @override
@@ -46,16 +54,26 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
     _tabController.dispose();
     _teamNameController.dispose();
     _teamDescriptionController.dispose();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _loadDashboard(silent: true);
+    });
+  }
+
   Future<void> _loadDashboard({bool silent = false}) async {
+    if (!mounted || _isRefreshing) return;
     if (!silent && mounted) {
       setState(() {
         _isLoading = true;
         _error = null;
       });
     }
+    setState(() => _isRefreshing = true);
 
     try {
       final fromAt = DateFormat(

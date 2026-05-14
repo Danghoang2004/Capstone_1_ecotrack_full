@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:frontend_ecotrack/core/services/notification_service.dart';
 import 'package:frontend_ecotrack/data/models/NotificationModelAdmin.dart';
@@ -17,14 +19,19 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
   List<NotificationModel> _filteredNotifications = [];
   bool _isLoading = true;
   bool _isMutating = false;
-  
+  bool _isRefreshing = false;
+  DateTime? _lastSyncedAt;
+  Timer? _refreshTimer;
+
+  static const Duration _refreshInterval = Duration(seconds: 40);
+
   // Filter & Search
   String _searchQuery = '';
   String _filterStatus = 'all'; // all, read, unread
   String _sortBy = 'newest'; // newest, oldest, title
   int _currentPage = 1;
   final int _itemsPerPage = 10;
-  
+
   // Bulk selection
   final Set<int> _selectedIds = {};
   bool _selectAll = false;
@@ -33,42 +40,84 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
   void initState() {
     super.initState();
     _fetchNotifications();
+    _startAutoRefresh();
   }
 
-  Future<void> _fetchNotifications() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _fetchNotifications(showLoading: false, silent: true);
+    });
+  }
+
+  Future<void> _fetchNotifications({
+    bool showLoading = true,
+    bool silent = false,
+  }) async {
+    if (!mounted || _isRefreshing) {
+      return;
+    }
+
+    if (showLoading) {
+      setState(() => _isLoading = true);
+    }
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
     try {
       final data = await _notificationService.getAdminNotifications();
+      if (!mounted) return;
       setState(() {
         _allNotifications = data;
         _applyFilters();
         _isLoading = false;
+        _lastSyncedAt = DateTime.now();
       });
     } catch (e) {
-      print("Lỗi lấy danh sách Admin: $e");
-      setState(() => _isLoading = false);
+      if (!silent) {
+        debugPrint("Lỗi lấy danh sách Admin: $e");
+      }
+      if (mounted && showLoading) {
+        setState(() => _isLoading = false);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
     }
   }
 
   void _applyFilters() {
     var filtered = List<NotificationModel>.from(_allNotifications);
-    
+
     // Search filter
     if (_searchQuery.isNotEmpty) {
       filtered = filtered
-          .where((n) =>
-              n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              n.message.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where(
+            (n) =>
+                n.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                n.message.toLowerCase().contains(_searchQuery.toLowerCase()),
+          )
           .toList();
     }
-    
+
     // Status filter
     if (_filterStatus == 'read') {
       filtered = filtered.where((n) => n.isRead).toList();
     } else if (_filterStatus == 'unread') {
       filtered = filtered.where((n) => !n.isRead).toList();
     }
-    
+
     // Sorting
     if (_sortBy == 'newest') {
       filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -77,7 +126,7 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
     } else if (_sortBy == 'title') {
       filtered.sort((a, b) => a.title.compareTo(b.title));
     }
-    
+
     setState(() {
       _filteredNotifications = filtered;
       _currentPage = 1;
@@ -95,8 +144,7 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
     );
   }
 
-  int get _totalPages =>
-      (_filteredNotifications.length / _itemsPerPage).ceil();
+  int get _totalPages => (_filteredNotifications.length / _itemsPerPage).ceil();
 
   void _toggleSelectAll(bool? value) {
     setState(() {
@@ -276,7 +324,7 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
 
   Future<void> _bulkDelete() async {
     if (_selectedIds.isEmpty) return;
-    
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -293,7 +341,10 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Xóa tất cả', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                'Xóa tất cả',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -320,25 +371,25 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
     }
 
     if (!mounted) return;
-    
+
     String message = failCount == 0
         ? 'Đã xóa $successCount thông báo.'
         : 'Xóa $successCount thông báo thành công, $failCount thất bại.';
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: failCount == 0 ? Colors.green : Colors.orange,
       ),
     );
-    
+
     await _fetchNotifications();
   }
 
   @override
   Widget build(BuildContext context) {
     final paginatedList = _getPaginatedList();
-    
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -354,6 +405,33 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
               ),
               Row(
                 children: [
+                  if (_lastSyncedAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Text(
+                        'Đồng bộ: ${DateFormat('HH:mm:ss').format(_lastSyncedAt!)}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: OutlinedButton.icon(
+                      onPressed: _isMutating || _isRefreshing
+                          ? null
+                          : () => _fetchNotifications(showLoading: false),
+                      icon: _isRefreshing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh_rounded),
+                      label: Text(_isRefreshing ? 'Đang cập nhật' : 'Làm mới'),
+                    ),
+                  ),
                   if (_selectedIds.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
@@ -477,9 +555,18 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
                       child: DropdownButtonFormField<String>(
                         value: _sortBy,
                         items: const [
-                          DropdownMenuItem(value: 'newest', child: Text('Mới nhất')),
-                          DropdownMenuItem(value: 'oldest', child: Text('Cũ nhất')),
-                          DropdownMenuItem(value: 'title', child: Text('Tiêu đề A-Z')),
+                          DropdownMenuItem(
+                            value: 'newest',
+                            child: Text('Mới nhất'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'oldest',
+                            child: Text('Cũ nhất'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'title',
+                            child: Text('Tiêu đề A-Z'),
+                          ),
                         ],
                         onChanged: (value) {
                           setState(() => _sortBy = value ?? 'newest');
@@ -516,153 +603,155 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredNotifications.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.notifications_none,
-                                size: 48, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Chưa có thông báo nào',
-                              style: TextStyle(color: Colors.grey.shade600),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_none,
+                          size: 48,
+                          color: Colors.grey.shade400,
                         ),
-                      )
-                    : ListView.builder(
-                        itemCount: paginatedList.length,
-                        itemBuilder: (context, index) {
-                          final item = paginatedList[index];
-                          final isSelected = _selectedIds.contains(item.id);
-                          
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: ListTile(
-                              leading: Checkbox(
-                                value: isSelected,
-                                onChanged: (value) =>
-                                    _toggleNotificationSelection(item.id),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Chưa có thông báo nào',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: paginatedList.length,
+                    itemBuilder: (context, index) {
+                      final item = paginatedList[index];
+                      final isSelected = _selectedIds.contains(item.id);
+
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: isSelected,
+                            onChanged: (value) =>
+                                _toggleNotificationSelection(item.id),
+                          ),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  item.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.title,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              if (!item.isRead)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    'Mới',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  if (!item.isRead)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Text(
-                                        'Mới',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              subtitle: Text(
-                                item.message,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 10,
-                              ),
-                              isThreeLine: true,
-                              titleAlignment: ListTileTitleAlignment.top,
-                              dense: false,
-                              minVerticalPadding: 8,
-                              trailing: SizedBox(
-                                width: 180,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                ),
+                            ],
+                          ),
+                          subtitle: Text(
+                            item.message,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 10,
+                          ),
+                          isThreeLine: true,
+                          titleAlignment: ListTileTitleAlignment.top,
+                          dense: false,
+                          minVerticalPadding: 8,
+                          trailing: SizedBox(
+                            width: 180,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.end,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          DateFormat('dd/MM/yyyy')
-                                              .format(item.createdAt),
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        Text(
-                                          DateFormat('HH:mm')
-                                              .format(item.createdAt),
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey.shade500,
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      DateFormat(
+                                        'dd/MM/yyyy',
+                                      ).format(item.createdAt),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    PopupMenuButton<String>(
-                                      enabled: !_isMutating,
-                                      onSelected: (value) async {
-                                        if (value == 'edit') {
-                                          await _showEditDialog(item);
-                                        }
-                                        if (value == 'delete') {
-                                          await _deleteNotification(item);
-                                        }
-                                      },
-                                      itemBuilder: (context) => const [
-                                        PopupMenuItem<String>(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit_outlined,
-                                                  size: 18),
-                                              SizedBox(width: 8),
-                                              Text('Chỉnh sửa'),
-                                            ],
-                                          ),
-                                        ),
-                                        PopupMenuItem<String>(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.delete_outline,
-                                                size: 18,
-                                                color: Colors.red,
-                                              ),
-                                              SizedBox(width: 8),
-                                              Text('Xóa'),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      DateFormat(
+                                        'HH:mm',
+                                      ).format(item.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                PopupMenuButton<String>(
+                                  enabled: !_isMutating,
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      await _showEditDialog(item);
+                                    }
+                                    if (value == 'delete') {
+                                      await _deleteNotification(item);
+                                    }
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit_outlined, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Chỉnh sửa'),
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                            color: Colors.red,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text('Xóa'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
 
           // Pagination Footer
@@ -681,10 +770,7 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
                   // Select all checkbox
                   Row(
                     children: [
-                      Checkbox(
-                        value: _selectAll,
-                        onChanged: _toggleSelectAll,
-                      ),
+                      Checkbox(value: _selectAll, onChanged: _toggleSelectAll),
                       const SizedBox(width: 8),
                       Text(
                         'Chọn tất cả trang này (${paginatedList.length})',
@@ -702,16 +788,14 @@ class _AdminNotificationPageState extends State<AdminNotificationPage> {
                       const SizedBox(width: 12),
                       ElevatedButton(
                         onPressed: _currentPage > 1 && !_isMutating
-                            ? () =>
-                                setState(() => _currentPage--) 
+                            ? () => setState(() => _currentPage--)
                             : null,
                         child: const Text('← Trước'),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: _currentPage < _totalPages && !_isMutating
-                            ? () =>
-                                setState(() => _currentPage++)
+                            ? () => setState(() => _currentPage++)
                             : null,
                         child: const Text('Sau →'),
                       ),
