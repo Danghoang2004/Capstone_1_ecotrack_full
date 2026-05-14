@@ -6,6 +6,7 @@ import 'package:frontend_ecotrack/core/services/report_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:geolocator/geolocator.dart';
+import 'ListReport_page.dart';
 
 class Report_page extends StatefulWidget {
   const Report_page({super.key});
@@ -19,11 +20,44 @@ class _Report_pageState extends State<Report_page> {
   File? selectedImage;
   String selectedTrashType = "rác thải"; // Gán mặc định tại đây
   final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController titleController = TextEditingController();
   final ImagePicker picker = ImagePicker();
   bool isSending = false;
   DateTime? lastSubmitTime;
   final List<String> validTrashTypes = ["Vô cơ", "Hữu cơ", "tổng hợp"];
   final ReportService reportService = ReportService(); // Khởi tạo Service
+
+  String _getAiDecisionVietnamese(String? aiDecision) {
+    switch ((aiDecision ?? '').toUpperCase()) {
+      case 'WASTE_DETECTED':
+        return 'Phát hiện rác';
+      case 'NOT_WASTE':
+        return 'Không phải rác';
+      case 'UNCERTAIN':
+        return 'Chưa chắc chắn';
+      case 'REQUEST_REUPLOAD':
+        return 'Yêu cầu chụp lại';
+      default:
+        return (aiDecision ?? 'Chưa xác định').toString();
+    }
+  }
+
+  String _getPollutionLevelVietnamese(String? pollutionLevel) {
+    switch ((pollutionLevel ?? '').toUpperCase()) {
+      case 'LOW':
+        return 'Thấp';
+      case 'MEDIUM':
+        return 'Trung bình';
+      case 'HIGH':
+        return 'Cao';
+      case 'CRITICAL':
+        return 'Nghiêm trọng';
+      case 'UNCONFIRMED':
+        return 'Chưa xác nhận';
+      default:
+        return (pollutionLevel ?? 'Chưa xác định').toString();
+    }
+  }
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -56,7 +90,21 @@ class _Report_pageState extends State<Report_page> {
 
   // --- GIAO DIỆN TICKET BÁO CÁO THÀNH CÔNG ---
   void _showReportSuccessTicket(Map<String, dynamic> data) {
-    // data lấy từ server: {success: true, status: "PENDING", points: 10, message: "...", time: "...", transactionCode: "..."}
+    final String reportStatus =
+        (data['report_status'] ?? data['status'] ?? 'PENDING').toString();
+    final Map<String, dynamic> aiResult = data['ai_result'] is Map
+        ? Map<String, dynamic>.from(data['ai_result'] as Map)
+        : <String, dynamic>{};
+    final String pollutionLevel = (aiResult['pollution_level'] ?? 'UNCONFIRMED')
+        .toString();
+    final String pollutionLevelVi = _getPollutionLevelVietnamese(
+      pollutionLevel,
+    );
+    final String aiDecisionVi = _getAiDecisionVietnamese(
+      (aiResult['ai_decision'] ?? 'NOT_WASTE').toString(),
+    );
+    final String severityText =
+        (aiResult['severity_description'] ?? data['message'] ?? '').toString();
 
     showDialog(
       context: context,
@@ -82,11 +130,15 @@ class _Report_pageState extends State<Report_page> {
               ),
 
               Text(
-                "Gửi báo cáo thành công!",
+                reportStatus == 'REQUEST_REUPLOAD'
+                    ? 'Ảnh cần chụp lại'
+                    : 'Gửi báo cáo thành công!',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: reportStatus == 'REQUEST_REUPLOAD'
+                      ? Colors.orange[700]
+                      : Colors.green[700],
                 ),
               ),
               const SizedBox(height: 8),
@@ -95,6 +147,40 @@ class _Report_pageState extends State<Report_page> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
+
+              if (aiResult.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4FBF8),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Kết luận AI: $aiDecisionVi",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text("Mức ô nhiễm: $pollutionLevelVi"),
+                      Text(
+                        "Điểm ô nhiễm: ${(aiResult['severity_score'] ?? 'N/A').toString()}",
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        severityText,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               const SizedBox(height: 20),
 
@@ -136,7 +222,13 @@ class _Report_pageState extends State<Report_page> {
               // Chi tiết giao dịch
               _buildTicketRow(
                 "Trạng thái",
-                data['status'] == "VERIFIED" ? "Đã xác thực" : "Đang chờ duyệt",
+                reportStatus == "AI_VERIFIED"
+                    ? "Đã xác thực bởi AI"
+                    : reportStatus == "NEED_REVIEW"
+                    ? "Cần kiểm duyệt"
+                    : reportStatus == "REQUEST_REUPLOAD"
+                    ? "Cần chụp lại"
+                    : "Đang chờ duyệt",
               ),
               _buildTicketRow("Mã báo cáo", data['transactionCode'] ?? "N/A"),
               _buildTicketRow("Thời gian", _formatServerTime(data['time'])),
@@ -289,10 +381,25 @@ class _Report_pageState extends State<Report_page> {
       desiredAccuracy: LocationAccuracy.high,
     );
   }
+
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    titleController.dispose();
+    super.dispose();
+  }
   // --------------------------------
 
   Future<void> _submitReport() async {
     final descriptionText = descriptionController.text.trim();
+    final titleText = titleController.text.trim();
+
+    if (titleText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vui lòng nhập tiêu đề báo cáo")),
+      );
+      return;
+    }
 
     if (selectedImage == null || descriptionText.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -312,7 +419,7 @@ class _Report_pageState extends State<Report_page> {
 
       // GỌI SERVICE VÀ NHẬN DATA
       final resultData = await reportService.uploadReport(
-        title: "Báo cáo rác thải",
+        title: titleText,
         description: descriptionText,
         latitude: currentPosition.latitude.toString(),
         longitude: currentPosition.longitude.toString(),
@@ -329,6 +436,7 @@ class _Report_pageState extends State<Report_page> {
           setState(() {
             selectedImage = null;
             descriptionController.clear();
+            titleController.clear();
           });
         } else {
           // 2. [QUAN TRỌNG] Trường hợp lỗi Business (Cooldown, Limit, AI reject)
@@ -376,7 +484,14 @@ class _Report_pageState extends State<Report_page> {
           actions: [
             IconButton(
               icon: const Icon(Icons.help_outline, color: Colors.black87),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ListReportPage(),
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 6),
           ],
@@ -389,6 +504,8 @@ class _Report_pageState extends State<Report_page> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildImagePickerSection(),
+              const SizedBox(height: 12),
+              _buildTitleSection(),
               const SizedBox(height: 20),
               // _buildTrashTypeSection() đã được lược bỏ theo yêu cầu
               _buildDescriptionSection(),
@@ -606,6 +723,49 @@ class _Report_pageState extends State<Report_page> {
                 helperStyle: TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitleSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.subject),
+              SizedBox(width: 10),
+              Text(
+                "Tiêu đề báo cáo",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: titleController,
+            decoration: const InputDecoration(
+              hintText: 'Nhập tiêu đề, ví dụ: Túi nhựa vứt bừa bãi',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            ),
+            maxLines: 1,
+            style: const TextStyle(fontSize: 14),
           ),
         ],
       ),

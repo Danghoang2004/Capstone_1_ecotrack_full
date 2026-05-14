@@ -71,6 +71,37 @@ class _ClassificationHistoryDetailPageState
     return names.toList();
   }
 
+  String _getWasteTypeVietnamese(String rawName) {
+    switch (rawName.trim().toLowerCase()) {
+      case 'bi_rac':
+        return 'Bì rác';
+      case 'dong_rac':
+        return 'Đống rác';
+      case 'tuilong_rac':
+      case 'tui_long_rac':
+        return 'Túi nilon rác';
+      case 'rac_thai_nhua':
+        return 'Rác thải nhựa';
+      case 'rac_thai_giay':
+        return 'Rác thải giấy';
+      case 'rac_thai_kim_loai':
+        return 'Rác thải kim loại';
+      case 'rac_thai_thuy_tinh':
+        return 'Rác thải thủy tinh';
+      case 'rac_thai_huu_co':
+        return 'Rác thải hữu cơ';
+      case 'rac_thai_vo_co':
+        return 'Rác thải vô cơ';
+      default:
+        final normalized = rawName.trim();
+        if (normalized.isEmpty) return '';
+        return normalized
+            .replaceAll('_', ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+    }
+  }
+
   Future<void> _loadRecycleSuggestions(List<String> wasteTypes) async {
     if (wasteTypes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -219,7 +250,7 @@ class _ClassificationHistoryDetailPageState
                 ),
               ),
               const SizedBox(height: 16),
-              if (detectedWasteTypes.isNotEmpty)
+              if (detail.trashDetected && detectedWasteTypes.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -244,7 +275,7 @@ class _ClassificationHistoryDetailPageState
                         children: detectedWasteTypes
                             .map(
                               (type) => Chip(
-                                label: Text(type),
+                                label: Text(_getWasteTypeVietnamese(type)),
                                 backgroundColor: const Color(0xFFE8FAF3),
                                 side: const BorderSide(
                                   color: Color(0xFFC7ECDD),
@@ -257,7 +288,7 @@ class _ClassificationHistoryDetailPageState
                   ),
                 ),
               const SizedBox(height: 20),
-              if (detectedWasteTypes.isNotEmpty)
+              if (detail.trashDetected && detectedWasteTypes.isNotEmpty)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(

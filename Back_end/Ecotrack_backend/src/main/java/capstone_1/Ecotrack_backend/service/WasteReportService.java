@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class WasteReportService {
@@ -58,7 +60,8 @@ public class WasteReportService {
         long reportsToday = reportRepository.countByUserIdAndCreatedAtAfter(userId, startOfDay);
 
         if (reportsToday >= MAX_REPORTS_PER_DAY) {
-            throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY + " lần). Hãy quay lại vào ngày mai nhé!");
+            throw new RuntimeException("Bạn đã đạt giới hạn báo cáo trong ngày (" + MAX_REPORTS_PER_DAY
+                    + " lần). Hãy quay lại vào ngày mai nhé!");
         }
 
         WasteReport lastReport = reportRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
@@ -66,7 +69,8 @@ public class WasteReportService {
         if (lastReport != null) {
             long minutesSinceLast = Duration.between(lastReport.getCreatedAt(), LocalDateTime.now()).toMinutes();
             if (minutesSinceLast < COOLDOWN_MINUTES) {
-                throw new RuntimeException("Vui lòng chờ thêm " + (COOLDOWN_MINUTES - minutesSinceLast) + " phút trước khi gửi báo cáo tiếp theo.");
+                throw new RuntimeException("Vui lòng chờ thêm " + (COOLDOWN_MINUTES - minutesSinceLast)
+                        + " phút trước khi gửi báo cáo tiếp theo.");
             }
         }
 
@@ -81,25 +85,45 @@ public class WasteReportService {
             AiDetectionResponse.AiData data = aiResult.getData();
 
             reportData.setAiVerified(data.isWaste());
-            reportData.setAiConfidence(data.getOverallConfidence());
+            reportData.setAiConfidence(resolveFinalScore(data));
             reportData.setAiAnalyzedImageUrl(data.getOutputImage());
+            reportData.setAiWasteType(data.getWasteType());
+            reportData.setAiFinalWasteScore(data.getFinalWasteScore());
+            reportData.setAiWasteContextScore(data.getWasteContextScore());
+            reportData.setAiWasteAreaRatio(data.getWasteAreaRatio());
+            reportData.setAiObjectCount(data.getObjectCount());
+            reportData.setAiSeverityScore(data.getSeverityScore());
+            reportData.setAiPollutionLevel(data.getPollutionLevel());
+            reportData.setAiSeverityDescription(data.getSeverityDescription());
+            reportData.setAiRecommendation(data.getRecommendation());
+            reportData.setAiDecision(data.getAiDecision());
+            reportData.setAiNeedManualReview(Boolean.TRUE.equals(data.getNeedManualReview()));
+            reportData.setAiErrorMessage(data.getErrorMessage());
+            reportData.setAiFalsePositiveReason(data.getFalsePosReason());
             try {
-                reportData.setAiAnalysisJson(objectMapper.writeValueAsString(data.getTypePercentage()));
-            } catch (Exception e) { reportData.setAiAnalysisJson("{}"); }
+                reportData.setAiAnalysisJson(buildAiAnalysisJson(data));
+            } catch (Exception e) {
+                reportData.setAiAnalysisJson("{}");
+            }
 
-            if (data.isWaste() && data.getOverallConfidence() >= AI_CONFIDENCE_THRESHOLD) {
+            if ("AI_VERIFIED".equalsIgnoreCase(data.getReportStatus())) {
                 isEligibleForPoints = true;
-                reportData.setStatus(WasteReport.Status.VERIFIED);
+                reportData.setStatus(WasteReport.Status.AI_VERIFIED);
+            } else if ("NEED_REVIEW".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.NEED_REVIEW);
+            } else if ("REQUEST_REUPLOAD".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.REQUEST_REUPLOAD);
             } else {
                 isEligibleForPoints = false;
-                reportData.setStatus(WasteReport.Status.REJECTED);
+                reportData.setStatus(WasteReport.Status.NEED_REVIEW);
             }
         } else {
-            reportData.setStatus(WasteReport.Status.PENDING);
+            reportData.setStatus(WasteReport.Status.PENDING_AI_ANALYSIS);
             isEligibleForPoints = false;
         }
         WasteReport saved = reportRepository.save(reportData);
-
 
         if (isEligibleForPoints) {
             processPointsAndNotification(saved, true);
@@ -145,6 +169,46 @@ public class WasteReportService {
         }
     }
 
+    private Double resolveFinalScore(AiDetectionResponse.AiData data) {
+        if (data.getFinalWasteScore() != null) {
+            return data.getFinalWasteScore();
+        }
+        if (data.getObjectConfidenceScore() != null) {
+            return data.getObjectConfidenceScore();
+        }
+        return data.getOverallConfidence();
+    }
+
+    private String buildAiAnalysisJson(AiDetectionResponse.AiData data) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("is_waste", data.isWaste());
+        payload.put("detected_items", data.getDetectedItems());
+        payload.put("waste_type", data.getWasteType());
+        payload.put("object_confidence_score", data.getObjectConfidenceScore());
+        payload.put("waste_context_score", data.getWasteContextScore());
+        payload.put("final_waste_score", data.getFinalWasteScore());
+        payload.put("waste_area_ratio", data.getWasteAreaRatio());
+        payload.put("object_count", data.getObjectCount());
+        payload.put("severity_score", data.getSeverityScore());
+        payload.put("pollution_level", data.getPollutionLevel());
+        payload.put("severity_description", data.getSeverityDescription());
+        payload.put("recommendation", data.getRecommendation());
+        payload.put("ai_decision", data.getAiDecision());
+        payload.put("report_status", data.getReportStatus());
+        payload.put("need_manual_review", data.getNeedManualReview());
+        payload.put("error_message", data.getErrorMessage());
+        payload.put("image_quality_score", data.getImageQualityScore());
+        payload.put("type_percentage", data.getTypePercentage());
+        payload.put("output_image", data.getOutputImage());
+        payload.put("false_positive_reason", data.getFalsePosReason());
+        payload.put("model_a_has_general_object", data.getModelAHasGeneralObject());
+        payload.put("model_a_detected_items", data.getModelADetectedItems());
+        payload.put("model_a_reason", data.getModelAReason());
+        payload.put("model_b_detected_items", data.getModelBDetectedItems());
+        payload.put("final_waste_decision", data.getFinalWasteDecision());
+        return objectMapper.writeValueAsString(payload);
+    }
+
     private void processPointsAndNotification(WasteReport report, boolean isSuccess) {
         if (isSuccess) {
             User user = userRepository.findById(report.getUserId()).orElseThrow();
@@ -163,20 +227,22 @@ public class WasteReportService {
 
             notificationService.createNotification(
                     report.getUserId(), NotificationType.CAMPAIGN, "Cộng 10 điểm!",
-                    "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId()
-            );
+                    "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId());
         } else {
             String message = "";
-            if (report.getStatus() == WasteReport.Status.REJECTED) {
-                message = "AI không phát hiện thấy rác trong ảnh này hoặc độ rõ nét thấp.";
+            if (report.getStatus() == WasteReport.Status.REQUEST_REUPLOAD) {
+                message = "Ảnh chưa đủ rõ hoặc chưa đủ bối cảnh rác. Vui lòng chụp lại ảnh rõ hơn.";
+            } else if (report.getStatus() == WasteReport.Status.NEED_REVIEW) {
+                message = "AI phát hiện vật thể có thể là rác nhưng cần admin kiểm duyệt thêm.";
+            } else if (report.getStatus() == WasteReport.Status.PENDING_AI_ANALYSIS) {
+                message = "Hệ thống đang phân tích ảnh, vui lòng kiểm tra lại sau.";
             } else {
                 message = "Báo cáo đang chờ nhân viên kiểm duyệt thủ công.";
             }
 
             notificationService.createNotification(
                     report.getUserId(), NotificationType.SYSTEM, "Báo cáo chưa được duyệt",
-                    message, "REPORT", report.getReportId()
-            );
+                    message, "REPORT", report.getReportId());
         }
     }
 
@@ -188,11 +254,11 @@ public class WasteReportService {
         return reportRepository.findAllByOrderByCreatedAtDesc();
     }
 
-
     public boolean updateReportStatus(Long reportId, String newStatusStr) {
         // 1. Tìm báo cáo
         WasteReport report = reportRepository.findById(reportId).orElse(null);
-        if (report == null) return false;
+        if (report == null)
+            return false;
 
         try {
             // 2. Convert String sang Enum
@@ -224,8 +290,7 @@ public class WasteReportService {
                     title,
                     message,
                     "REPORT",
-                    report.getReportId()
-            );
+                    report.getReportId());
 
             return true;
         } catch (IllegalArgumentException e) {
