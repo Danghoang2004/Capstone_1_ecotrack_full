@@ -59,7 +59,10 @@ class AiWasteClassificationData {
     final rawDetections = json['detections'] as List<dynamic>? ?? <dynamic>[];
 
     return AiWasteClassificationData(
-      trashDetected: json['trashDetected'] == true || json['is_trash'] == true,
+      trashDetected:
+          json['trashDetected'] == true ||
+          json['is_waste'] == true ||
+          json['is_trash'] == true,
       overallConfidence:
           ((json['overallConfidence'] ?? json['overall_confidence']) as num?)
               ?.toDouble() ??

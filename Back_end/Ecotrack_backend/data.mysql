@@ -205,13 +205,26 @@ CREATE TABLE waste_reports (
     image_url VARCHAR(255) NOT NULL,
     gps_lat DECIMAL(10,8) NOT NULL,
     gps_long DECIMAL(11,8) NOT NULL,
-    status ENUM('PENDING','VERIFIED','REJECTED','CLEANED') NOT NULL DEFAULT 'PENDING',
+    status ENUM('PENDING','VERIFIED','REJECTED','CLEANED','PENDING_AI_ANALYSIS','AI_VERIFIED','NEED_REVIEW','REQUEST_REUPLOAD','APPROVED') NOT NULL DEFAULT 'PENDING',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     category VARCHAR(50),
    ai_verified TINYINT(1) NULL DEFAULT NULL,
    ai_confidence DOUBLE NULL DEFAULT '0',
    ai_analysis_json TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
    ai_analyzed_image_url  VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_waste_type VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_final_waste_score DOUBLE NULL DEFAULT NULL,
+   ai_waste_context_score DOUBLE NULL DEFAULT NULL,
+   ai_waste_area_ratio DOUBLE NULL DEFAULT NULL,
+   ai_object_count INT NULL DEFAULT NULL,
+   ai_severity_score INT NULL DEFAULT NULL,
+   ai_pollution_level VARCHAR(20) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_severity_description TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_recommendation TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_decision VARCHAR(30) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_need_manual_review TINYINT(1) NULL DEFAULT NULL,
+   ai_error_message TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+   ai_false_positive_reason TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
@@ -370,6 +383,24 @@ CREATE TABLE recycle_suggestion_steps (
     FOREIGN KEY (suggestion_id) REFERENCES recycle_suggestions(suggestion_id) ON DELETE CASCADE,
     UNIQUE KEY uk_recycle_step_order (suggestion_id, step_order)
 );
+
+CREATE TABLE campaign_chat_messages (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  campaign_id BIGINT NOT NULL,
+  sender_user_id BIGINT NOT NULL,
+  message_text TEXT,
+  attachment_url VARCHAR(500),
+  attachment_type VARCHAR(50),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  INDEX idx_campaign_created (campaign_id, created_at),
+  INDEX idx_campaign_gt_id (campaign_id, id),
+  CONSTRAINT fk_campaign_chat_campaign FOREIGN KEY (campaign_id)
+    REFERENCES campaigns(campaign_id) ON DELETE CASCADE,
+  CONSTRAINT fk_campaign_chat_sender FOREIGN KEY (sender_user_id)
+    REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO recycle_suggestions (
     waste_type_key,

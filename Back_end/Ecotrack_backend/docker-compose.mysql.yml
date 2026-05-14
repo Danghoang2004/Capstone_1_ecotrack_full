@@ -1,3 +1,5 @@
+name: ecotrack_backend_capstone2
+
 services:
   mysql-ecotrack:
     image: mysql:8.0
