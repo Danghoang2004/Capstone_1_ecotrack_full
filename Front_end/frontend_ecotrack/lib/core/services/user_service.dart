@@ -133,6 +133,65 @@ class UserService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getAllEnvironmentUsers() async {
+    final response = await apiClient.get("/api/admin/environment/users");
+
+    if (response.statusCode == 401) {
+      return [];
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception("Lỗi server: ${response.statusCode}");
+    }
+
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+    return List<Map<String, dynamic>>.from(body);
+  }
+
+  Future<void> updateEnvironmentUser(int userId, Map<String, dynamic> data) async {
+    final response = await apiClient.put("/api/admin/environment/users/$userId", data);
+
+    if (response.statusCode == 401) {
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
+      throw Exception(error);
+    }
+  }
+
+  Future<void> deleteEnvironmentUser(int userId) async {
+    final response = await apiClient.delete("/api/admin/environment/users/$userId");
+
+    if (response.statusCode == 401) {
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
+      throw Exception(error);
+    }
+  }
+
+  Future<void> deleteEnvironmentUsers(List<int> userIds) async {
+    final response = await apiClient.post("/api/admin/environment/users/bulk/delete", {
+      'userIds': userIds,
+    });
+
+    if (response.statusCode == 401) {
+      return;
+    }
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      final error = body['error'] ?? 'Lỗi server: ${response.statusCode}';
+      throw Exception(error);
+    }
+  }
+
   Future<void> updateProfileFull({
     required String fullName,
     required String location,
@@ -228,6 +287,45 @@ class UserService {
     } else {
       return [];
     }
+  }
+
+  // Lấy tiến độ huy hiệu của user (bao gồm badges đã đạt và chưa đạt)
+  Future<Map<String, dynamic>> getBadgeProgress() async {
+    // 1. Gọi API với authentication token
+    final response = await apiClient.get("/api/user/badges/progress");
+
+    // 2. Xử lý lỗi Token hết hạn
+    if (response.statusCode == 401) {
+      throw UnauthorizedException("Token expired");
+    }
+
+    // 3. Xử lý lỗi Server
+    if (response.statusCode != 200) {
+      throw Exception("Lỗi server: ${response.statusCode}");
+    }
+
+    // 4. Parse dữ liệu thành JSON
+    final body = jsonDecode(utf8.decode(response.bodyBytes));
+
+    // 5. Trỏ đúng vào key 'data' - giờ data là object chứa currentPoints + badges
+    if (body['success'] == true && body['data'] != null) {
+      return body['data'];
+    } else {
+      return {'currentPoints': 0, 'badges': []};
+    }
+  }
+
+  // Helper method để extract badges từ progress response
+  Future<List<BadgeModel>> getBadgeProgressBadges() async {
+    final progressData = await getBadgeProgress();
+    final badgesData = progressData['badges'] as List<dynamic>? ?? [];
+    return badgesData.map((json) => BadgeModel.fromJson(json)).toList();
+  }
+
+  // Helper method để lấy current points
+  Future<int> getCurrentBadgePoints() async {
+    final progressData = await getBadgeProgress();
+    return progressData['currentPoints'] as int? ?? 0;
   }
 }
 

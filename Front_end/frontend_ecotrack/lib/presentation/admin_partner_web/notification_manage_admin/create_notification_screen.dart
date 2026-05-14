@@ -11,10 +11,17 @@ class CreateNotificationScreen extends StatefulWidget {
 }
 
 class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
+  static const List<Map<String, String>> _audienceOptions = [
+    {'value': 'ROLE_USER', 'label': 'Người dùng'},
+    {'value': 'ROLE_ENVIRONMENT', 'label': 'Đội môi trường'},
+    {'value': 'ROLE_ALL', 'label': 'Tất cả vai trò'},
+  ];
+
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
 
   int _sendTimeOption = 0; // 0: Ngay lập tức, 1: Lên lịch
+  String _selectedAudienceRole = 'ROLE_USER';
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
@@ -212,6 +219,7 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
     bool success = await _notificationService.sendBroadcastNotification(
       title: title,
       message: content,
+      audienceRole: _selectedAudienceRole,
       notificationType: 'SYSTEM',
       scheduledTime: scheduleStr,
     );
@@ -279,6 +287,25 @@ class _CreateNotificationScreenState extends State<CreateNotificationScreen> {
             fontWeight: FontWeight.bold,
             color: Color(0xFF5EAC24),
           ),
+        ),
+        const SizedBox(height: 24),
+        const Text("Đối tượng nhận", style: TextStyle(color: Colors.grey)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedAudienceRole,
+          items: _audienceOptions
+              .map(
+                (option) => DropdownMenuItem<String>(
+                  value: option['value'],
+                  child: Text(option['label'] ?? ''),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() => _selectedAudienceRole = value);
+          },
+          decoration: const InputDecoration(border: OutlineInputBorder()),
         ),
         const SizedBox(height: 24),
         const Text("Thời gian gửi", style: TextStyle(color: Colors.grey)),

@@ -22,13 +22,15 @@ public class CampaignController {
     private final UserRepository userRepository;
 
     @GetMapping("/active")
-    public List<CampaignResponse> getActiveCampaigns() {
-        return service.getActiveCampaigns();
+    public List<CampaignResponse> getActiveCampaigns(Authentication authentication) {
+        Long userId = resolveUserId(authentication);
+        return service.getActiveCampaigns(userId);
     }
 
     @GetMapping("/upcoming")
-    public List<CampaignResponse> getUpcomingCampaigns() {
-        return service.getUpcomingCampaigns();
+    public List<CampaignResponse> getUpcomingCampaigns(Authentication authentication) {
+        Long userId = resolveUserId(authentication);
+        return service.getUpcomingCampaigns(userId);
     }
 
     // --- SỬA LẠI: Lấy thông tin user (nếu có) để check trạng thái joined ---
@@ -69,6 +71,17 @@ public class CampaignController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    private Long resolveUserId(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElse(null);
     }
 
 }

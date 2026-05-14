@@ -13,5 +13,7 @@ public class BadgeResponse {
     private String iconUrl;
     private String description;
     private String requirement;
-    private String awardedAt; // ISO string, optional
+    private Integer pointsRequired;
+    private String awardedAt;
+    private Boolean isClaimed = false;
 }

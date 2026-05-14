@@ -21,6 +21,7 @@ public class QuizService {
         private final PointTransactionRepository pointTransactionRepo;
         private final UserRepository userRepo;
         private final UserPointsRepository userPointsRepo;
+        private final BadgeCheckService badgeCheckService;
 
         // =========================================================
         // ⭐ LẤY QUIZ – TRẢ VỀ NGẪU NHIÊN 2 CÂU + ĐÁP ÁN ĐÚNG (correctKey)
@@ -185,6 +186,7 @@ public class QuizService {
                         // Cộng dồn điểm mới vào điểm hiện tại
                         up.setPoints(up.getPoints() + reward);
                         userPointsRepo.save(up);
+                        badgeCheckService.checkAndAwardBadges(userId);
                 }
 
                 return new SubmitResponse(correct, total, passed, correctnessList);

@@ -36,6 +36,8 @@ public class WasteReportService {
     private UserRepository userRepository;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private AdminRealtimeSseService adminRealtimeSseService;
 
     // RestTemplate để gọi API Python
     private final RestTemplate restTemplate = new RestTemplate();
@@ -130,6 +132,8 @@ public class WasteReportService {
         } else {
             processPointsAndNotification(saved, false);
         }
+
+        adminRealtimeSseService.publishReportCreated(saved);
         return saved;
     }
 
@@ -237,7 +241,7 @@ public class WasteReportService {
             } else if (report.getStatus() == WasteReport.Status.PENDING_AI_ANALYSIS) {
                 message = "Hệ thống đang phân tích ảnh, vui lòng kiểm tra lại sau.";
             } else {
-                message = "Báo cáo đang chờ nhân viên kiểm duyệt thủ công.";
+                message = "Đang kiểm duyệt. Chúng mình sẽ xác nhận trong tối đa 24h ";
             }
 
             notificationService.createNotification(
@@ -267,21 +271,21 @@ public class WasteReportService {
             reportRepository.save(report);
 
             // 3. Gửi thông báo cho User sở hữu báo cáo đó
-            String title = "Cập nhật trạng thái báo cáo";
+            String title = "📋 Cập nhật báo cáo";
             String message = "";
 
             switch (newStatus) {
                 case VERIFIED:
-                    message = "Báo cáo '" + report.getTitle() + "' của bạn đã được Admin xác thực.";
+                    message = " Báo cáo \"" + report.getTitle() + "\" xác thực thành công! Cảm ơn bạn 💚";
                     break;
                 case REJECTED:
-                    message = "Báo cáo '" + report.getTitle() + "' đã bị từ chối.";
+                    message = "Báo cáo \"" + report.getTitle() + "\" không được chấp nhận. Bạn có thể thử lại nhé!";
                     break;
                 case CLEANED:
-                    message = "Tuyệt vời! Khu vực bạn báo cáo đã được dọn dẹp sạch sẽ.";
+                    message = "Tuyệt vời! Khu vực \"" + report.getTitle() + "\" đã được dọn sạch. Cảm ơn bạn!";
                     break;
                 default:
-                    message = "Trạng thái báo cáo của bạn đã thay đổi thành " + newStatusStr;
+                    message = "Trạng thái báo cáo đã cập nhật: " + newStatusStr;
             }
 
             notificationService.createNotification(
@@ -294,7 +298,6 @@ public class WasteReportService {
 
             return true;
         } catch (IllegalArgumentException e) {
-            // Lỗi nếu gửi lên status không tồn tại trong Enum
             return false;
         }
     }

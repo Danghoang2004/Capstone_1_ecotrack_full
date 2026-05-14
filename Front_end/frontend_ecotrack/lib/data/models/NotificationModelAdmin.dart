@@ -7,6 +7,7 @@ class NotificationModel {
   final bool isRead;
   final DateTime createdAt;
   final NotificationType type;
+  final String? targetType;
 
   NotificationModel({
     required this.id,
@@ -15,6 +16,7 @@ class NotificationModel {
     required this.isRead,
     required this.createdAt,
     required this.type,
+    required this.targetType,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class NotificationModel {
         (e) => e.name == json['type'],
         orElse: () => NotificationType.SYSTEM,
       ),
+      targetType: json['targetType'] as String?,
     );
   }
 }

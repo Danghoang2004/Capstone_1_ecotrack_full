@@ -99,7 +99,8 @@ CREATE TABLE badges (
     badge_name VARCHAR(100) NOT NULL,
     icon_url VARCHAR(255) NOT NULL,
     description TEXT,
-    requirement TEXT
+    requirement TEXT,
+    points_required INT NOT NULL DEFAULT 0
 );
 
 -- ================================================================
@@ -828,12 +829,13 @@ FROM tmp_seed20 s
 JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
 
 -- 8) badges: 20 dòng
-INSERT INTO badges (badge_name, icon_url, description, requirement)
+INSERT INTO badges (badge_name, icon_url, description, requirement, points_required)
 SELECT
     CONCAT('Huy hieu ', LPAD(n, 2, '0')),
     CONCAT('badges/badge_', LPAD(n, 2, '0'), '.png'),
     CONCAT('Mo ta huy hieu so ', n),
-    CONCAT('Yeu cau dat moc ', n * 50, ' diem')
+    CONCAT('Yeu cau dat moc ', n * 50, ' diem'),
+    n * 50
 FROM tmp_seed20;
 
 -- 9) user_badges: 20 dòng
@@ -1167,3 +1169,17 @@ SELECT
 FROM tmp_seed20 s
 JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'));
 
+-- ================================================================
+-- Badges
+-- ================================================================
+INSERT INTO badges (badge_name, description, icon_url, requirement, points_required) VALUES
+('Eco Starter', 'Bạn đã bắt đầu hành trình bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-starter.png', 'Đạt 50 điểm', 50),
+('Eco Warrior', 'Bạn là một chiến binh bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-warrior.png', 'Đạt 100 điểm', 100),
+('Green Guardian', 'Bạn là người bảo vệ xanh', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/green-guardian.png', 'Đạt 250 điểm', 250),
+('Eco Champion', 'Bạn là nhà vô địch bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-champion.png', 'Đạt 500 điểm', 500),
+('Planet Hero', 'Bạn là anh hùng của hành tinh', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/planet-hero.png', 'Đạt 1000 điểm', 1000),
+('Nature Lover', 'Bạn yêu thiên nhiên và bảo vệ nó', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/nature-lover.png', 'Đạt 150 điểm', 150),
+('Climate Guardian', 'Bạn là người bảo vệ khí hậu toàn cầu', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/climate-guardian.png', 'Đạt 350 điểm', 350),
+('Waste Warrior', 'Bạn chiến đấu chống lại rác thải', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/waste-warrior.png', 'Đạt 200 điểm', 200),
+('Sustainability Master', 'Bạn là bậc thầy của phát triển bền vững', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/sustainability-master.png', 'Đạt 750 điểm', 750),
+('Legendary Protector', 'Bạn là huyền thoại bảo vệ Trái Đất', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/legendary-protector.png', 'Đạt 1500 điểm', 1500);

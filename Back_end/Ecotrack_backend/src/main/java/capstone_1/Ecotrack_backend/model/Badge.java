@@ -23,15 +23,25 @@ public class Badge {
     @Column(name = "requirement", columnDefinition = "TEXT")
     private String requirement;
 
+    @Column(name = "points_required", nullable = false, columnDefinition = "INT DEFAULT 0")
+    private Integer pointsRequired = 0;
+
     public Badge() {
     }
 
-    public Badge(Long badgeId, String badgeName, String description, String iconUrl, String requirement) {
+    public Badge(Long badgeId, String badgeName, String description, String iconUrl, String requirement,
+            Integer pointsRequired) {
         this.badgeId = badgeId;
         this.badgeName = badgeName;
         this.description = description;
         this.iconUrl = iconUrl;
         this.requirement = requirement;
+        this.pointsRequired = pointsRequired;
+    }
+
+    // Backwards-compatible constructor used in some tests/callers that don't pass pointsRequired
+    public Badge(Long badgeId, String badgeName, String description, String iconUrl, String requirement) {
+        this(badgeId, badgeName, description, iconUrl, requirement, 0);
     }
 
     public Long getBadgeId() {
@@ -73,5 +83,12 @@ public class Badge {
     public void setRequirement(String requirement) {
         this.requirement = requirement;
     }
-}
 
+    public Integer getPointsRequired() {
+        return pointsRequired;
+    }
+
+    public void setPointsRequired(Integer pointsRequired) {
+        this.pointsRequired = pointsRequired;
+    }
+}

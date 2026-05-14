@@ -9,12 +9,10 @@ class SessionService {
 
   static Future<void> handleSessionExpired() async {
     if (_isShowingDialog) {
-      return; // Tránh hiển thị nhiều dialog cùng lúc
+      return;
     }
 
     _isShowingDialog = true;
-
-    // Lấy context TRƯỚC KHI logout
     final context = navigatorKey.currentContext;
 
     if (context == null) {
@@ -26,8 +24,6 @@ class SessionService {
       _isShowingDialog = false;
       return;
     }
-
-    // Hiển thị dialog TRƯỚC, sau đó mới logout khi user nhấn OK/X
     try {
       await SessionExpiredDialog.show(
         context,

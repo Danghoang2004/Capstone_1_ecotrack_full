@@ -108,6 +108,7 @@ class NotificationService {
   Future<bool> sendBroadcastNotification({
     required String title,
     required String message,
+    required String audienceRole,
     String notificationType = 'SYSTEM',
     String? scheduledTime,
   }) async {
@@ -116,7 +117,7 @@ class NotificationService {
         "title": title,
         "message": message,
         "notificationType": notificationType,
-        "targetType": "GLOBAL",
+        "targetType": audienceRole,
       };
 
       final res = await apiClient.post(
