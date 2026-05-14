@@ -31,6 +31,9 @@ public class NotificationService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private NotificationBroadcastService notificationBroadcastService;
+
     public List<NotificationResponse> getAllForUser(Long userId) {
         User user = getUser(userId);
         Long lastReadBroadcastId = getLastReadBroadcastId(userId);
@@ -107,7 +110,11 @@ public class NotificationService {
         n.setTargetType(targetType);
         n.setTargetId(targetId);
         n.setSourceScope(NotificationSourceScope.USER_EVENT);
-        return notificationRepository.save(n);
+        Notification saved = notificationRepository.save(n);
+
+        notificationBroadcastService.sendNotificationToUser(userId, NotificationResponse.fromEntity(saved));
+
+        return saved;
     }
 
     private User getUser(Long userId) {

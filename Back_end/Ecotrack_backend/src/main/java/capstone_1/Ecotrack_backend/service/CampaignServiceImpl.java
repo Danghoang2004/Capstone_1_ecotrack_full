@@ -29,6 +29,9 @@ public class CampaignServiceImpl implements CampaignService {
     private CampaignParticipantRepository participantRepo;
 
     @Autowired
+    private CampaignBroadcastService campaignBroadcastService;
+
+    @Autowired
     private CampaignRepository campaignRepository;
 
     @Autowired
@@ -125,6 +128,8 @@ public class CampaignServiceImpl implements CampaignService {
 
         participantRepo.save(participant);
         sendJoinCampaignEmail(user, campaign);
+
+        campaignBroadcastService.broadcastCampaignParticipantUpdate(campaignId, participant);
     }
 
     public List<CampaignResponse> getActiveCampaigns(Long userId) {
@@ -138,7 +143,7 @@ public class CampaignServiceImpl implements CampaignService {
                         daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
                     }
 
-                        boolean joined = userId != null
+                    boolean joined = userId != null
                             && participantRepo.existsById_CampaignIdAndId_UserId(c.getCampaignId(), userId);
 
                     return new CampaignResponse(
@@ -147,20 +152,19 @@ public class CampaignServiceImpl implements CampaignService {
                             c.getDescription(),
                             c.getImageUrl(),
                             c.getStartDate() + " "
-                                + c.getStartTime().format(TIME_FORMATTER)
-                                + " - "
-                                + c.getEndTime().format(TIME_FORMATTER),
+                                    + c.getStartTime().format(TIME_FORMATTER)
+                                    + " - "
+                                    + c.getEndTime().format(TIME_FORMATTER),
                             campaignRepository.countParticipants(c.getCampaignId()),
                             c.getLocationAddress(),
                             c.getRewardPoints(),
                             (int) (daysLeft < 0 ? 0 : daysLeft), // Thêm trường này vào Response
-                            joined
-                    );
+                            joined);
                 })
                 .toList();
     }
 
-                public List<CampaignResponse> getUpcomingCampaigns(Long userId) {
+    public List<CampaignResponse> getUpcomingCampaigns(Long userId) {
         LocalDate today = LocalDate.now();
 
         return campaignRepository.findUpcomingCampaigns().stream()
@@ -171,7 +175,7 @@ public class CampaignServiceImpl implements CampaignService {
                         daysLeft = ChronoUnit.DAYS.between(today, c.getEndDate());
                     }
 
-                        boolean joined = userId != null
+                    boolean joined = userId != null
                             && participantRepo.existsById_CampaignIdAndId_UserId(c.getCampaignId(), userId);
 
                     return new CampaignResponse(
@@ -180,15 +184,14 @@ public class CampaignServiceImpl implements CampaignService {
                             c.getDescription(),
                             c.getImageUrl(),
                             c.getStartDate() + " "
-                                + c.getStartTime().format(TIME_FORMATTER)
-                                + " - "
-                                + c.getEndTime().format(TIME_FORMATTER),
+                                    + c.getStartTime().format(TIME_FORMATTER)
+                                    + " - "
+                                    + c.getEndTime().format(TIME_FORMATTER),
                             campaignRepository.countParticipants(c.getCampaignId()),
                             c.getLocationAddress(),
                             c.getRewardPoints(),
                             (int) (daysLeft < 0 ? 0 : daysLeft), // Gán giá trị vào DTO
-                            joined
-                    );
+                            joined);
                 })
                 .toList();
     }
