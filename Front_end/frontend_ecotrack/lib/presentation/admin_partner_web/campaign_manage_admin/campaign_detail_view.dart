@@ -35,6 +35,10 @@ class CampaignDetailView extends StatelessWidget {
               _item("Mô tả", c.description ?? "Không có"),
               _item("Địa điểm", c.location),
               _item("Thời gian", "${c.startDate} → ${c.endDate}"),
+              _item(
+                "Số người tham gia",
+                "${c.currentParticipants}/${c.maxParticipants}",
+              ),
               _item("Số người tối đa", c.maxParticipants.toString()),
               _item("Điểm thưởng", "${c.rewardPoints} điểm"),
 

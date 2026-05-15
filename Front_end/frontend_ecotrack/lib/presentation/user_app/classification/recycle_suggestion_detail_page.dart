@@ -341,7 +341,7 @@ class _RecycleSuggestionDetailPageState
                 step.instructionImageUrl!,
                 height: 168,
                 width: double.infinity,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Container(
                   height: 168,
                   color: const Color(0xFFE2E8F0),

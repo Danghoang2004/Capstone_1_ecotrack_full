@@ -133,6 +133,22 @@ class _AdminSidebarState extends State<AdminSidebar> {
                   onTap: widget.onNavigate,
                 ),
                 _MenuItem(
+                  icon: Icons.recycling_outlined,
+                  label: 'Quản Lý Tái Chế',
+                  keyName: 'recycle',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
+                _MenuItem(
+                  icon: Icons.emoji_events_outlined,
+                  label: 'Quản Lý Huy Hiệu',
+                  keyName: 'badges',
+                  selectedMenu: widget.selectedMenu,
+                  isCollapsed: isCollapsed,
+                  onTap: widget.onNavigate,
+                ),
+                _MenuItem(
                   icon: Icons.notifications_active_outlined,
                   label: 'Quản Lý Thông Báo',
                   keyName: 'notifications',

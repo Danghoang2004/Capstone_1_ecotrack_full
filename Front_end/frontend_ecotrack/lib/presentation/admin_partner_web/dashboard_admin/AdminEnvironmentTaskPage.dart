@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ class AdminEnvironmentTaskPage extends StatefulWidget {
 
 class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
   static const int _taskRowsPerPage = 5;
+  static const Duration _refreshInterval = Duration(seconds: 40);
 
   final AdminEnvironmentTaskService _service = AdminEnvironmentTaskService();
   final ReportServiceAdmin _reportService = ReportServiceAdmin();
@@ -44,22 +46,36 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
   int _taskCurrentPage = 0;
 
   bool _isLoading = true;
+  bool _isRefreshing = false;
+  Timer? _refreshTimer;
+  DateTime? _lastSyncedAt;
   final Set<int> _expandedTaskIds = <int>{};
 
   @override
   void initState() {
     super.initState();
     _loadTasks();
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
     _noteCtrl.dispose();
     _taskTableHorizontalController.dispose();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadTasks() async {
+  void _startAutoRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(_refreshInterval, (_) {
+      _loadTasks(silent: true);
+    });
+  }
+
+  Future<void> _loadTasks({bool silent = false}) async {
+    if (!mounted || _isRefreshing) return;
+    setState(() => _isRefreshing = true);
     try {
       final results = await Future.wait([
         _service.fetchAllTasks(),
@@ -106,13 +122,17 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
         }
 
         _isLoading = false;
+        _lastSyncedAt = DateTime.now();
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      if (mounted && !silent) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRefreshing = false);
     }
   }
 

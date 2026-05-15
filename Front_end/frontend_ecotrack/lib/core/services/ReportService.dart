@@ -83,6 +83,17 @@ class ReportServiceAdmin {
     return [];
   }
 
+  Future<List<Report>> fetchReportsByUser(int userId) async {
+    final response = await apiClient.get("/api/admin/reports/user/$userId");
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = apiClient.decodeUtf8Json(response);
+      return data.map((json) => Report.fromJson(json)).toList();
+    }
+
+    return [];
+  }
+
   // Get report theo id
   Future<Map<String, dynamic>?> getReportById(int id) async {
     final response = await apiClient.get("/api/reports/$id");

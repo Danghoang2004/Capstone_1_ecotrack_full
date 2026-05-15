@@ -39,10 +39,20 @@ class _ListReportPageState extends State<ListReportPage> {
     switch (status) {
       case 'PENDING':
         return const Color(0xFFFFB74D);
+      case 'PENDING_AI_ANALYSIS':
+        return const Color(0xFFFFB74D);
       case 'VERIFIED':
         return const Color(0xFF42A5F5);
+      case 'AI_VERIFIED':
+        return const Color(0xFF1E88E5);
+      case 'NEED_REVIEW':
+        return const Color(0xFFFB8C00);
+      case 'REQUEST_REUPLOAD':
+        return const Color(0xFFF4511E);
       case 'CLEANED':
         return const Color(0xFF66BB6A);
+      case 'APPROVED':
+        return const Color(0xFF2E7D32);
       case 'REJECTED':
         return const Color(0xFFEF5350);
       default:
@@ -54,10 +64,20 @@ class _ListReportPageState extends State<ListReportPage> {
     switch (status) {
       case 'PENDING':
         return 'Đang xử lý';
+      case 'PENDING_AI_ANALYSIS':
+        return 'Đang phân tích AI';
       case 'VERIFIED':
         return 'Đã xác thực';
+      case 'AI_VERIFIED':
+        return 'AI đã xác thực';
+      case 'NEED_REVIEW':
+        return 'Cần kiểm duyệt';
+      case 'REQUEST_REUPLOAD':
+        return 'Cần chụp lại';
       case 'CLEANED':
         return 'Đã dọn dẹp';
+      case 'APPROVED':
+        return 'Đã duyệt';
       case 'REJECTED':
         return 'Từ chối';
       default:

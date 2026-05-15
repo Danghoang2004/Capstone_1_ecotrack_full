@@ -1,8 +1,11 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.response.BadgeResponse;
+import capstone_1.Ecotrack_backend.dto.request.BadgeRequest;
+import capstone_1.Ecotrack_backend.dto.request.AwardBadgeRequest;
 import capstone_1.Ecotrack_backend.model.Badge;
 import capstone_1.Ecotrack_backend.model.UserBadge;
+import capstone_1.Ecotrack_backend.model.UserBadgeId;
 import capstone_1.Ecotrack_backend.model.UserPoints;
 import capstone_1.Ecotrack_backend.repository.BadgeRepository;
 import capstone_1.Ecotrack_backend.repository.UserBadgeRepository;
@@ -12,6 +15,7 @@ import capstone_1.Ecotrack_backend.dto.response.BadgeProgressResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -112,5 +116,94 @@ public class BadgeService {
         response.setAwardedAt(userBadge.getAwardedAt() != null ? userBadge.getAwardedAt().toString() : null);
         response.setIsClaimed(true);
         return response;
+    }
+
+    // ========== ADMIN BADGE MANAGEMENT METHODS ==========
+
+    public Badge createBadge(BadgeRequest request) {
+        if (request.getBadgeName() == null || request.getBadgeName().isBlank()) {
+            throw new RuntimeException("Tên huy hiệu không được để trống");
+        }
+
+        Badge badge = new Badge();
+        badge.setBadgeName(request.getBadgeName());
+        badge.setDescription(request.getDescription());
+        badge.setIconUrl(request.getIconUrl());
+        badge.setRequirement(request.getRequirement());
+        badge.setPointsRequired(request.getPointsRequired() != null ? request.getPointsRequired() : 0);
+
+        return badgeRepository.save(badge);
+    }
+
+    public Badge updateBadge(Long badgeId, BadgeRequest request) {
+        Badge badge = badgeRepository.findById(badgeId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy huy hiệu với ID: " + badgeId));
+
+        if (request.getBadgeName() != null && !request.getBadgeName().isBlank()) {
+            badge.setBadgeName(request.getBadgeName());
+        }
+        if (request.getDescription() != null) {
+            badge.setDescription(request.getDescription());
+        }
+        if (request.getIconUrl() != null) {
+            badge.setIconUrl(request.getIconUrl());
+        }
+        if (request.getRequirement() != null) {
+            badge.setRequirement(request.getRequirement());
+        }
+        if (request.getPointsRequired() != null) {
+            badge.setPointsRequired(request.getPointsRequired());
+        }
+
+        return badgeRepository.save(badge);
+    }
+
+    public void deleteBadge(Long badgeId) {
+        Badge badge = badgeRepository.findById(badgeId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy huy hiệu với ID: " + badgeId));
+
+        // Xóa tất cả UserBadge liên quan
+        userBadgeRepository.deleteByBadgeId(badgeId);
+
+        // Xóa badge
+        badgeRepository.delete(badge);
+    }
+
+    public UserBadge awardBadgeToUser(AwardBadgeRequest request) {
+        if (request.getUserId() == null || request.getBadgeId() == null) {
+            throw new RuntimeException("userId và badgeId không được để trống");
+        }
+
+        // Kiểm tra user tồn tại
+        if (!userRepository.existsById(request.getUserId())) {
+            throw new RuntimeException("Không tìm thấy người dùng với ID: " + request.getUserId());
+        }
+
+        // Kiểm tra badge tồn tại
+        Badge badge = badgeRepository.findById(request.getBadgeId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy huy hiệu với ID: " + request.getBadgeId()));
+
+        // Kiểm tra user đã có badge này chưa
+        UserBadgeId id = new UserBadgeId(request.getUserId(), request.getBadgeId());
+        if (userBadgeRepository.existsById(id)) {
+            throw new RuntimeException("Người dùng đã có huy hiệu này rồi");
+        }
+
+        // Tạo UserBadge mới
+        UserBadge userBadge = new UserBadge();
+        userBadge.setId(id);
+        userBadge.setUser(userRepository.getReferenceById(request.getUserId()));
+        userBadge.setBadge(badge);
+        userBadge.setAwardedAt(LocalDateTime.now());
+
+        return userBadgeRepository.save(userBadge);
+    }
+
+    public void removeBadgeFromUser(Long userId, Long badgeId) {
+        UserBadgeId id = new UserBadgeId(userId, badgeId);
+        if (!userBadgeRepository.existsById(id)) {
+            throw new RuntimeException("Người dùng không có huy hiệu này");
+        }
+        userBadgeRepository.deleteById(id);
     }
 }

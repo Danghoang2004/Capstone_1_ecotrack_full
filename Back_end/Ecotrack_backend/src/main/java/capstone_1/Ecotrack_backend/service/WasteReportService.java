@@ -1,6 +1,7 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.response.AiDetectionResponse; // Đảm bảo import đúng DTO của bạn
+import capstone_1.Ecotrack_backend.dto.response.AdminGroupedWasteReportResponse;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,10 +17,19 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class WasteReportService {
@@ -34,6 +44,8 @@ public class WasteReportService {
     private UserRepository userRepository;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private AdminRealtimeSseService adminRealtimeSseService;
 
     // RestTemplate để gọi API Python
     private final RestTemplate restTemplate = new RestTemplate();
@@ -83,23 +95,42 @@ public class WasteReportService {
             AiDetectionResponse.AiData data = aiResult.getData();
 
             reportData.setAiVerified(data.isWaste());
-            reportData.setAiConfidence(data.getOverallConfidence());
+            reportData.setAiConfidence(resolveFinalScore(data));
             reportData.setAiAnalyzedImageUrl(data.getOutputImage());
+            reportData.setAiWasteType(data.getWasteType());
+            reportData.setAiFinalWasteScore(data.getFinalWasteScore());
+            reportData.setAiWasteContextScore(data.getWasteContextScore());
+            reportData.setAiWasteAreaRatio(data.getWasteAreaRatio());
+            reportData.setAiObjectCount(data.getObjectCount());
+            reportData.setAiSeverityScore(data.getSeverityScore());
+            reportData.setAiPollutionLevel(data.getPollutionLevel());
+            reportData.setAiSeverityDescription(data.getSeverityDescription());
+            reportData.setAiRecommendation(data.getRecommendation());
+            reportData.setAiDecision(data.getAiDecision());
+            reportData.setAiNeedManualReview(Boolean.TRUE.equals(data.getNeedManualReview()));
+            reportData.setAiErrorMessage(data.getErrorMessage());
+            reportData.setAiFalsePositiveReason(data.getFalsePosReason());
             try {
-                reportData.setAiAnalysisJson(objectMapper.writeValueAsString(data.getTypePercentage()));
+                reportData.setAiAnalysisJson(buildAiAnalysisJson(data));
             } catch (Exception e) {
                 reportData.setAiAnalysisJson("{}");
             }
 
-            if (data.isWaste() && data.getOverallConfidence() >= AI_CONFIDENCE_THRESHOLD) {
+            if ("AI_VERIFIED".equalsIgnoreCase(data.getReportStatus())) {
                 isEligibleForPoints = true;
-                reportData.setStatus(WasteReport.Status.VERIFIED);
+                reportData.setStatus(WasteReport.Status.AI_VERIFIED);
+            } else if ("NEED_REVIEW".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.NEED_REVIEW);
+            } else if ("REQUEST_REUPLOAD".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.REQUEST_REUPLOAD);
             } else {
                 isEligibleForPoints = false;
-                reportData.setStatus(WasteReport.Status.REJECTED);
+                reportData.setStatus(WasteReport.Status.NEED_REVIEW);
             }
         } else {
-            reportData.setStatus(WasteReport.Status.PENDING);
+            reportData.setStatus(WasteReport.Status.PENDING_AI_ANALYSIS);
             isEligibleForPoints = false;
         }
         WasteReport saved = reportRepository.save(reportData);
@@ -109,6 +140,8 @@ public class WasteReportService {
         } else {
             processPointsAndNotification(saved, false);
         }
+
+        adminRealtimeSseService.publishReportCreated(saved);
         return saved;
     }
 
@@ -148,6 +181,46 @@ public class WasteReportService {
         }
     }
 
+    private Double resolveFinalScore(AiDetectionResponse.AiData data) {
+        if (data.getFinalWasteScore() != null) {
+            return data.getFinalWasteScore();
+        }
+        if (data.getObjectConfidenceScore() != null) {
+            return data.getObjectConfidenceScore();
+        }
+        return data.getOverallConfidence();
+    }
+
+    private String buildAiAnalysisJson(AiDetectionResponse.AiData data) throws Exception {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("is_waste", data.isWaste());
+        payload.put("detected_items", data.getDetectedItems());
+        payload.put("waste_type", data.getWasteType());
+        payload.put("object_confidence_score", data.getObjectConfidenceScore());
+        payload.put("waste_context_score", data.getWasteContextScore());
+        payload.put("final_waste_score", data.getFinalWasteScore());
+        payload.put("waste_area_ratio", data.getWasteAreaRatio());
+        payload.put("object_count", data.getObjectCount());
+        payload.put("severity_score", data.getSeverityScore());
+        payload.put("pollution_level", data.getPollutionLevel());
+        payload.put("severity_description", data.getSeverityDescription());
+        payload.put("recommendation", data.getRecommendation());
+        payload.put("ai_decision", data.getAiDecision());
+        payload.put("report_status", data.getReportStatus());
+        payload.put("need_manual_review", data.getNeedManualReview());
+        payload.put("error_message", data.getErrorMessage());
+        payload.put("image_quality_score", data.getImageQualityScore());
+        payload.put("type_percentage", data.getTypePercentage());
+        payload.put("output_image", data.getOutputImage());
+        payload.put("false_positive_reason", data.getFalsePosReason());
+        payload.put("model_a_has_general_object", data.getModelAHasGeneralObject());
+        payload.put("model_a_detected_items", data.getModelADetectedItems());
+        payload.put("model_a_reason", data.getModelAReason());
+        payload.put("model_b_detected_items", data.getModelBDetectedItems());
+        payload.put("final_waste_decision", data.getFinalWasteDecision());
+        return objectMapper.writeValueAsString(payload);
+    }
+
     private void processPointsAndNotification(WasteReport report, boolean isSuccess) {
         if (isSuccess) {
             User user = userRepository.findById(report.getUserId()).orElseThrow();
@@ -165,19 +238,22 @@ public class WasteReportService {
             userPointsRepository.save(userPoints);
 
             notificationService.createNotification(
-                    report.getUserId(), NotificationType.CAMPAIGN, " +10 điểm đạt được!",
-                    "Awesome! Báo cáo của bạn được xác thực. Bạn đang giúp làm sạch môi trường ", "REPORT",
-                    report.getReportId());
+                    report.getUserId(), NotificationType.CAMPAIGN, "Cộng 10 điểm!",
+                    "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId());
         } else {
             String message = "";
-            if (report.getStatus() == WasteReport.Status.REJECTED) {
-                message = "Ảnh chưa rõ ràng hoặc không phát hiện rác. Hãy thử lại với ảnh sáng hơn nhé ";
+            if (report.getStatus() == WasteReport.Status.REQUEST_REUPLOAD) {
+                message = "Ảnh chưa đủ rõ hoặc chưa đủ bối cảnh rác. Vui lòng chụp lại ảnh rõ hơn.";
+            } else if (report.getStatus() == WasteReport.Status.NEED_REVIEW) {
+                message = "AI phát hiện vật thể có thể là rác nhưng cần admin kiểm duyệt thêm.";
+            } else if (report.getStatus() == WasteReport.Status.PENDING_AI_ANALYSIS) {
+                message = "Hệ thống đang phân tích ảnh, vui lòng kiểm tra lại sau.";
             } else {
                 message = "Đang kiểm duyệt. Chúng mình sẽ xác nhận trong tối đa 24h ";
             }
 
             notificationService.createNotification(
-                    report.getUserId(), NotificationType.SYSTEM, " Đang xử lý",
+                    report.getUserId(), NotificationType.SYSTEM, "Báo cáo chưa được duyệt",
                     message, "REPORT", report.getReportId());
         }
     }
@@ -188,6 +264,99 @@ public class WasteReportService {
 
     public List<WasteReport> getAllReportsForAdmin() {
         return reportRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public List<AdminGroupedWasteReportResponse> getAllGroupedReportsForAdmin() {
+        List<WasteReport> reports = reportRepository.findAllByOrderByCreatedAtDesc();
+
+        Map<String, List<WasteReport>> reportsByLocation = new LinkedHashMap<>();
+        for (WasteReport report : reports) {
+            String key = buildLocationKey(report.getGpsLat(), report.getGpsLong(), report.getReportId());
+            reportsByLocation.computeIfAbsent(key, ignored -> new java.util.ArrayList<>()).add(report);
+        }
+
+        Set<Long> allUserIds = new HashSet<>();
+        for (WasteReport report : reports) {
+            if (report.getUserId() != null) {
+                allUserIds.add(report.getUserId());
+            }
+        }
+
+        Map<Long, User> userById = userRepository.findAllById(allUserIds)
+                .stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        return reportsByLocation.values().stream()
+                .map(group -> toGroupedResponse(group, userById))
+                .sorted(Comparator.comparing(AdminGroupedWasteReportResponse::getCreatedAt).reversed())
+                .toList();
+    }
+
+    private AdminGroupedWasteReportResponse toGroupedResponse(
+            List<WasteReport> group,
+            Map<Long, User> userById) {
+        List<WasteReport> sortedGroup = group.stream()
+                .sorted(Comparator.comparing(WasteReport::getCreatedAt).reversed())
+                .toList();
+
+        WasteReport latest = sortedGroup.get(0);
+
+        AdminGroupedWasteReportResponse response = new AdminGroupedWasteReportResponse();
+        response.setReportId(latest.getReportId());
+        response.setTitle(latest.getTitle());
+        response.setDescription(latest.getDescription());
+        response.setImageUrl(latest.getImageUrl());
+        response.setGpsLat(latest.getGpsLat());
+        response.setGpsLong(latest.getGpsLong());
+        response.setStatus(latest.getStatus() != null ? latest.getStatus().name() : "UNKNOWN");
+        response.setCreatedAt(latest.getCreatedAt());
+        response.setCategory(latest.getCategory());
+        response.setAiConfidence(latest.getAiConfidence());
+        response.setReportCount(sortedGroup.size());
+
+        Map<Long, AdminGroupedWasteReportResponse.ReporterInfo> reportersByUser = new HashMap<>();
+        for (WasteReport report : sortedGroup) {
+            Long userId = report.getUserId();
+            if (userId == null) {
+                continue;
+            }
+
+            AdminGroupedWasteReportResponse.ReporterInfo info = reportersByUser.get(userId);
+            if (info == null) {
+                info = new AdminGroupedWasteReportResponse.ReporterInfo();
+                info.setUserId(userId);
+
+                User user = userById.get(userId);
+                info.setUsername(user != null ? user.getUsername() : "User #" + userId);
+                info.setEmail(user != null ? user.getEmail() : "");
+                info.setReportCount(0);
+                info.setLatestReportedAt(report.getCreatedAt());
+                reportersByUser.put(userId, info);
+            }
+
+            info.setReportCount(info.getReportCount() + 1);
+            if (info.getLatestReportedAt() == null ||
+                    (report.getCreatedAt() != null && report.getCreatedAt().isAfter(info.getLatestReportedAt()))) {
+                info.setLatestReportedAt(report.getCreatedAt());
+            }
+        }
+
+        List<AdminGroupedWasteReportResponse.ReporterInfo> reporters = reportersByUser.values().stream()
+                .sorted(Comparator.comparing(AdminGroupedWasteReportResponse.ReporterInfo::getLatestReportedAt).reversed())
+                .toList();
+        response.setReporters(reporters);
+        return response;
+    }
+
+    private String buildLocationKey(BigDecimal lat, BigDecimal lng, Long fallbackId) {
+        if (lat == null || lng == null) {
+            return "NO_GPS_" + fallbackId;
+        }
+
+        // Nhóm theo GPS gần đúng 5 chữ số thập phân (~1m) để gom các báo cáo cùng điểm.
+        BigDecimal normalizedLat = lat.setScale(5, RoundingMode.HALF_UP);
+        BigDecimal normalizedLng = lng.setScale(5, RoundingMode.HALF_UP);
+        return normalizedLat.toPlainString() + "_" + normalizedLng.toPlainString();
     }
 
     public boolean updateReportStatus(Long reportId, String newStatusStr) {

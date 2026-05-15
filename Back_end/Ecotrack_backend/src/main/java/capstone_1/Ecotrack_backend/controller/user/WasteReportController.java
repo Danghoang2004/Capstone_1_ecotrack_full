@@ -16,6 +16,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @RestController
 @RequestMapping("/api/user/reports")
 @CrossOrigin
@@ -23,6 +26,7 @@ public class WasteReportController {
 
     private final WasteReportService reportService;
     private final CloudinaryService cloudinaryService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public WasteReportController(WasteReportService reportService, CloudinaryService cloudinaryService) {
         this.reportService = reportService;
@@ -64,15 +68,15 @@ public class WasteReportController {
             WasteReport saved = reportService.saveReport(report, image);
 
             Map<String, Object> response = new HashMap<>();
-            response.put("success", saved.getStatus() == WasteReport.Status.VERIFIED);
+            response.put("success", true);
+            response.put("report_id", saved.getReportId());
+            response.put("report_status", saved.getStatus().name());
             response.put("status", saved.getStatus().name());
-            response.put("points", saved.getStatus() == WasteReport.Status.VERIFIED ? 10 : 0);
-            response.put("message",
-                    saved.getStatus() == WasteReport.Status.VERIFIED
-                            ? "Báo cáo của bạn đã được AI xác thực thành công."
-                            : saved.getStatus() == WasteReport.Status.REJECTED
-                                    ? "AI không phát hiện rác hoặc ảnh không rõ."
-                                    : "Báo cáo đang chờ kiểm duyệt.");
+            response.put("points", saved.getStatus() == WasteReport.Status.AI_VERIFIED ? 10 : 0);
+            response.put("message", buildStatusMessage(saved.getStatus()));
+
+            Map<String, Object> aiResult = buildAiResult(saved);
+            response.put("ai_result", aiResult);
 
             response.put("time", saved.getCreatedAt());
             response.put("transactionCode", "TXN-" + saved.getReportId());
@@ -91,6 +95,49 @@ public class WasteReportController {
             errorResponse.put("message", "Lỗi hệ thống: " + ex.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
+    }
+
+    private String buildStatusMessage(WasteReport.Status status) {
+        return switch (status) {
+            case AI_VERIFIED, VERIFIED -> "Báo cáo của bạn đã được AI xác thực thành công.";
+            case NEED_REVIEW -> "AI phát hiện vật thể có thể là rác nhưng cần admin kiểm duyệt thêm.";
+            case REQUEST_REUPLOAD -> "Ảnh chưa đủ rõ hoặc chưa đủ bối cảnh rác. Vui lòng chụp lại ảnh rõ hơn.";
+            case PENDING_AI_ANALYSIS, PENDING -> "Báo cáo đang được AI phân tích.";
+            case REJECTED -> "AI không phát hiện rác hoặc ảnh không rõ.";
+            case CLEANED, APPROVED -> "Báo cáo đã được xử lý.";
+        };
+    }
+
+    private Map<String, Object> buildAiResult(WasteReport report) {
+        Map<String, Object> aiResult = new HashMap<>();
+        aiResult.put("is_waste_detected", Boolean.TRUE.equals(report.getAiVerified()));
+        aiResult.put("waste_type", report.getAiWasteType());
+        aiResult.put("object_confidence_score", report.getAiConfidence());
+        aiResult.put("waste_context_score", report.getAiWasteContextScore());
+        aiResult.put("final_waste_score", report.getAiFinalWasteScore());
+        aiResult.put("waste_area_ratio", report.getAiWasteAreaRatio());
+        aiResult.put("object_count", report.getAiObjectCount());
+        aiResult.put("severity_score", report.getAiSeverityScore());
+        aiResult.put("pollution_level", report.getAiPollutionLevel());
+        aiResult.put("severity_description", report.getAiSeverityDescription());
+        aiResult.put("recommendation", report.getAiRecommendation());
+        aiResult.put("ai_decision", report.getAiDecision());
+        aiResult.put("need_manual_review", report.getAiNeedManualReview());
+        aiResult.put("error_message", report.getAiErrorMessage());
+        aiResult.put("output_image", report.getAiAnalyzedImageUrl());
+
+        try {
+            if (report.getAiAnalysisJson() != null && !report.getAiAnalysisJson().isBlank()) {
+                Map<String, Object> stored = objectMapper.readValue(
+                        report.getAiAnalysisJson(),
+                        new TypeReference<Map<String, Object>>() {
+                        });
+                aiResult.putAll(stored);
+            }
+        } catch (Exception ignored) {
+        }
+
+        return aiResult;
     }
 
     @GetMapping("")

@@ -477,6 +477,8 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
               .fold<int>(0, (sum, entry) => sum + entry.value)
         : 0;
     final topEntry = groupedEntries.isNotEmpty ? groupedEntries.first : null;
+    final shouldShowGroupedDetails =
+        result.trashDetected && groupedEntries.isNotEmpty;
 
     return Container(
       key: const ValueKey('classification-result-card'),
@@ -516,7 +518,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
             style: TextStyle(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          if (groupedEntries.isEmpty)
+          if (!shouldShowGroupedDetails)
             const Text('Không có dữ liệu loại rác để tổng hợp.')
           else
             ...displayedEntries.map(
@@ -535,7 +537,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        entry.key,
+                        _getWasteTypeVietnamese(entry.key),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -571,7 +573,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Text(
-                'Loại chiếm ưu thế: ${topEntry.key} (${topEntry.value} vật - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
+                'Loại chiếm ưu thế: ${_getWasteTypeVietnamese(topEntry.key)} (${topEntry.value} vật - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
                 style: const TextStyle(
                   color: Color(0xFF166534),
                   fontWeight: FontWeight.w600,
@@ -665,6 +667,37 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
     if (total <= 0) return '0%';
     final percentage = (value / total) * 100;
     return '${percentage.toStringAsFixed(1)}%';
+  }
+
+  String _getWasteTypeVietnamese(String rawName) {
+    switch (rawName.trim().toLowerCase()) {
+      case 'bi_rac':
+        return 'Bì rác';
+      case 'dong_rac':
+        return 'Đống rác';
+      case 'tuilong_rac':
+      case 'tui_long_rac':
+        return 'Túi nilon rác';
+      case 'rac_thai_nhua':
+        return 'Rác thải nhựa';
+      case 'rac_thai_giay':
+        return 'Rác thải giấy';
+      case 'rac_thai_kim_loai':
+        return 'Rác thải kim loại';
+      case 'rac_thai_thuy_tinh':
+        return 'Rác thải thủy tinh';
+      case 'rac_thai_huu_co':
+        return 'Rác thải hữu cơ';
+      case 'rac_thai_vo_co':
+        return 'Rác thải vô cơ';
+      default:
+        final normalized = rawName.trim();
+        if (normalized.isEmpty) return '';
+        return normalized
+            .replaceAll('_', ' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
+    }
   }
 
   Widget _infoRow(String label, String value) {
