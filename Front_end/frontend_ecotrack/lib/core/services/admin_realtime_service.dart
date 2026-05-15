@@ -8,11 +8,17 @@ import 'package:http/http.dart' as http;
 class AdminRealtimeEvent {
   final String eventType;
   final int? reportId;
+  final int? campaignId;
+  final int? participants;
+  final int? maxParticipants;
   final String? status;
 
   const AdminRealtimeEvent({
     required this.eventType,
     this.reportId,
+    this.campaignId,
+    this.participants,
+    this.maxParticipants,
     this.status,
   });
 
@@ -22,12 +28,25 @@ class AdminRealtimeEvent {
       reportId: map['reportId'] is int
           ? map['reportId'] as int
           : int.tryParse(map['reportId']?.toString() ?? ''),
+      campaignId: map['campaignId'] is int
+          ? map['campaignId'] as int
+          : int.tryParse(map['campaignId']?.toString() ?? ''),
+      participants: map['participants'] is int
+          ? map['participants'] as int
+          : int.tryParse(map['participants']?.toString() ?? ''),
+      maxParticipants: map['maxParticipants'] is int
+          ? map['maxParticipants'] as int
+          : int.tryParse(map['maxParticipants']?.toString() ?? ''),
       status: map['status']?.toString(),
     );
   }
 
   bool get isReportEvent =>
       eventType == 'REPORT_CREATED' || eventType == 'REPORT_STATUS_UPDATED';
+
+  bool get isCampaignEvent =>
+      eventType == 'CAMPAIGN_PARTICIPANT_UPDATED' ||
+      eventType == 'CAMPAIGN_UPDATED';
 }
 
 class AdminRealtimeService {
@@ -143,7 +162,9 @@ class AdminRealtimeService {
       }
 
       final event = AdminRealtimeEvent.fromMap(decoded);
-      if (event.eventType.isEmpty && eventName != null && eventName.isNotEmpty) {
+      if (event.eventType.isEmpty &&
+          eventName != null &&
+          eventName.isNotEmpty) {
         final fallback = AdminRealtimeEvent(
           eventType: eventName,
           reportId: event.reportId,
