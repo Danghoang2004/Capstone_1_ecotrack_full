@@ -1,6 +1,7 @@
 package capstone_1.Ecotrack_backend.controller.user;
 
 import capstone_1.Ecotrack_backend.dto.response.HotspotClusterResponse;
+import capstone_1.Ecotrack_backend.dto.response.HotspotNearbyResponse;
 import capstone_1.Ecotrack_backend.dto.response.HotspotPredictResponse;
 import capstone_1.Ecotrack_backend.service.HotspotClusteringService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -70,6 +71,24 @@ public class HotspotController {
 
         if (min_samples != null && min_samples < 1) {
             throw new IllegalArgumentException("min_samples phải >= 1");
+        }
+    }
+
+    private void validatePoint(Double lat, Double lng) {
+        if (lat == null || lng == null) {
+            throw new IllegalArgumentException("lat và lng không được rỗng");
+        }
+        if (lat < -90 || lat > 90) {
+            throw new IllegalArgumentException("lat phải trong khoảng [-90, 90]");
+        }
+        if (lng < -180 || lng > 180) {
+            throw new IllegalArgumentException("lng phải trong khoảng [-180, 180]");
+        }
+    }
+
+    private void validateNearbyParams(Double alertRadiusMeters) {
+        if (alertRadiusMeters != null && (alertRadiusMeters < 50 || alertRadiusMeters > 2000)) {
+            throw new IllegalArgumentException("alertRadiusMeters phải trong khoảng [50, 2000]");
         }
     }
 
@@ -206,6 +225,45 @@ public class HotspotController {
                     "INVALID_DATE_FORMAT",
                     "Định dạng ngày không hợp lệ. Sử dụng ISO-8601: yyyy-MM-ddTHH:mm:ss. Lỗi: " + e.getMessage(),
                     HttpStatus.BAD_REQUEST.value()));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErrorResponse(
+                    "INVALID_PARAMETERS",
+                    "Tham số không hợp lệ: " + e.getMessage(),
+                    HttpStatus.UNPROCESSABLE_ENTITY.value()));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponse(
+                    "INTERNAL_ERROR",
+                    "Lỗi server: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        }
+    }
+
+    @GetMapping("/nearby")
+    @Operation(summary = "Cảnh báo khi user ở gần điểm nóng rác")
+    public ResponseEntity<?> getNearbyHotspots(
+            @Parameter(description = "Vĩ độ hiện tại của user") @RequestParam Double lat,
+
+            @Parameter(description = "Kinh độ hiện tại của user") @RequestParam Double lng,
+
+            @Parameter(description = "Bán kính cảnh báo quanh user, đơn vị mét") @RequestParam(required = false) Double alertRadiusMeters,
+
+            @Parameter(description = "DBSCAN eps (km)") @RequestParam(required = false) Double eps_km,
+
+            @Parameter(description = "DBSCAN min samples") @RequestParam(required = false) Integer min_samples) {
+        try {
+            validatePoint(lat, lng);
+            validateNearbyParams(alertRadiusMeters);
+            validateClusteringParams(eps_km, min_samples);
+
+            HotspotNearbyResponse response = clusteringService.findNearbyHotspots(
+                    lat,
+                    lng,
+                    alertRadiusMeters,
+                    eps_km,
+                    min_samples);
+            return ResponseEntity.ok(response);
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(new ErrorResponse(

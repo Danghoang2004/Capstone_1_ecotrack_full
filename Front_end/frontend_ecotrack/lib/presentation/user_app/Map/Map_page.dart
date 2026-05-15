@@ -14,6 +14,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:frontend_ecotrack/presentation/user_app/Map/goong_map_bridge.dart';
+import 'package:frontend_ecotrack/core/services/hotspot_alert_notification_service.dart';
 
 class MapPage extends StatefulWidget {
   final bool hideAppBar;
@@ -162,6 +163,14 @@ class _MapPageState extends State<MapPage> {
   Set<Polyline> _polylines = {};
   Set<Circle> _circles = {};
 
+  // Hotspot alert tracking
+  NearbyHotspot? _activeHotspotAlert;
+  Timer? _nearbyHotspotCheckTimer;
+  DateTime? _lastNearbyHotspotFetchAt;
+  Set<int> _notifiedHotspots = {};
+  bool _isCheckingNearbyHotspot = false;
+  Set<int> _dismissedHotspotClusterIds = {};
+
   void _startReportsPolling() {
     _timer?.cancel();
     _timer = Timer.periodic(
@@ -186,12 +195,18 @@ class _MapPageState extends State<MapPage> {
     }
     _fetchReports();
     _startReportsPolling();
+    unawaited(
+      HotspotAlertNotificationService.instance.requestPermissionIfNeeded(),
+    );
     _startLiveTracking();
+    // Hotspot checking will start automatically once location is available
+    // (see _startLiveTracking)
   }
 
   @override
   void deactivate() {
     _stopReportsPolling();
+    _stopNearbyHotspotChecking();
     super.deactivate();
   }
 
@@ -199,6 +214,7 @@ class _MapPageState extends State<MapPage> {
   void activate() {
     super.activate();
     _startReportsPolling();
+    _startNearbyHotspotChecking();
   }
 
   @override
@@ -208,6 +224,7 @@ class _MapPageState extends State<MapPage> {
     _positionStreamSubscription?.cancel();
     _mapInitRetryTimer?.cancel();
     _mapReadyPoller?.cancel();
+    _nearbyHotspotCheckTimer?.cancel();
     if (kIsWeb) {
       try {
         _goongBridge.disposeMap();
@@ -820,6 +837,9 @@ class _MapPageState extends State<MapPage> {
       _isHeatmapMode = true;
       _markers.clear();
       _updateHeatmapCircles();
+      // Clear hotspot alert khi chuyển sang chế độ điểm nóng
+      _activeHotspotAlert = null;
+      _dismissedHotspotClusterIds.clear();
     });
 
     _fetchHotspotsFromViewport();
@@ -875,6 +895,13 @@ class _MapPageState extends State<MapPage> {
                 _myLocation = newPos;
                 _updateMarkers();
               });
+              // Start hotspot checking once location is available
+              if (_nearbyHotspotCheckTimer == null) {
+                debugPrint('[Hotspot] Starting nearby hotspot checking');
+                _startNearbyHotspotChecking();
+              } else {
+                unawaited(_checkNearbyHotspot());
+              }
             }
           },
         );
@@ -894,6 +921,609 @@ class _MapPageState extends State<MapPage> {
         );
       }
     }
+  }
+
+  void _startNearbyHotspotChecking() {
+    _nearbyHotspotCheckTimer?.cancel();
+    _nearbyHotspotCheckTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _checkNearbyHotspot(),
+    );
+    unawaited(_checkNearbyHotspot());
+  }
+
+  void _stopNearbyHotspotChecking() {
+    _nearbyHotspotCheckTimer?.cancel();
+    _nearbyHotspotCheckTimer = null;
+  }
+
+  Future<void> _checkNearbyHotspot() async {
+    // Không check hotspot khi ở chế độ heatmap (điểm nóng)
+    if (_isHeatmapMode) {
+      return;
+    }
+
+    if (_myLocation == null) {
+      debugPrint('[Hotspot] Location not available yet');
+      return;
+    }
+
+    final now = DateTime.now();
+    final lastFetch = _lastNearbyHotspotFetchAt;
+    if (lastFetch != null && now.difference(lastFetch).inSeconds < 15) {
+      return;
+    }
+
+    try {
+      if (mounted) {
+        setState(() {
+          _isCheckingNearbyHotspot = true;
+        });
+      }
+
+      debugPrint(
+        '[Hotspot] Fetching nearby hotspots at ${_myLocation!.latitude}, ${_myLocation!.longitude}',
+      );
+      final response = await _hotspotService.fetchNearbyHotspots(
+        lat: _myLocation!.latitude,
+        lng: _myLocation!.longitude,
+        alertRadiusMeters: 250,
+      );
+
+      if (!mounted) {
+        debugPrint('[Hotspot] Widget disposed, skipping setState');
+        return;
+      }
+
+      _lastNearbyHotspotFetchAt = now;
+
+      if (response.alert && response.nearestHotspot != null) {
+        final hotspot = response.nearestHotspot!;
+        debugPrint(
+          '[Hotspot] Alert triggered: ${hotspot.dominantWasteType} at ${hotspot.distanceMeters}m',
+        );
+
+        if (mounted) {
+          setState(() {
+            // Nếu là hotspot khác, clear dismissed set để banner hiện lại
+            if (_activeHotspotAlert?.clusterId != hotspot.clusterId) {
+              _dismissedHotspotClusterIds.clear();
+            }
+            _activeHotspotAlert = hotspot;
+            _isCheckingNearbyHotspot = false;
+          });
+        }
+
+        // Show notification only once per hotspot
+        if (!_notifiedHotspots.contains(hotspot.clusterId)) {
+          _notifiedHotspots.add(hotspot.clusterId);
+          await HotspotAlertNotificationService.instance.showHotspotAlert(
+            hotspot,
+          );
+        }
+      } else {
+        debugPrint('[Hotspot] No alert or no nearby hotspot');
+        if (mounted) {
+          setState(() {
+            _activeHotspotAlert = null;
+            _isCheckingNearbyHotspot = false;
+          });
+        }
+        _notifiedHotspots.clear();
+      }
+    } catch (e) {
+      debugPrint('[Hotspot] Error checking nearby hotspots: $e');
+      if (mounted) {
+        setState(() {
+          _isCheckingNearbyHotspot = false;
+        });
+      }
+    }
+  }
+
+  void _showHotspotAlertDetails() {
+    if (_activeHotspotAlert == null) return;
+
+    final hotspot = _activeHotspotAlert!;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.72,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          children: [
+            // HANDLE
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.red,
+                      size: 30,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Chi tiết cảnh báo điểm rác',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          '${hotspot.distanceMeters.toStringAsFixed(0)}m từ vị trí của bạn',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    // INFO CARD
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          _modernDetailRow(
+                            Icons.report,
+                            'Số báo cáo',
+                            '${hotspot.reportCount}',
+                          ),
+
+                          _modernDetailRow(
+                            Icons.delete_outline,
+                            'Loại rác chủ yếu',
+                            _wasteTypeVietnamese(hotspot.dominantWasteType),
+                          ),
+
+                          _modernDetailRow(
+                            Icons.location_on_outlined,
+                            'Khoảng cách',
+                            '${hotspot.distanceMeters.toStringAsFixed(0)} m',
+                          ),
+
+                          _modernDetailRow(
+                            Icons.circle_outlined,
+                            'Bán kính khu vực',
+                            '${hotspot.radiusKm.toStringAsFixed(2)} km',
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    // CATEGORY TITLE
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Chi tiết từng loại rác',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // CATEGORY LIST
+                    ...hotspot.categoryCounts.entries.map(
+                      (e) => Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.recycling,
+                                color: Colors.blue,
+                              ),
+                            ),
+
+                            const SizedBox(width: 14),
+
+                            Expanded(
+                              child: Text(
+                                _wasteTypeVietnamese(e.key),
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '${e.value}',
+                                style: TextStyle(
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 26),
+                  ],
+                ),
+              ),
+            ),
+
+            // BUTTON
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: const Text(
+                    'Đóng',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _wasteTypeVietnamese(String type) {
+    switch (type.toUpperCase()) {
+      case 'PLASTIC':
+        return 'Rác nhựa';
+
+      case 'PAPER':
+        return 'Rác giấy';
+
+      case 'METAL':
+        return 'Rác kim loại';
+
+      case 'ORGANIC':
+        return 'Rác hữu cơ';
+
+      case 'CONSTRUCTION':
+        return 'Rác xây dựng';
+
+      case 'ELECTRONIC':
+        return 'Rác điện tử';
+
+      case 'MIXED':
+        return 'Rác hỗn hợp';
+
+      case 'GLASS':
+        return 'Rác thủy tinh';
+
+      default:
+        return type;
+    }
+  }
+
+  Widget _modernDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.grey.shade600, size: 22),
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+            ),
+          ),
+
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHotspotStatusBadge() {
+    if (_myLocation == null) {
+      return Positioned(
+        top: 12,
+        right: 12,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 8,
+                height: 8,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              ),
+              SizedBox(width: 6),
+              Text(
+                'Đang định vị...',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Positioned(
+      top: 63,
+      right: 35,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: _isCheckingNearbyHotspot
+              ? Colors.orange.shade100
+              : Colors.green.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isCheckingNearbyHotspot ? Colors.orange : Colors.green,
+            width: 1,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_isCheckingNearbyHotspot)
+              const SizedBox(
+                width: 10,
+                height: 10,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _activeHotspotAlert != null
+                      ? Colors.red
+                      : Colors.green,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            const SizedBox(width: 6),
+            Text(
+              _isCheckingNearbyHotspot
+                  ? 'Kiểm tra...'
+                  : (_activeHotspotAlert != null ? 'Cảnh báo!' : 'Sẵn sàng'),
+              style: TextStyle(
+                fontSize: 11,
+                color: _isCheckingNearbyHotspot
+                    ? Colors.orange.shade800
+                    : (_activeHotspotAlert != null
+                          ? Colors.red.shade800
+                          : Colors.green.shade800),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHotspotAlertBanner() {
+    // Chỉ hiển thị cảnh báo khi ở chế độ báo cáo rác, không hiển thị ở chế độ điểm nóng
+    if (_isHeatmapMode) {
+      return const SizedBox.shrink();
+    }
+
+    if (_activeHotspotAlert == null) {
+      return const SizedBox.shrink();
+    }
+
+    final hotspot = _activeHotspotAlert!;
+
+    // Ẩn banner nếu user đã close cái này, nhưng vẫn giữ cảnh báo trên badge
+    if (_dismissedHotspotClusterIds.contains(hotspot.clusterId)) {
+      return const SizedBox.shrink();
+    }
+
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + (widget.hideAppBar ? 28 : 155),
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: GestureDetector(
+          onTap: _showHotspotAlertDetails,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 217, 47, 13),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.white, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Bạn gần một điểm rác!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${hotspot.reportCount} báo cáo • ${_wasteTypeVietnamese(hotspot.dominantWasteType)}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Nhấn để xem chi tiết',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _dismissedHotspotClusterIds.add(hotspot.clusterId);
+
+                      // KHÔNG xoá map
+                      // KHÔNG đổi mode
+                      // KHÔNG clear marker
+                      _activeHotspotAlert = null;
+                    });
+                  },
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _updateMarkers() {
@@ -1243,7 +1873,7 @@ class _MapPageState extends State<MapPage> {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
         boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
         ],
@@ -1275,10 +1905,16 @@ class _MapPageState extends State<MapPage> {
   void _setReportView() {
     setState(() {
       _isHeatmapMode = false;
+
       _circles.clear();
       _observedHeatmapPoints.clear();
+
+      _updateMarkers();
     });
+
     _syncGoongMapState();
+
+    unawaited(_checkNearbyHotspot());
   }
 
   String _buildMobileGoongHostHtml() {
@@ -1294,10 +1930,22 @@ class _MapPageState extends State<MapPage> {
   <style>
     html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
     .goong-report-popup-shell .maplibregl-popup-content {
-      padding: 10px 12px;
-      max-width: min(88vw, 360px);
-      box-sizing: border-box;
-    }
+  padding: 12px;
+  border-radius: 22px;
+  max-width: min(90vw, 370px);
+  box-sizing: border-box;
+  background: #ffffff;
+  box-shadow:
+     0 2px 6px rgba(0,0,0,0.08);
+}
+
+.maplibregl-popup-close-button {
+  font-size: 22px;
+  color: #374151;
+  padding: 10px;
+  right: 4px;
+  top: 2px;
+}
     .goong-report-popup-body {
       width: min(84vw, 332px);
       max-width: 100%;
@@ -1488,41 +2136,198 @@ class _MapPageState extends State<MapPage> {
       }
 
       function buildReportsPopupHtml(item) {
-        const reports = Array.isArray(item.reports) && item.reports.length
-          ? item.reports
-          : [item];
+  const reports = (
+  Array.isArray(item.reports) && item.reports.length
+    ? item.reports
+    : [item]
+).slice(0, 3);
 
-        let html = '';
-        html += '<div class="goong-report-popup-body">';
-        html += '<div style="font-weight:700;font-size:14px;margin-bottom:8px;color:#111827;">';
-        html += 'Cụm báo cáo (' + reports.length + ')';
-        html += '</div>';
+  function vietnameseStatus(status) {
+    switch (String(status || '').toUpperCase()) {
+      case 'PENDING':
+        return 'Chờ xác minh';
 
-        for (let i = 0; i < reports.length; i++) {
-          const r = reports[i] || {};
-          const title = escapeHtml(r.title || 'Không có tiêu đề');
-          const desc = escapeHtml(r.description || 'Không có mô tả');
-          const status = String(r.status || 'UNKNOWN').toUpperCase();
-          const statusColorValue = statusColor(status);
-          const imageUrl = String(r.imageUrl || '').trim();
+      case 'VERIFIED':
+        return 'Đã xác minh';
 
-          html += '<div style="padding:8px 0;border-top:' + (i === 0 ? 'none' : '1px solid #e5e7eb') + ';">';
-          html += '<div style="font-weight:600;font-size:13px;color:#111827;">' + title + '</div>';
-          html += '<div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;background:' + statusColorValue + ';">' + escapeHtml(status) + '</div>';
-          html += '<div style="margin-top:6px;font-size:12px;color:#374151;">' + desc + '</div>';
+      case 'CLEANED':
+        return 'Đã dọn dẹp';
 
-          if (imageUrl) {
-            html += '<div style="margin-top:6px;">';
-            html += '<button type="button" class="goong-open-image" data-image-url="' + escapeHtml(imageUrl) + '" style="border:none;background:transparent;padding:0;font-size:12px;color:#2563eb;text-decoration:underline;cursor:pointer;">Xem ảnh đính kèm</button>';
-            html += '</div>';
-          }
+      case 'REJECTED':
+        return 'Đã từ chối';
 
-          html += '</div>';
-        }
+      default:
+        return 'Không xác định';
+    }
+  }
 
-        html += '</div>';
-        return html;
-      }
+  let html = '';
+
+  html += `
+    <div class="goong-report-popup-body"
+      style="
+        font-family: Arial, sans-serif;
+        padding: 4px;
+      "
+    >
+  `;
+
+  html += `
+    <div style="
+      text-align:center;
+      margin-bottom:16px;
+    ">
+      <div style="
+        font-size:18px;
+        font-weight:700;
+        color:#111827;
+      ">
+        🗑️ Chi tiết báo cáo rác
+      </div>
+
+      <div style="
+        margin-top:4px;
+        font-size:12px;
+        color:#6b7280;
+      ">
+        Có \${reports.length} báo cáo tại khu vực này
+      </div>
+    </div>
+  `;
+
+  for (let i = 0; i < reports.length; i++) {
+    const r = reports[i] || {};
+
+    const title = escapeHtml(
+      r.title || 'Không có tiêu đề'
+    );
+
+    const desc = escapeHtml(
+      r.description || 'Không có mô tả'
+    );
+
+    const status = String(
+      r.status || 'UNKNOWN'
+    ).toUpperCase();
+
+    const vietnameseText =
+      vietnameseStatus(status);
+
+    const statusColorValue =
+      statusColor(status);
+
+    const imageUrl = String(
+      r.imageUrl || ''
+    ).trim();
+
+    html += `
+      <div style="
+        background:#ffffff;
+        border-radius:10px;
+        padding:15px;
+        margin-bottom:14px;
+        border:1px solid #e5e7eb;
+        box-shadow:
+          0 1px 4px rgba(0,0,0,0.05);
+      ">
+    `;
+
+    html += `
+      <div style="
+        font-size:15px;
+        font-weight:700;
+        color:#111827;
+        line-height:1.5;
+      ">
+        \${title}
+      </div>
+    `;
+
+    html += `
+      <div style="
+        margin-top:10px;
+      ">
+        <span style="
+          background:\${statusColorValue};
+          color:white;
+          padding:6px 12px;
+          border-radius:999px;
+          font-size:11px;
+          font-weight:700;
+          display:inline-block;
+          letter-spacing:0.3px;
+        ">
+          \${vietnameseText}
+        </span>
+      </div>
+    `;
+
+    html += `
+      <div style="
+        margin-top:14px;
+        background:#f9fafb;
+        border-radius:12px;
+        padding:12px;
+      ">
+        <div style="
+          font-size:12px;
+          font-weight:700;
+          color:#111827;
+          margin-bottom:8px;
+        ">
+           Mô tả
+        </div>
+
+        <div style="
+          font-size:13px;
+          line-height:1.7;
+          color:#374151;
+        ">
+          \${desc}
+        </div>
+      </div>
+    `;
+
+    if (imageUrl) {
+      html += `
+        <div style="
+          margin-top:14px;
+        ">
+          <button
+            type="button"
+            class="goong-open-image"
+            data-image-url="\${escapeHtml(imageUrl)}"
+            style="
+              width:100%;
+              border:none;
+              background:#2563eb;
+              color:white;
+              padding:13px;
+              border-radius:14px;
+              font-size:13px;
+              font-weight:700;
+              cursor:pointer;
+              box-shadow:
+                0 6px 14px rgba(37,99,235,0.35);
+            "
+          >
+             Xem ảnh đính kèm
+          </button>
+        </div>
+      `;
+    }
+
+    html += `
+      </div>
+    `;
+  }
+
+  html += `
+    </div>
+  `;
+
+  return html;
+}
 
       function renderReports() {
         clearLayers();
@@ -1943,7 +2748,9 @@ class _MapPageState extends State<MapPage> {
                 ),
               ),
             ),
-          Positioned(top: 85, right: 6, child: _buildLegend()),
+          if (_activeHotspotAlert != null) _buildHotspotAlertBanner(),
+          _buildHotspotStatusBadge(),
+          Positioned(top: 98, right: 6, child: _buildLegend()),
           Positioned(
             bottom: 50,
             right: 0,
