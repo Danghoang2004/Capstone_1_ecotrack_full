@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // [MỚI]
 import 'package:frontend_ecotrack/data/models/report_model.dart';
@@ -7,6 +8,38 @@ class ReportDetailPage extends StatelessWidget {
   final Report report;
 
   const ReportDetailPage({super.key, required this.report});
+
+  String _getAiDecisionVietnamese(String? aiDecision) {
+    switch ((aiDecision ?? '').toUpperCase()) {
+      case 'WASTE_DETECTED':
+        return 'Phát hiện rác';
+      case 'NOT_WASTE':
+        return 'Không phải rác';
+      case 'UNCERTAIN':
+        return 'Chưa chắc chắn';
+      case 'REQUEST_REUPLOAD':
+        return 'Yêu cầu chụp lại';
+      default:
+        return (aiDecision ?? 'Chưa xác định').toString();
+    }
+  }
+
+  String _getPollutionLevelVietnamese(String? pollutionLevel) {
+    switch ((pollutionLevel ?? '').toUpperCase()) {
+      case 'LOW':
+        return 'Thấp';
+      case 'MEDIUM':
+        return 'Trung bình';
+      case 'HIGH':
+        return 'Cao';
+      case 'CRITICAL':
+        return 'Nghiêm trọng';
+      case 'UNCONFIRMED':
+        return 'Chưa xác nhận';
+      default:
+        return (pollutionLevel ?? 'Chưa xác định').toString();
+    }
+  }
 
   // [MỚI] Hàm xử lý URL ảnh
   String _buildImageUrl(String? path) {
@@ -20,10 +53,18 @@ class ReportDetailPage extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'PENDING':
+      case 'PENDING_AI_ANALYSIS':
         return Colors.orange;
       case 'VERIFIED':
         return Colors.blue;
+      case 'AI_VERIFIED':
+        return const Color(0xFF1E88E5);
+      case 'NEED_REVIEW':
+        return const Color(0xFFFB8C00);
+      case 'REQUEST_REUPLOAD':
+        return const Color(0xFFF4511E);
       case 'CLEANED':
+      case 'APPROVED':
         return Colors.green;
       case 'REJECTED':
         return Colors.red;
@@ -36,6 +77,15 @@ class ReportDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // [MỚI] Gọi hàm xử lý URL
     String displayImageUrl = _buildImageUrl(report.imageUrl);
+    Map<String, dynamic>? aiData;
+    if (report.aiAnalysisJson != null && report.aiAnalysisJson!.isNotEmpty) {
+      try {
+        aiData = jsonDecode(report.aiAnalysisJson!) as Map<String, dynamic>;
+      } catch (_) {
+        aiData = null;
+      }
+    }
+    final Map<String, dynamic> analysisData = aiData ?? <String, dynamic>{};
 
     return Scaffold(
       // Scaffold tự động có nút Back trên AppBar nếu dùng Navigator.push
@@ -178,8 +228,125 @@ class ReportDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           _buildAIRow(
-                            "Độ tin cậy:",
+                            "Điểm AI tổng hợp:",
                             "${(report.aiConfidence! * 100).toStringAsFixed(1)}%",
+                          ),
+                          if (report.aiPollutionLevel != null) ...[
+                            const SizedBox(height: 8),
+                            _buildAIRow(
+                              "Mức ô nhiễm:",
+                              _getPollutionLevelVietnamese(
+                                report.aiPollutionLevel,
+                              ),
+                            ),
+                          ],
+                          if (report.aiSeverityScore != null) ...[
+                            const SizedBox(height: 8),
+                            _buildAIRow(
+                              "Điểm ô nhiễm:",
+                              "${report.aiSeverityScore}/100",
+                            ),
+                          ],
+                          if (report.aiWasteType != null) ...[
+                            const SizedBox(height: 8),
+                            _buildAIRow("Loại rác AI:", report.aiWasteType!),
+                          ],
+                          if (report.aiNeedManualReview == true) ...[
+                            const SizedBox(height: 8),
+                            _buildAIRow("Trạng thái AI:", "Cần kiểm duyệt"),
+                          ],
+                          if (report.aiFalsePositiveReason != null &&
+                              report.aiFalsePositiveReason!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: Colors.orange.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.warning_amber,
+                                    color: Colors.orange,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      report.aiFalsePositiveReason!,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.orange,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  if (aiData != null) ...[
+                    const Text(
+                      "Chi tiết phân tích",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Colors.blueGrey.withOpacity(0.12),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildAIRow(
+                            "Kết luận AI:",
+                            _getAiDecisionVietnamese(
+                              (analysisData['ai_decision'] ??
+                                      report.aiDecision ??
+                                      'N/A')
+                                  .toString(),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildAIRow(
+                            "Ngữ cảnh rác:",
+                            (analysisData['waste_context_score'] ??
+                                    report.aiWasteContextScore ??
+                                    0)
+                                .toString(),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildAIRow(
+                            "Diện tích rác:",
+                            (analysisData['waste_area_ratio'] ??
+                                    report.aiWasteAreaRatio ??
+                                    0)
+                                .toString(),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildAIRow(
+                            "Số lượng vật thể:",
+                            (analysisData['object_count'] ??
+                                    report.aiObjectCount ??
+                                    0)
+                                .toString(),
                           ),
                         ],
                       ),

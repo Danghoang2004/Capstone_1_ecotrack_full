@@ -85,7 +85,10 @@ public class AiWasteClassificationProxyService {
 
     private AiWasteClassificationResultDto mapToResultDto(JsonNode data) {
         AiWasteClassificationResultDto result = new AiWasteClassificationResultDto();
-        result.setTrashDetected(data.path("is_trash").asBoolean(false));
+        boolean trashDetected = data.path("is_waste").asBoolean(
+                data.path("is_trash").asBoolean(
+                        data.path("trashDetected").asBoolean(false)));
+        result.setTrashDetected(trashDetected);
         result.setOverallConfidence(data.path("overall_confidence").asDouble(0.0));
         result.setTotalObjectsDetected(data.path("total_objects_detected").asInt(0));
         result.setWasteTypes(readWasteTypes(data));
