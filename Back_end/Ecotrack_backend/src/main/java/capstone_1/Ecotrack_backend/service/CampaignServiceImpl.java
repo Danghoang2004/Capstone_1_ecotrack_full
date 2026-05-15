@@ -32,6 +32,9 @@ public class CampaignServiceImpl implements CampaignService {
     private CampaignBroadcastService campaignBroadcastService;
 
     @Autowired
+    private AdminRealtimeSseService adminRealtimeSseService;
+
+    @Autowired
     private CampaignRepository campaignRepository;
 
     @Autowired
@@ -128,6 +131,12 @@ public class CampaignServiceImpl implements CampaignService {
 
         participantRepo.save(participant);
         sendJoinCampaignEmail(user, campaign);
+
+        int updatedParticipants = Math.toIntExact(participantRepo.countById_CampaignId(campaignId));
+        adminRealtimeSseService.publishCampaignParticipantUpdated(
+            campaignId,
+            updatedParticipants,
+            campaign.getMaxParticipants());
 
         campaignBroadcastService.broadcastCampaignParticipantUpdate(campaignId, participant);
     }

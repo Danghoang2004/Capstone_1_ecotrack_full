@@ -944,7 +944,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
       case 'VERIFIED':
         bg = const Color(0xFFE3F0FF);
         text = const Color(0xFF0A66C2);
-        label = "Đang làm";
+        label = "Đã xác minh";
         break;
       case 'PENDING':
         bg = const Color(0xFFFFF0DD);

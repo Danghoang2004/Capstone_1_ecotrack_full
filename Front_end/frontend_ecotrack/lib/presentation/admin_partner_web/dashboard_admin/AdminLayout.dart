@@ -17,6 +17,7 @@ import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/User_ma
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_header.dart';
 import 'package:frontend_ecotrack/presentation/admin_web/dashboard_admin/widgets/admin_sidebar.dart';
 import 'package:frontend_ecotrack/presentation/admin_app/badge_management/admin_badge_management_screen.dart';
+import 'package:frontend_ecotrack/presentation/admin_app/recycle_management/admin_recycle_management_screen.dart';
 import '../notification_manage_admin/AdminNotificationPage.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -29,6 +30,7 @@ class AdminLayout extends StatefulWidget {
 class _AdminLayoutState extends State<AdminLayout> {
   String _selectedMenu = 'dashboard';
   int _globalRefreshVersion = 0;
+  int _campaignRefreshVersion = 0;
   int _environmentTasksPageVersion = 0;
   int _environmentTeamsPageVersion = 0;
   late final AdminRealtimeService _adminRealtimeService;
@@ -47,7 +49,8 @@ class _AdminLayoutState extends State<AdminLayout> {
     'campaign': 7,
     'quiz': 8,
     'badges': 9,
-    'notifications': 10,
+    'recycle': 10,
+    'notifications': 11,
   };
 
   @override
@@ -56,11 +59,17 @@ class _AdminLayoutState extends State<AdminLayout> {
     _adminRealtimeService = AdminRealtimeService.instance;
     _adminRealtimeService.start();
     _realtimeSubscription = _adminRealtimeService.events.listen((event) {
-      if (!mounted || !event.isReportEvent) return;
+      if (!mounted) return;
 
-      // Rebuild all admin tabs when report events arrive so screens refetch data immediately.
       setState(() {
-        _globalRefreshVersion++;
+        if (event.isReportEvent) {
+          // Rebuild all admin tabs when report events arrive so screens refetch data immediately.
+          _globalRefreshVersion++;
+        }
+
+        if (event.isCampaignEvent) {
+          _campaignRefreshVersion++;
+        }
       });
     });
   }
@@ -74,7 +83,9 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   List<Widget> _buildPages() {
     return [
-      AdminDashboardDataScreen(key: ValueKey('dashboard_$_globalRefreshVersion')),
+      AdminDashboardDataScreen(
+        key: ValueKey('dashboard_$_globalRefreshVersion'),
+      ),
       UserManagementScreen(key: ValueKey('users_$_globalRefreshVersion')),
       EnvironmentUserManagementScreen(
         key: ValueKey('environment_users_$_globalRefreshVersion'),
@@ -91,10 +102,17 @@ class _AdminLayoutState extends State<AdminLayout> {
         ),
       ),
       AdminMapPage(key: ValueKey('map_$_globalRefreshVersion')),
-      AdminCampaignPage(key: ValueKey('campaign_$_globalRefreshVersion')),
+      AdminCampaignPage(refreshToken: _campaignRefreshVersion),
       AdminQuizPage(key: ValueKey('quiz_$_globalRefreshVersion')),
-      AdminBadgeManagementScreen(key: ValueKey('badges_$_globalRefreshVersion')),
-      AdminNotificationPage(key: ValueKey('notifications_$_globalRefreshVersion')),
+      AdminBadgeManagementScreen(
+        key: ValueKey('badges_$_globalRefreshVersion'),
+      ),
+      AdminRecycleManagementScreen(
+        key: ValueKey('recycle_$_globalRefreshVersion'),
+      ),
+      AdminNotificationPage(
+        key: ValueKey('notifications_$_globalRefreshVersion'),
+      ),
     ];
   }
 
