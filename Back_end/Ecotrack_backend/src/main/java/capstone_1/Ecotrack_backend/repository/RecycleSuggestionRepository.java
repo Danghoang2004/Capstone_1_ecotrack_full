@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public interface RecycleSuggestionRepository extends JpaRepository<RecycleSuggestion, Long> {
 
+    @EntityGraph(attributePaths = { "steps" })
     List<RecycleSuggestion> findByWasteTypeKeyInAndIsActiveTrueOrderByWasteTypeKeyAscSuggestionIdAsc(
             Collection<String> wasteTypeKeys);
 

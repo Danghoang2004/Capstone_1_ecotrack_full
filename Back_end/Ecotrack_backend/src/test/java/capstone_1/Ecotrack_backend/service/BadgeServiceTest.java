@@ -50,8 +50,8 @@ class BadgeServiceTest {
 
     @BeforeEach
     void setUp() {
-        badge1 = new Badge(1L, "Starter", "Mô tả 1", "/icon1.png", "Yêu cầu 1");
-        badge2 = new Badge(2L, "Hero", "Mô tả 2", "/icon2.png", "Yêu cầu 2");
+        badge1 = new Badge(1L, "Starter", "Mô tả 1", "/icon1.png", "Yêu cầu 1", 10);
+        badge2 = new Badge(2L, "Hero", "Mô tả 2", "/icon2.png", "Yêu cầu 2", 50);
     }
 
     @Nested
@@ -72,6 +72,7 @@ class BadgeServiceTest {
             assertThat(result.get(0).getIconUrl()).isEqualTo("/icon1.png");
             assertThat(result.get(0).getDescription()).isEqualTo("Mô tả 1");
             assertThat(result.get(0).getRequirement()).isEqualTo("Yêu cầu 1");
+            assertThat(result.get(0).getPointsRequired()).isEqualTo(10);
             assertThat(result.get(0).getAwardedAt()).isNull(); // hệ thống chung, không có thời gian được trao
         }
 
@@ -153,4 +154,3 @@ class BadgeServiceTest {
         }
     }
 }
-

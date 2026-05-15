@@ -6,6 +6,7 @@ class Report {
   final double longitude;
   final String imageUrl;
   final String status;
+  final String category;
 
   Report({
     required this.id,
@@ -15,6 +16,7 @@ class Report {
     required this.longitude,
     required this.imageUrl,
     required this.status,
+    required this.category,
   });
 
   factory Report.fromJson(Map<String, dynamic> j) {
@@ -26,6 +28,7 @@ class Report {
       longitude: (j['gpsLong'] as num?)?.toDouble() ?? 0.0,
       imageUrl: j['imageUrl'] ?? '',
       status: j['status'] ?? '',
+      category: j['category'] ?? '',
     );
   }
 }
