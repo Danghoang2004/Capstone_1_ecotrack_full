@@ -1,6 +1,7 @@
 package capstone_1.Ecotrack_backend.service;
 
 import capstone_1.Ecotrack_backend.dto.response.AiDetectionResponse; // Đảm bảo import đúng DTO của bạn
+import capstone_1.Ecotrack_backend.dto.response.AdminGroupedWasteReportResponse;
 import capstone_1.Ecotrack_backend.model.*;
 import capstone_1.Ecotrack_backend.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,12 +17,19 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class WasteReportService {
@@ -256,6 +264,99 @@ public class WasteReportService {
 
     public List<WasteReport> getAllReportsForAdmin() {
         return reportRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    public List<AdminGroupedWasteReportResponse> getAllGroupedReportsForAdmin() {
+        List<WasteReport> reports = reportRepository.findAllByOrderByCreatedAtDesc();
+
+        Map<String, List<WasteReport>> reportsByLocation = new LinkedHashMap<>();
+        for (WasteReport report : reports) {
+            String key = buildLocationKey(report.getGpsLat(), report.getGpsLong(), report.getReportId());
+            reportsByLocation.computeIfAbsent(key, ignored -> new java.util.ArrayList<>()).add(report);
+        }
+
+        Set<Long> allUserIds = new HashSet<>();
+        for (WasteReport report : reports) {
+            if (report.getUserId() != null) {
+                allUserIds.add(report.getUserId());
+            }
+        }
+
+        Map<Long, User> userById = userRepository.findAllById(allUserIds)
+                .stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        return reportsByLocation.values().stream()
+                .map(group -> toGroupedResponse(group, userById))
+                .sorted(Comparator.comparing(AdminGroupedWasteReportResponse::getCreatedAt).reversed())
+                .toList();
+    }
+
+    private AdminGroupedWasteReportResponse toGroupedResponse(
+            List<WasteReport> group,
+            Map<Long, User> userById) {
+        List<WasteReport> sortedGroup = group.stream()
+                .sorted(Comparator.comparing(WasteReport::getCreatedAt).reversed())
+                .toList();
+
+        WasteReport latest = sortedGroup.get(0);
+
+        AdminGroupedWasteReportResponse response = new AdminGroupedWasteReportResponse();
+        response.setReportId(latest.getReportId());
+        response.setTitle(latest.getTitle());
+        response.setDescription(latest.getDescription());
+        response.setImageUrl(latest.getImageUrl());
+        response.setGpsLat(latest.getGpsLat());
+        response.setGpsLong(latest.getGpsLong());
+        response.setStatus(latest.getStatus() != null ? latest.getStatus().name() : "UNKNOWN");
+        response.setCreatedAt(latest.getCreatedAt());
+        response.setCategory(latest.getCategory());
+        response.setAiConfidence(latest.getAiConfidence());
+        response.setReportCount(sortedGroup.size());
+
+        Map<Long, AdminGroupedWasteReportResponse.ReporterInfo> reportersByUser = new HashMap<>();
+        for (WasteReport report : sortedGroup) {
+            Long userId = report.getUserId();
+            if (userId == null) {
+                continue;
+            }
+
+            AdminGroupedWasteReportResponse.ReporterInfo info = reportersByUser.get(userId);
+            if (info == null) {
+                info = new AdminGroupedWasteReportResponse.ReporterInfo();
+                info.setUserId(userId);
+
+                User user = userById.get(userId);
+                info.setUsername(user != null ? user.getUsername() : "User #" + userId);
+                info.setEmail(user != null ? user.getEmail() : "");
+                info.setReportCount(0);
+                info.setLatestReportedAt(report.getCreatedAt());
+                reportersByUser.put(userId, info);
+            }
+
+            info.setReportCount(info.getReportCount() + 1);
+            if (info.getLatestReportedAt() == null ||
+                    (report.getCreatedAt() != null && report.getCreatedAt().isAfter(info.getLatestReportedAt()))) {
+                info.setLatestReportedAt(report.getCreatedAt());
+            }
+        }
+
+        List<AdminGroupedWasteReportResponse.ReporterInfo> reporters = reportersByUser.values().stream()
+                .sorted(Comparator.comparing(AdminGroupedWasteReportResponse.ReporterInfo::getLatestReportedAt).reversed())
+                .toList();
+        response.setReporters(reporters);
+        return response;
+    }
+
+    private String buildLocationKey(BigDecimal lat, BigDecimal lng, Long fallbackId) {
+        if (lat == null || lng == null) {
+            return "NO_GPS_" + fallbackId;
+        }
+
+        // Nhóm theo GPS gần đúng 5 chữ số thập phân (~1m) để gom các báo cáo cùng điểm.
+        BigDecimal normalizedLat = lat.setScale(5, RoundingMode.HALF_UP);
+        BigDecimal normalizedLng = lng.setScale(5, RoundingMode.HALF_UP);
+        return normalizedLat.toPlainString() + "_" + normalizedLng.toPlainString();
     }
 
     public boolean updateReportStatus(Long reportId, String newStatusStr) {
