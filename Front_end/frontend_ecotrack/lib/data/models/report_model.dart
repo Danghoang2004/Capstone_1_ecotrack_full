@@ -24,6 +24,8 @@ class Report {
   final bool? aiNeedManualReview;
   final String? aiErrorMessage;
   final String? aiFalsePositiveReason;
+  final int reportCount;
+  final List<ReportReporter> reporters;
 
   Report({
     required this.reportId,
@@ -51,6 +53,8 @@ class Report {
     this.aiNeedManualReview,
     this.aiErrorMessage,
     this.aiFalsePositiveReason,
+    this.reportCount = 1,
+    this.reporters = const [],
   });
 
   factory Report.fromJson(Map<String, dynamic> json) {
@@ -83,6 +87,40 @@ class Report {
       aiNeedManualReview: json['aiNeedManualReview'],
       aiErrorMessage: json['aiErrorMessage'],
       aiFalsePositiveReason: json['aiFalsePositiveReason'],
+      reportCount: json['reportCount'] ?? 1,
+      reporters: (json['reporters'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(ReportReporter.fromJson)
+          .toList(),
+    );
+  }
+}
+
+class ReportReporter {
+  final int userId;
+  final String username;
+  final String email;
+  final int reportCount;
+  final DateTime? latestReportedAt;
+
+  const ReportReporter({
+    required this.userId,
+    required this.username,
+    required this.email,
+    required this.reportCount,
+    required this.latestReportedAt,
+  });
+
+  factory ReportReporter.fromJson(Map<String, dynamic> json) {
+    final latest = json['latestReportedAt'];
+    return ReportReporter(
+      userId: json['userId'] ?? 0,
+      username: (json['username'] ?? '').toString(),
+      email: (json['email'] ?? '').toString(),
+      reportCount: json['reportCount'] ?? 1,
+      latestReportedAt: latest is String && latest.isNotEmpty
+          ? DateTime.tryParse(latest)
+          : null,
     );
   }
 }

@@ -1,5 +1,6 @@
 package capstone_1.Ecotrack_backend.controller.admin;
 
+import capstone_1.Ecotrack_backend.dto.response.AdminGroupedWasteReportResponse;
 import capstone_1.Ecotrack_backend.model.WasteReport;
 import capstone_1.Ecotrack_backend.service.WasteReportService;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +23,8 @@ public class AdminReportController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<WasteReport>> getAllReports() {
-        List<WasteReport> reports = reportService.getAllReportsForAdmin();
+    public ResponseEntity<List<AdminGroupedWasteReportResponse>> getAllReports() {
+        List<AdminGroupedWasteReportResponse> reports = reportService.getAllGroupedReportsForAdmin();
         return ResponseEntity.ok(reports);
     }
 
@@ -42,5 +43,11 @@ public class AdminReportController {
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Update failed or Invalid status"));
         }
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<WasteReport>> getReportsByUser(@PathVariable Long userId) {
+        List<WasteReport> reports = reportService.getReportsByUser(userId);
+        return ResponseEntity.ok(reports);
     }
 }

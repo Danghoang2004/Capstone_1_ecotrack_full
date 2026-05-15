@@ -9,6 +9,7 @@ import 'package:frontend_ecotrack/core/theme/app_colors.dart';
 import 'package:frontend_ecotrack/data/models/report_model.dart';
 import 'package:frontend_ecotrack/data/utils/ImageUtils.dart';
 import 'package:intl/intl.dart';
+import 'UserReportsPage.dart';
 
 class AdminReportPage extends StatefulWidget {
   const AdminReportPage({super.key});
@@ -98,10 +99,17 @@ class _AdminReportPageState extends State<AdminReportPage> {
 
         // Lọc theo từ khóa tìm kiếm (Tiêu đề hoặc Mô tả)
         String query = _searchController.text.toLowerCase();
+        final reporterText = report.reporters
+            .map((e) => '${e.username} ${e.email}'.toLowerCase())
+            .join(' ');
+        final gpsText =
+            '${report.latitude.toStringAsFixed(5)} ${report.longitude.toStringAsFixed(5)}';
         bool searchMatch =
             query.isEmpty ||
             report.title.toLowerCase().contains(query) ||
-            report.description.toLowerCase().contains(query);
+            report.description.toLowerCase().contains(query) ||
+            reporterText.contains(query) ||
+            gpsText.contains(query);
 
         return statusMatch && searchMatch;
       }).toList();
@@ -359,7 +367,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
     int pending = _reports.where((r) => r.status == 'PENDING').length;
     int verified = _reports.where((r) => r.status == 'VERIFIED').length;
     int cleaned = _reports.where((r) => r.status == 'CLEANED').length;
-    int total = _reports.length;
+    int total = _reports.fold<int>(0, (sum, r) => sum + r.reportCount);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -749,7 +757,8 @@ class _AdminReportPageState extends State<AdminReportPage> {
             ? 1220.0
             : constraints.maxWidth;
         const sidePadding = 16.0;
-        const idWidth = 120.0;
+        const gpsWidth = 220.0;
+        const reportCountWidth = 110.0;
         const leadWidth = 170.0;
         const taskStateWidth = 210.0;
         const reportStateWidth = 210.0;
@@ -757,7 +766,8 @@ class _AdminReportPageState extends State<AdminReportPage> {
         final titleWidth =
             tableWidth -
             (sidePadding * 2) -
-            idWidth -
+            gpsWidth -
+            reportCountWidth -
             leadWidth -
             taskStateWidth -
             reportStateWidth -
@@ -785,9 +795,10 @@ class _AdminReportPageState extends State<AdminReportPage> {
                       ),
                       child: Row(
                         children: [
-                          _buildTableHeaderCell("Task ID", idWidth),
+                          _buildTableHeaderCell("GPS", gpsWidth),
+                          _buildTableHeaderCell("Số báo cáo", reportCountWidth),
                           _buildTableHeaderCell("Báo cáo", titleWidth),
-                          _buildTableHeaderCell("Lead xử lý", leadWidth),
+                          _buildTableHeaderCell("Người báo", leadWidth),
                           _buildTableHeaderCell(
                             "Trạng thái task",
                             taskStateWidth,
@@ -826,13 +837,20 @@ class _AdminReportPageState extends State<AdminReportPage> {
                           ),
                           child: Row(
                             children: [
-                              _buildTableCell("#${report.reportId}", idWidth),
+                              _buildTableCell(_formatGps(report), gpsWidth),
+                              _buildTableCell(
+                                '${report.reportCount}',
+                                reportCountWidth,
+                              ),
                               _buildTableCell(
                                 report.title,
                                 titleWidth,
                                 maxLines: 1,
                               ),
-                              _buildTableCell("env_lead_01", leadWidth),
+                              _buildTableCell(
+                                _buildReporterSummary(report),
+                                leadWidth,
+                              ),
                               SizedBox(
                                 width: taskStateWidth,
                                 child: _buildTaskStateBadge(report.status),
@@ -892,6 +910,20 @@ class _AdminReportPageState extends State<AdminReportPage> {
         ),
       ],
     );
+  }
+
+  String _formatGps(Report report) {
+    return '${report.latitude.toStringAsFixed(5)}, ${report.longitude.toStringAsFixed(5)}';
+  }
+
+  String _buildReporterSummary(Report report) {
+    if (report.reporters.isEmpty) {
+      return 'User #${report.reportId}';
+    }
+    if (report.reporters.length == 1) {
+      return report.reporters.first.username;
+    }
+    return '${report.reporters.first.username} +${report.reporters.length - 1}';
   }
 
   Widget _buildTableHeaderCell(String title, double width) {
@@ -1079,6 +1111,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
               const SizedBox(width: 16),
               Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
               const SizedBox(width: 4),
+      
               Text(
                 DateFormat('HH:mm dd/MM/yyyy').format(report.createdAt),
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
@@ -1303,10 +1336,20 @@ class _AdminReportPageState extends State<AdminReportPage> {
                         runSpacing: 20,
                         children: [
                           _detailItem(
-                            Icons.person,
-                            "Người báo cáo",
-                            "User #${report.reportId}",
-                          ), // Thay ID thật nếu có
+                            Icons.location_on,
+                            "Vị trí GPS",
+                            _formatGps(report),
+                          ),
+                          _detailItem(
+                            Icons.groups,
+                            "Số user đã báo",
+                            '${report.reporters.length}',
+                          ),
+                          _detailItem(
+                            Icons.receipt_long,
+                            "Tổng số báo cáo",
+                            '${report.reportCount}',
+                          ),
                           if (report.aiConfidence != null)
                             _detailItem(
                               Icons.smart_toy,
@@ -1315,6 +1358,101 @@ class _AdminReportPageState extends State<AdminReportPage> {
                             ),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      const SizedBox(height: 10),
+
+                      const Text(
+                        "Người dùng đã báo cáo tại điểm này:",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (report.reporters.isEmpty)
+                        const Text(
+                          'Chưa có danh sách người báo cáo.',
+                          style: TextStyle(color: Colors.black54),
+                        )
+                      else
+                        ...report.reporters.map((reporter) {
+                          final latestText = reporter.latestReportedAt != null
+                              ? DateFormat(
+                                  'HH:mm - dd/MM/yyyy',
+                                ).format(reporter.latestReportedAt!)
+                              : 'N/A';
+                          return InkWell(
+                            onTap: () {
+                              // Debug log to browser console to confirm tap handler runs
+                              // (visible in DevTools console when running flutter web)
+                              // Close detail dialog first (ctx from showDialog builder is in scope),
+                              // then navigate after a short delay so the dialog fully dismisses.
+                              print('AdminReportPage: open user reports for userId=${reporter.userId}');
+                              Navigator.of(ctx).pop();
+                              Future.delayed(const Duration(milliseconds: 150), () {
+                                if (!mounted) return;
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => UserReportsPage(
+                                    userId: reporter.userId,
+                                    username: reporter.username,
+                                  ),
+                                ));
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF7FAFC),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: const Color(0xFFE5E7EB),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.person, size: 18),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          reporter.username,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        if (reporter.email.isNotEmpty)
+                                          Text(
+                                            reporter.email,
+                                            style: const TextStyle(
+                                              color: Colors.black54,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text('x${reporter.reportCount} báo cáo'),
+                                      Text(
+                                        latestText,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
                       const SizedBox(height: 20),
                       const Divider(),
                       const SizedBox(height: 10),
