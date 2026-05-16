@@ -73,6 +73,16 @@ public class AdminRealtimeSseService {
         ));
     }
 
+    public void publishCampaignParticipantUpdated(Long campaignId, int participants, int maxParticipants) {
+        broadcast("CAMPAIGN_PARTICIPANT_UPDATED", Map.of(
+                "eventType", "CAMPAIGN_PARTICIPANT_UPDATED",
+                "campaignId", campaignId,
+                "participants", participants,
+                "maxParticipants", maxParticipants,
+                "time", LocalDateTime.now().toString()
+        ));
+    }
+
     private void broadcast(String eventName, Object payload) {
         for (SseEmitter emitter : emitters) {
             sendSingleEvent(emitter, eventName, payload);

@@ -113,6 +113,145 @@ class PredictHotspotApiResponse {
   }
 }
 
+class RecyclingSuggestion {
+  final String title;
+  final List<String> steps;
+
+  RecyclingSuggestion({required this.title, required this.steps});
+
+  factory RecyclingSuggestion.fromJson(Map<String, dynamic> json) {
+    return RecyclingSuggestion(
+      title: (json['title'] ?? '').toString(),
+      steps:
+          ((json['steps'] as List?) ?? const [])
+              .map((e) => e.toString())
+              .where((e) => e.trim().isNotEmpty)
+              .toList(),
+    );
+  }
+}
+
+class ReportInfo {
+  final int reportId;
+  final String title;
+  final String description;
+  final String category;
+  final String status;
+
+  ReportInfo({
+    required this.reportId,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.status,
+  });
+
+  factory ReportInfo.fromJson(Map<String, dynamic> json) {
+    return ReportInfo(
+      reportId: _parseInt(json['reportId'] ?? json['report_id']) ?? 0,
+      title: (json['title'] ?? 'Không có tiêu đề').toString(),
+      description: (json['description'] ?? '').toString(),
+      category: (json['category'] ?? 'Rác hỗn hợp').toString(),
+      status: (json['status'] ?? 'UNKNOWN').toString(),
+    );
+  }
+}
+
+class NearbyHotspot {
+  final int clusterId;
+  final double centerLat;
+  final double centerLng;
+  final double radiusKm;
+  final int reportCount;
+  final double distanceMeters;
+  final Map<String, int> categoryCounts;
+  final String dominantWasteType;
+  final RecyclingSuggestion recyclingSuggestion;
+  final List<ReportInfo> reports;
+
+  NearbyHotspot({
+    required this.clusterId,
+    required this.centerLat,
+    required this.centerLng,
+    required this.radiusKm,
+    required this.reportCount,
+    required this.distanceMeters,
+    required this.categoryCounts,
+    required this.dominantWasteType,
+    required this.recyclingSuggestion,
+    required this.reports,
+  });
+
+  factory NearbyHotspot.fromJson(Map<String, dynamic> json) {
+    final rawCategoryCounts =
+        (json['categoryCounts'] ?? json['category_counts']) as Map?;
+    
+    final rawReports = (json['reports'] as List?) ?? [];
+    final reportsList = rawReports
+        .whereType<Map<String, dynamic>>()
+        .map((report) => ReportInfo.fromJson(report))
+        .toList();
+
+    return NearbyHotspot(
+      clusterId: _parseInt(json['clusterId'] ?? json['cluster_id']) ?? 0,
+      centerLat: _parseDouble(json['centerLat'] ?? json['center_lat']) ?? 0.0,
+      centerLng: _parseDouble(json['centerLng'] ?? json['center_lng']) ?? 0.0,
+      radiusKm: _parseDouble(json['radiusKm'] ?? json['radius_km']) ?? 0.0,
+      reportCount: _parseInt(json['reportCount'] ?? json['report_count']) ?? 0,
+      distanceMeters:
+          _parseDouble(json['distanceMeters'] ?? json['distance_meters']) ??
+          0.0,
+      categoryCounts: rawCategoryCounts == null
+          ? const {}
+          : rawCategoryCounts.map(
+              (key, value) => MapEntry(key.toString(), _parseInt(value) ?? 0),
+            ),
+      dominantWasteType: (json['dominantWasteType'] ??
+              json['dominant_waste_type'] ??
+              'Rác hỗn hợp')
+          .toString(),
+      recyclingSuggestion: RecyclingSuggestion.fromJson(
+        ((json['recyclingSuggestion'] ?? json['recycling_suggestion']) as Map?)
+                ?.cast<String, dynamic>() ??
+            const {},
+      ),
+      reports: reportsList,
+    );
+  }
+}
+
+class NearbyHotspotApiResponse {
+  final bool success;
+  final bool alert;
+  final NearbyHotspot? nearestHotspot;
+  final List<NearbyHotspot> hotspots;
+
+  NearbyHotspotApiResponse({
+    required this.success,
+    required this.alert,
+    required this.nearestHotspot,
+    required this.hotspots,
+  });
+
+  factory NearbyHotspotApiResponse.fromJson(Map<String, dynamic> json) {
+    final nearestRaw = json['nearestHotspot'] ?? json['nearest_hotspot'];
+    final List<dynamic> rawHotspots =
+        ((json['hotspots'] ?? json['data']) as List?) ?? const [];
+
+    return NearbyHotspotApiResponse(
+      success: _parseBool(json['success']) ?? false,
+      alert: _parseBool(json['alert']) ?? false,
+      nearestHotspot: nearestRaw is Map
+          ? NearbyHotspot.fromJson(nearestRaw.cast<String, dynamic>())
+          : null,
+      hotspots: rawHotspots
+          .whereType<Map<String, dynamic>>()
+          .map(NearbyHotspot.fromJson)
+          .toList(),
+    );
+  }
+}
+
 int? _parseInt(dynamic value) {
   if (value == null) return null;
   if (value is int) return value;

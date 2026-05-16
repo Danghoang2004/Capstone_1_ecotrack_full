@@ -27,8 +27,12 @@ public class AiWasteClassificationProxyService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${ai.classify-waste-url:http://127.0.0.1:8000/ai/classify-waste}")
+    @Value("${ai.classify-waste-url}")
     private String aiClassifyWasteUrl;
+
+    private String getAiClassifyWasteUrl() {
+        return aiClassifyWasteUrl;
+    }
 
     public AiWasteClassificationResultDto classifyWaste(MultipartFile image) {
         if (image == null || image.isEmpty()) {
@@ -50,7 +54,7 @@ public class AiWasteClassificationProxyService {
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
             ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                    aiClassifyWasteUrl,
+                    getAiClassifyWasteUrl(),
                     requestEntity,
                     JsonNode.class);
 

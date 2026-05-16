@@ -100,4 +100,28 @@ class HotspotService {
     final json = _apiClient.decodeUtf8Json(response) as Map<String, dynamic>;
     return PredictHotspotApiResponse.fromJson(json);
   }
+
+  Future<NearbyHotspotApiResponse> fetchNearbyHotspots({
+    required double lat,
+    required double lng,
+    double alertRadiusMeters = 250,
+    double epsKm = 0.5,
+    int minSamples = 2,
+  }) async {
+    final path =
+        '/api/public/hotspots/nearby?lat=$lat&lng=$lng&alertRadiusMeters=$alertRadiusMeters&eps_km=$epsKm&min_samples=$minSamples';
+
+    final response = await _apiClient.get(path);
+    if (response.statusCode != 200) {
+      return NearbyHotspotApiResponse(
+        success: false,
+        alert: false,
+        nearestHotspot: null,
+        hotspots: const [],
+      );
+    }
+
+    final json = _apiClient.decodeUtf8Json(response) as Map<String, dynamic>;
+    return NearbyHotspotApiResponse.fromJson(json);
+  }
 }

@@ -1,0 +1,1182 @@
+
+-- ================================================================
+-- DỮ LIỆU MẪU
+-- ================================================================
+
+INSERT INTO roles (role_name) VALUES
+('ROLE_USER'),
+('ROLE_ADMIN'),
+('ROLE_PARTNER'),
+('ROLE_ENVIRONMENT');
+
+-- Tạo dãy số dùng chung
+DROP TEMPORARY TABLE IF EXISTS tmp_seed20;
+CREATE TEMPORARY TABLE tmp_seed20 (n INT PRIMARY KEY);
+INSERT INTO tmp_seed20 (n) VALUES
+(1),(2),(3),(4),(5),(6),(7),(8),(9),(10),
+(11),(12),(13),(14),(15),(16),(17),(18),(19),(20);
+
+-- 1.1) roles: thêm 16 role để tổng 20
+INSERT IGNORE INTO roles (role_name)
+SELECT CONCAT('ROLE_EXTRA_', LPAD(n, 2, '0'))
+FROM tmp_seed20
+WHERE n <= 16;
+
+-- 1.2) users: 20 dòng gốc
+INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, provider_id, is_verified, verification_code, last_credentials_update)
+SELECT CONCAT('dn_user_', LPAD(n, 2, '0')),
+    '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy',
+    CONCAT('dn_user_', LPAD(n, 2, '0'), '@gmail.com'),
+    TRUE, TRUE, TRUE, TRUE, NULL,
+    CASE WHEN MOD(n, 2) = 0 THEN TRUE ELSE FALSE END,
+    CASE WHEN MOD(n, 2) = 0 THEN NULL ELSE CONCAT('VERIFY_DN_', LPAD(n, 2, '0')) END,
+    DATE_SUB(NOW(), INTERVAL n DAY)
+FROM tmp_seed20;
+
+-- 1.3) users: thêm 20 user thực tế mới
+INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, provider_id, is_verified, verification_code, last_credentials_update) VALUES
+('ngoc.tran', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'ngoc.tran@gmail.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-01-15 08:30:00'),
+('minh.hoang', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'minh.hoang@yahoo.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-02-20 14:22:00'),
+('thuy.le', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'thuy.le@outlook.com', TRUE, TRUE, TRUE, TRUE, NULL, FALSE, 'VERIFY_X9K2M', '2026-03-10 09:45:00'),
+('tuan.phan', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'tuan.phan@gmail.com', TRUE, TRUE, TRUE, TRUE, 'google', TRUE, NULL, '2026-01-05 16:30:00'),
+('lan.vo', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'lan.vo@hotmail.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-04-02 11:15:00'),
+('hung.dao', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'hung.dao@gmail.com', TRUE, FALSE, TRUE, TRUE, NULL, FALSE, 'VERIFY_P7L3N', '2026-02-28 07:50:00'),
+('trang.bui', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'trang.bui@edu.vn', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-03-25 13:40:00'),
+('phat.ngo', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'phat.ngo@gmail.com', TRUE, TRUE, FALSE, TRUE, NULL, TRUE, NULL, '2025-12-10 10:00:00'),
+('nhi.dinh', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'nhi.dinh@yahoo.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-01-20 15:30:00'),
+('quang.ly', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'quang.ly@gmail.com', TRUE, TRUE, TRUE, FALSE, NULL, FALSE, 'VERIFY_W4B8C', '2025-11-15 08:00:00'),
+('anh.nguyen', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'anh.nguyen@gmail.com', TRUE, TRUE, TRUE, TRUE, 'facebook', TRUE, NULL, '2026-04-10 17:20:00'),
+('khoa.pham', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'khoa.pham@outlook.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-02-05 12:10:00'),
+('uyen.truong', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'uyen.truong@gmail.com', TRUE, TRUE, TRUE, TRUE, NULL, FALSE, 'VERIFY_M3K9D', '2026-03-18 09:30:00'),
+('duc.ton', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'duc.ton@yahoo.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-01-30 14:45:00'),
+('my.lam', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'my.lam@gmail.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-04-05 10:50:00'),
+('hieu.ha', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'hieu.ha@edu.vn', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-02-15 16:00:00'),
+('tram.dang', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'tram.dang@gmail.com', TRUE, TRUE, TRUE, TRUE, NULL, FALSE, 'VERIFY_T5Y7U', '2026-03-30 11:30:00'),
+('vu.ho', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'vu.ho@hotmail.com', TRUE, FALSE, TRUE, TRUE, NULL, TRUE, NULL, '2025-11-20 08:15:00'),
+('thao.cao', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'thao.cao@gmail.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-01-08 13:00:00'),
+('loc.vuong', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'loc.vuong@yahoo.com', TRUE, TRUE, TRUE, TRUE, NULL, TRUE, NULL, '2026-04-12 09:20:00');
+
+-- 1.4) user_role: gán role cho 20 user gốc
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n, 2, '0'))
+JOIN roles r ON r.role_name = CASE
+    WHEN s.n <= 12 THEN 'ROLE_USER'
+    WHEN s.n <= 16 THEN 'ROLE_PARTNER'
+    WHEN s.n <= 18 THEN 'ROLE_ADMIN'
+    ELSE 'ROLE_ENVIRONMENT'
+END;
+
+-- 1.5) user_role: gán role cho 20 user mới
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username IN ('ngoc.tran','minh.hoang','thuy.le','tuan.phan','lan.vo','hung.dao','trang.bui','phat.ngo','nhi.dinh','quang.ly','anh.nguyen','khoa.pham','uyen.truong','duc.ton','my.lam','hieu.ha','tram.dang','vu.ho','thao.cao','loc.vuong')
+AND r.role_name = 'ROLE_USER';
+
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username IN ('minh.hoang','lan.vo','duc.ton') AND r.role_name = 'ROLE_ADMIN';
+
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username IN ('ngoc.tran','trang.bui','khoa.pham') AND r.role_name = 'ROLE_PARTNER';
+
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username IN ('tuan.phan','nhi.dinh','anh.nguyen','thao.cao','loc.vuong') AND r.role_name = 'ROLE_ENVIRONMENT';
+
+-- 2) levels: 20 dòng
+INSERT INTO levels (level_name, min_points, max_points, icon_url)
+SELECT CONCAT('Level ', LPAD(n, 2, '0')), (n-1)*100, (n*100)-1, CONCAT('icons/level_', LPAD(n,2,'0'), '.png')
+FROM tmp_seed20;
+
+-- 3) user_profiles: 20 dòng gốc
+INSERT INTO user_profiles (user_id, full_name, avatar_url, gender, phone_number, birth_date, location, level_id, quiz_streak, last_quiz_date)
+SELECT u.user_id, CONCAT('Nguoi dung Da Nang ', LPAD(s.n,2,'0')), CONCAT('avatars/dn_user_', LPAD(s.n,2,'0'), '.png'),
+    CASE MOD(s.n,3) WHEN 1 THEN 'M' WHEN 2 THEN 'F' ELSE 'O' END,
+    CONCAT('0901', LPAD(s.n,6,'0')), DATE_SUB('2004-12-31', INTERVAL s.n*250 DAY), 'Da Nang, Viet Nam',
+    l.level_id, MOD(s.n,7), DATE_SUB(CURDATE(), INTERVAL s.n DAY)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'))
+JOIN levels l ON l.level_name = CONCAT('Level ', LPAD(s.n,2,'0'));
+
+-- 4) user_profiles: 20 hồ sơ user mới
+INSERT INTO user_profiles (user_id, full_name, avatar_url, gender, phone_number, birth_date, location, level_id, quiz_streak, last_quiz_date)
+SELECT u.user_id,
+    CASE u.username
+        WHEN 'ngoc.tran' THEN 'Trần Thị Ngọc' WHEN 'minh.hoang' THEN 'Hoàng Văn Minh'
+        WHEN 'thuy.le' THEN 'Lê Thị Thúy' WHEN 'tuan.phan' THEN 'Phan Anh Tuấn'
+        WHEN 'lan.vo' THEN 'Võ Thị Lan' WHEN 'hung.dao' THEN 'Đào Quốc Hùng'
+        WHEN 'trang.bui' THEN 'Bùi Thị Trang' WHEN 'phat.ngo' THEN 'Ngô Tấn Phát'
+        WHEN 'nhi.dinh' THEN 'Đinh Thị Nhi' WHEN 'quang.ly' THEN 'Lý Đại Quang'
+        WHEN 'anh.nguyen' THEN 'Nguyễn Văn Anh' WHEN 'khoa.pham' THEN 'Phạm Đăng Khoa'
+        WHEN 'uyen.truong' THEN 'Trương Thị Uyên' WHEN 'duc.ton' THEN 'Tôn Minh Đức'
+        WHEN 'my.lam' THEN 'Lâm Ngọc My' WHEN 'hieu.ha' THEN 'Hà Trung Hiếu'
+        WHEN 'tram.dang' THEN 'Đặng Thị Trâm' WHEN 'vu.ho' THEN 'Hồ Quốc Vũ'
+        WHEN 'thao.cao' THEN 'Cao Thị Thảo' WHEN 'loc.vuong' THEN 'Vương Thành Lộc'
+    END,
+    CASE u.username
+        WHEN 'ngoc.tran' THEN 'https://i.pravatar.cc/150?img=1' WHEN 'minh.hoang' THEN 'https://i.pravatar.cc/150?img=2'
+        WHEN 'thuy.le' THEN 'https://i.pravatar.cc/150?img=3' WHEN 'tuan.phan' THEN 'https://i.pravatar.cc/150?img=4'
+        WHEN 'lan.vo' THEN 'https://i.pravatar.cc/150?img=5' WHEN 'hung.dao' THEN 'https://i.pravatar.cc/150?img=6'
+        WHEN 'trang.bui' THEN 'https://i.pravatar.cc/150?img=7' WHEN 'phat.ngo' THEN 'https://i.pravatar.cc/150?img=8'
+        WHEN 'nhi.dinh' THEN 'https://i.pravatar.cc/150?img=9' WHEN 'quang.ly' THEN 'https://i.pravatar.cc/150?img=10'
+        WHEN 'anh.nguyen' THEN 'https://i.pravatar.cc/150?img=11' WHEN 'khoa.pham' THEN 'https://i.pravatar.cc/150?img=12'
+        WHEN 'uyen.truong' THEN 'https://i.pravatar.cc/150?img=13' WHEN 'duc.ton' THEN 'https://i.pravatar.cc/150?img=14'
+        WHEN 'my.lam' THEN 'https://i.pravatar.cc/150?img=15' WHEN 'hieu.ha' THEN 'https://i.pravatar.cc/150?img=16'
+        WHEN 'tram.dang' THEN 'https://i.pravatar.cc/150?img=17' WHEN 'vu.ho' THEN 'https://i.pravatar.cc/150?img=18'
+        WHEN 'thao.cao' THEN 'https://i.pravatar.cc/150?img=19' WHEN 'loc.vuong' THEN 'https://i.pravatar.cc/150?img=20'
+    END,
+    CASE WHEN u.username IN ('ngoc.tran','thuy.le','lan.vo','trang.bui','nhi.dinh','uyen.truong','my.lam','tram.dang','thao.cao') THEN 'F' ELSE 'M' END,
+    CONCAT('09', LPAD(FLOOR(10000000 + RAND()*80000000), 8, '0')),
+    DATE_SUB('2002-01-01', INTERVAL FLOOR(RAND()*5475) DAY),
+    'Đà Nẵng, Việt Nam',
+    (SELECT level_id FROM levels WHERE level_name = 'Level 05'),
+    FLOOR(RAND()*10),
+    DATE_SUB('2026-05-15', INTERVAL FLOOR(RAND()*30) DAY)
+FROM users u
+WHERE u.username IN ('ngoc.tran','minh.hoang','thuy.le','tuan.phan','lan.vo','hung.dao','trang.bui','phat.ngo','nhi.dinh','quang.ly','anh.nguyen','khoa.pham','uyen.truong','duc.ton','my.lam','hieu.ha','tram.dang','vu.ho','thao.cao','loc.vuong');
+
+-- 5) user_points: 20 dòng gốc
+INSERT INTO user_points (user_id, points)
+SELECT u.user_id, s.n * 120
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 6) user_points: 20 dòng mới
+INSERT INTO user_points (user_id, points)
+SELECT u.user_id, 
+    CASE u.username
+        WHEN 'ngoc.tran' THEN 850 WHEN 'minh.hoang' THEN 1200
+        WHEN 'thuy.le' THEN 320 WHEN 'tuan.phan' THEN 680
+        WHEN 'lan.vo' THEN 1500 WHEN 'hung.dao' THEN 90
+        WHEN 'trang.bui' THEN 450 WHEN 'phat.ngo' THEN 220
+        WHEN 'nhi.dinh' THEN 1100 WHEN 'quang.ly' THEN 55
+        WHEN 'anh.nguyen' THEN 780 WHEN 'khoa.pham' THEN 560
+        WHEN 'uyen.truong' THEN 340 WHEN 'duc.ton' THEN 1350
+        WHEN 'my.lam' THEN 670 WHEN 'hieu.ha' THEN 420
+        WHEN 'tram.dang' THEN 180 WHEN 'vu.ho' THEN 25
+        WHEN 'thao.cao' THEN 950 WHEN 'loc.vuong' THEN 730
+    END
+FROM users u
+WHERE u.username IN ('ngoc.tran','minh.hoang','thuy.le','tuan.phan','lan.vo','hung.dao','trang.bui','phat.ngo','nhi.dinh','quang.ly','anh.nguyen','khoa.pham','uyen.truong','duc.ton','my.lam','hieu.ha','tram.dang','vu.ho','thao.cao','loc.vuong');
+
+-- 7) point_transactions: 20 dòng gốc
+INSERT INTO point_transactions (user_id, action_type, points, description, created_at)
+SELECT u.user_id,
+    CASE MOD(s.n,6) WHEN 1 THEN 'REPORT' WHEN 2 THEN 'CAMPAIGN' WHEN 3 THEN 'BADGE' WHEN 4 THEN 'QUIZ' WHEN 5 THEN 'VOUCHER' ELSE 'OTHER' END,
+    CASE WHEN MOD(s.n,5)=0 THEN -50 ELSE 20+s.n END,
+    CONCAT('Giao dich diem #', LPAD(s.n,2,'0')),
+    DATE_SUB(NOW(), INTERVAL s.n HOUR)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 8) point_transactions: 20 giao dịch mới
+INSERT INTO point_transactions (user_id, action_type, points, description, created_at)
+SELECT u.user_id, 'REPORT', 50, CONCAT('Báo cáo rác tại Đà Nẵng - mã ', u.username), DATE_SUB('2026-05-15', INTERVAL FLOOR(RAND()*30) DAY)
+FROM users u
+WHERE u.username IN ('ngoc.tran','minh.hoang','thuy.le','tuan.phan','lan.vo','hung.dao','trang.bui','phat.ngo','nhi.dinh','quang.ly','anh.nguyen','khoa.pham','uyen.truong','duc.ton','my.lam','hieu.ha','tram.dang','vu.ho','thao.cao','loc.vuong');
+
+-- 9) badges gốc: 10 huy hiệu
+INSERT INTO badges (badge_name, description, icon_url, requirement, points_required) VALUES
+('Eco Starter', 'Bạn đã bắt đầu hành trình bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-starter.png', 'Đạt 50 điểm', 50),
+('Eco Warrior', 'Bạn là một chiến binh bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-warrior.png', 'Đạt 100 điểm', 100),
+('Green Guardian', 'Bạn là người bảo vệ xanh', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/green-guardian.png', 'Đạt 250 điểm', 250),
+('Eco Champion', 'Bạn là nhà vô địch bảo vệ môi trường', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/eco-champion.png', 'Đạt 500 điểm', 500),
+('Planet Hero', 'Bạn là anh hùng của hành tinh', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/planet-hero.png', 'Đạt 1000 điểm', 1000),
+('Nature Lover', 'Bạn yêu thiên nhiên và bảo vệ nó', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/nature-lover.png', 'Đạt 150 điểm', 150),
+('Climate Guardian', 'Bạn là người bảo vệ khí hậu toàn cầu', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/climate-guardian.png', 'Đạt 350 điểm', 350),
+('Waste Warrior', 'Bạn chiến đấu chống lại rác thải', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/waste-warrior.png', 'Đạt 200 điểm', 200),
+('Sustainability Master', 'Bạn là bậc thầy của phát triển bền vững', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/sustainability-master.png', 'Đạt 750 điểm', 750),
+('Legendary Protector', 'Bạn là huyền thoại bảo vệ Trái Đất', 'https://res.cloudinary.com/dufrrtxru/image/upload/v1/badges/legendary-protector.png', 'Đạt 1500 điểm', 1500);
+
+-- 10) badges: thêm 10 huy hiệu nữa cho đủ 20
+INSERT INTO badges (badge_name, icon_url, description, requirement, points_required)
+SELECT CONCAT('Huy hieu ', LPAD(n,2,'0')), CONCAT('badges/badge_', LPAD(n,2,'0'), '.png'),
+    CONCAT('Mo ta huy hieu so ', n), CONCAT('Yeu cau dat moc ', n*50, ' diem'), n*50
+FROM tmp_seed20;
+
+-- 11) user_badges: 20 dòng
+INSERT INTO user_badges (user_id, badge_id, awarded_at)
+SELECT u.user_id, b.badge_id, DATE_SUB(NOW(), INTERVAL s.n DAY)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'))
+JOIN badges b ON b.badge_name = CONCAT('Huy hieu ', LPAD(s.n,2,'0'));
+
+-- 12) leaderboard: 20 dòng
+INSERT INTO leaderboard (user_id, rank_position, score, snapshot_date, updated_at)
+SELECT u.user_id, s.n, (21-s.n)*150, CURDATE(), NOW()
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 13) community_groups: 20 nhóm gốc + 20 nhóm mới
+INSERT INTO community_groups (group_name, created_by_user_id)
+SELECT CONCAT('Nhom cong dong Da Nang ', LPAD(s.n,2,'0')), u.user_id
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+INSERT INTO community_groups (group_name, created_by_user_id) VALUES
+('Đà Nẵng Xanh - Sạch - Đẹp', (SELECT user_id FROM users WHERE username='lan.vo')),
+('Tình Nguyện Viên Môi Trường ĐN', (SELECT user_id FROM users WHERE username='minh.hoang')),
+('Cộng Đồng Tái Chế Đà Nẵng', (SELECT user_id FROM users WHERE username='ngoc.tran')),
+('Biển Sạch - Cá Vui', (SELECT user_id FROM users WHERE username='tuan.phan')),
+('Eco Warriors Đà Nẵng', (SELECT user_id FROM users WHERE username='nhi.dinh')),
+('Sống Xanh Cùng Nhau', (SELECT user_id FROM users WHERE username='my.lam')),
+('Đà Nẵng Không Rác Thải', (SELECT user_id FROM users WHERE username='duc.ton')),
+('Cộng Đồng Phân Loại Rác Tại Nguồn', (SELECT user_id FROM users WHERE username='trang.bui')),
+('Nhóm Dọn Rác Cuối Tuần', (SELECT user_id FROM users WHERE username='anh.nguyen')),
+('Bảo Vệ Môi Trường Sơn Trà', (SELECT user_id FROM users WHERE username='thao.cao')),
+('Chống Rác Thải Nhựa Đà Nẵng', (SELECT user_id FROM users WHERE username='loc.vuong')),
+('Vườn Cộng Đồng Hải Châu', (SELECT user_id FROM users WHERE username='hieu.ha')),
+('Team Tái Chế Sáng Tạo', (SELECT user_id FROM users WHERE username='khoa.pham')),
+('Đà Nẵng Zero Waste', (SELECT user_id FROM users WHERE username='uyen.truong')),
+('Môi Trường Là Nhà', (SELECT user_id FROM users WHERE username='phat.ngo')),
+('Năng Lượng Xanh Miền Trung', (SELECT user_id FROM users WHERE username='thuy.le')),
+('Hành Động Vì Khí Hậu', (SELECT user_id FROM users WHERE username='tram.dang')),
+('Cộng Đồng Yêu Thiên Nhiên ĐN', (SELECT user_id FROM users WHERE username='vu.ho')),
+('Làm Đẹp Phố Phường', (SELECT user_id FROM users WHERE username='ngoc.tran')),
+('Recycle Masters Đà Nẵng', (SELECT user_id FROM users WHERE username='lan.vo'));
+
+-- 14) group_members: 20 dòng
+INSERT INTO group_members (group_id, user_id, role)
+SELECT g.group_id, u.user_id, 'ADMIN'
+FROM tmp_seed20 s
+JOIN community_groups g ON g.group_name = CONCAT('Nhom cong dong Da Nang ', LPAD(s.n,2,'0'))
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 15) group_leaderboard: 20 dòng
+INSERT INTO group_leaderboard (group_id, total_score, snapshot_date, updated_at)
+SELECT g.group_id, 1000+(s.n*80), CURDATE(), NOW()
+FROM tmp_seed20 s
+JOIN community_groups g ON g.group_name = CONCAT('Nhom cong dong Da Nang ', LPAD(s.n,2,'0'));
+
+-- 16) quizzes: 20 dòng gốc
+INSERT INTO quizzes (title, points_reward, status)
+SELECT CONCAT('Quiz Moi Truong Da Nang ', LPAD(n,2,'0')), 10+n, 'PUBLISHED'
+FROM tmp_seed20;
+
+-- 17) quizzes: thêm 20 quiz mới
+INSERT INTO quizzes (title, points_reward, status) VALUES
+('Phân loại rác thải nhựa đúng cách', 25, 'PUBLISHED'),
+('Kiến thức về rác thải nguy hại', 30, 'PUBLISHED'),
+('Thử thách tái chế sáng tạo', 40, 'PUBLISHED'),
+('Bảo vệ đại dương khỏi rác thải', 35, 'PUBLISHED'),
+('Rác thải điện tử - Hiểm họa và giải pháp', 45, 'PUBLISHED'),
+('Composting - Ủ rác hữu cơ tại nhà', 30, 'PUBLISHED'),
+('Zero Waste - Sống không rác thải', 50, 'PUBLISHED'),
+('Phân biệt các loại nhựa (PET, HDPE, PVC...)', 35, 'PUBLISHED'),
+('Tác hại của túi nilon đến môi trường', 20, 'PUBLISHED'),
+('Tiết kiệm năng lượng và giảm khí thải', 30, 'PUBLISHED'),
+('Rác thải y tế - Xử lý an toàn', 40, 'DRAFT'),
+('Biến đổi khí hậu và hành động của bạn', 45, 'PUBLISHED'),
+('Thực phẩm hữu cơ vs thực phẩm thông thường', 25, 'PUBLISHED'),
+('Kinh tế tuần hoàn - Mô hình tương lai', 50, 'PUBLISHED'),
+('Fast Fashion - Thời trang và môi trường', 35, 'PUBLISHED'),
+('Pin mặt trời - Năng lượng xanh', 30, 'DRAFT'),
+('Đa dạng sinh học tại Việt Nam', 40, 'PUBLISHED'),
+('Microplastic - Hạt vi nhựa nguy hiểm', 45, 'PUBLISHED'),
+('Nước sạch và vệ sinh môi trường', 25, 'PUBLISHED'),
+('Giao thông xanh - Giảm phát thải carbon', 30, 'PUBLISHED');
+
+-- 18) quiz_questions: 20 câu hỏi cho quiz "Phân loại rác thải nhựa đúng cách"
+INSERT INTO quiz_questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option)
+SELECT q.quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option
+FROM quizzes q
+JOIN (
+    SELECT 'Phân loại rác thải nhựa đúng cách' as qtitle, 'Nhựa PET (chai nước suối) thuộc nhóm nào?' as question_text, 'Nhựa tái chế dễ dàng' as option_a, 'Nhựa khó tái chế' as option_b, 'Nhựa không thể tái chế' as option_c, 'Nhựa nguy hại' as option_d, 'A' as correct_option UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Túi nilon mất bao lâu để phân hủy?', '1-5 năm', '10-50 năm', '100-500 năm', 'Trên 1000 năm', 'D' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Ký hiệu tái chế số mấy là nhựa an toàn cho thực phẩm?', 'Số 1 (PET)', 'Số 3 (PVC)', 'Số 5 (PP)', 'Số 7 (OTHER)', 'C' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Đốt rác thải nhựa gây ra khí độc nào?', 'CO2', 'Dioxin và Furan', 'Oxy', 'Nitơ', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Nhựa HDPE thường dùng để sản xuất gì?', 'Chai nước ngọt', 'Ống nước', 'Màng bọc thực phẩm', 'Hộp xốp', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Bao nhiêu % rác thải nhựa được tái chế trên toàn cầu?', 'Khoảng 9%', 'Khoảng 30%', 'Khoảng 50%', 'Khoảng 70%', 'A' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Đâu là cách xử lý chai nhựa đúng?', 'Vứt vào thùng rác chung', 'Rửa sạch, bỏ vào thùng tái chế', 'Đốt bỏ', 'Chôn lấp', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Rác thải nhựa ảnh hưởng đến sinh vật biển như thế nào?', 'Không ảnh hưởng', 'Gây ngộ độc, tắc nghẽn tiêu hóa', 'Tăng nguồn thức ăn', 'Cải thiện môi trường sống', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Loại nhựa nào chứa BPA gây hại sức khỏe?', 'PET', 'HDPE', 'Polycarbonate (PC)', 'LDPE', 'C' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Thời gian phân hủy của chai nhựa PET?', '50-100 năm', '200-400 năm', '450-1000 năm', '50 năm', 'C' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Đảo rác Thái Bình Dương có diện tích gấp mấy lần Việt Nam?', 'Gấp 2', 'Gấp 6', 'Gấp 10', 'Gấp 50', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Vi nhựa (microplastic) có kích thước bao nhiêu?', 'Trên 5mm', 'Dưới 5mm', 'Từ 1-10cm', 'Trên 10cm', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Tái chế 1 tấn nhựa tiết kiệm được bao nhiêu dầu?', '100 lít', '500 lít', '2000 lít', 'Không tiết kiệm', 'C' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Sản phẩm nào KHÔNG chứa nhựa?', 'Bàn chải tre', 'Chai dầu gội', 'Túi zip', 'Hộp đựng cơm nhựa', 'A' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Nhựa LDPE thường dùng làm gì?', 'Chai nước', 'Túi nilon, màng bọc', 'Đồ chơi LEGO', 'Ống nhựa PVC', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Chương trình "Đổi rác lấy quà" phổ biến ở đâu?', 'Chỉ ở nước ngoài', 'Nhiều tỉnh thành Việt Nam', 'Chưa có ở VN', 'Chỉ ở Hà Nội', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Nhựa PS (xốp) có đặc điểm gì?', 'Dễ tái chế', 'Khó phân hủy, nhẹ, dễ vỡ vụn', 'Có thể ăn được', 'Tự phân hủy sau 1 năm', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Cách giảm thiểu rác thải nhựa hiệu quả nhất?', 'Tăng sản xuất nhựa', 'Dùng 1 lần rồi vứt', 'Tái sử dụng, từ chối đồ nhựa dùng 1 lần', 'Đốt tất cả rác nhựa', 'C' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Việt Nam đứng thứ mấy thế giới về xả rác nhựa ra đại dương?', 'Thứ 1', 'Thứ 4', 'Thứ 10', 'Thứ 20', 'B' UNION ALL
+    SELECT 'Phân loại rác thải nhựa đúng cách', 'Bạn nên làm gì với vỏ hộp sữa giấy?', 'Vứt vào thùng rác thường', 'Rửa sạch, gấp gọn, bỏ thùng tái chế', 'Đốt bỏ', 'Chôn xuống đất', 'B'
+) dt ON q.title = dt.qtitle;
+
+-- 19) user_quiz_attempts: 20 dòng gốc + 20 dòng mới
+INSERT INTO user_quiz_attempts (user_id, quiz_id, score, completed_at)
+SELECT u.user_id, q.quiz_id, 5+MOD(s.n,6), DATE_SUB(NOW(), INTERVAL s.n DAY)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'))
+JOIN quizzes q ON q.title = CONCAT('Quiz Moi Truong Da Nang ', LPAD(s.n,2,'0'));
+
+INSERT INTO user_quiz_attempts (user_id, quiz_id, score, completed_at)
+SELECT u.user_id, q.quiz_id, FLOOR(15+RAND()*35), DATE_SUB('2026-05-15', INTERVAL FLOOR(RAND()*30) DAY)
+FROM users u
+CROSS JOIN quizzes q
+WHERE u.username IN ('ngoc.tran','minh.hoang','thuy.le','tuan.phan','lan.vo','trang.bui','phat.ngo','nhi.dinh','anh.nguyen','khoa.pham','uyen.truong','duc.ton','my.lam','hieu.ha','tram.dang','thao.cao','loc.vuong','hung.dao','quang.ly','vu.ho')
+AND q.title IN ('Phân loại rác thải nhựa đúng cách','Kiến thức về rác thải nguy hại','Thử thách tái chế sáng tạo','Bảo vệ đại dương khỏi rác thải','Rác thải điện tử - Hiểm họa và giải pháp')
+LIMIT 20;
+
+-- 20) waste_reports: 20 dòng gốc + 20 dòng mới
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+((SELECT user_id FROM users WHERE username='dn_user_01'), 'Bao cao rac Thanh Khe 01', 'Diem rac nho tren duong noi bo Thanh Khe', 'reports/danang/thanhkhe_001.jpg', 16.06892000, 108.21640000, 'PENDING', DATE_SUB(NOW(), INTERVAL 1 HOUR), 'NHUA', 1, 0.93, '{"city":"Da Nang","district":"Thanh Khe","ward":"Chinh Gian"}', 'reports/danang/analyzed_001.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_02'), 'Bao cao rac Hai Chau 02', 'Diem rac tren khu pho co trung tam Hai Chau', 'reports/danang/haichau_002.jpg', 16.07124000, 108.22018000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 2 HOUR), 'HUU_CO', 1, 0.88, '{"city":"Da Nang","district":"Hai Chau","ward":"Hai Chau 1"}', 'reports/danang/analyzed_002.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_03'), 'Bao cao rac Hoa Xuan 03', 'Rac phat sinh tai khu dan cu Hoa Xuan', 'reports/danang/hoaxuan_003.jpg', 16.01278000, 108.22374000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 3 HOUR), 'KIM_LOAI', 0, 0.76, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa Xuan"}', 'reports/danang/analyzed_003.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_04'), 'Bao cao rac Hoa Khanh 04', 'Diem rac quanh truong hoc khu Hoa Khanh', 'reports/danang/hoakhanh_004.jpg', 16.06054000, 108.14789000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 4 HOUR), 'KHAC', 1, 0.91, '{"city":"Da Nang","district":"Lien Chieu","ward":"Hoa Khanh"}', 'reports/danang/analyzed_004.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_05'), 'Bao cao rac Hoa Cuong 05', 'Rac nho tai khu pho Hoa Cuong Bac', 'reports/danang/hoacuong_005.jpg', 16.04263000, 108.22745000, 'PENDING', DATE_SUB(NOW(), INTERVAL 5 HOUR), 'NHUA', 1, 0.84, '{"city":"Da Nang","district":"Hai Chau","ward":"Hoa Cuong Bac"}', 'reports/danang/analyzed_005.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_06'), 'Bao cao rac Vinh Trung 06', 'Diem rac ven duong khu Vinh Trung', 'reports/danang/vinhtrung_006.jpg', 16.07311000, 108.20695000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 6 HOUR), 'HUU_CO', 1, 0.87, '{"city":"Da Nang","district":"Thanh Khe","ward":"Vinh Trung"}', 'reports/danang/analyzed_006.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_07'), 'Bao cao rac Hoa An 07', 'Rac roi ven khu hoa an', 'reports/danang/hoaan_007.jpg', 16.02894000, 108.20641000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 7 HOUR), 'XAY_DUNG', 1, 0.90, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa An"}', 'reports/danang/analyzed_007.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_08'), 'Bao cao rac An Khe 08', 'Diem rac nho tai khu An Khe', 'reports/danang/ankhe_008.jpg', 16.04588000, 108.18432000, 'PENDING', DATE_SUB(NOW(), INTERVAL 8 HOUR), 'NHUA', 0, 0.79, '{"city":"Da Nang","district":"Thanh Khe","ward":"An Khe"}', 'reports/danang/analyzed_008.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_09'), 'Bao cao rac Hoa Minh 09', 'Rac tap ket trong khu Hoa Minh', 'reports/danang/hoaminh_009.jpg', 16.07652000, 108.14488000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 9 HOUR), 'HUU_CO', 1, 0.86, '{"city":"Da Nang","district":"Lien Chieu","ward":"Hoa Minh"}', 'reports/danang/analyzed_009.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_10'), 'Bao cao rac Khu Trung 10', 'Diem rac tai Khu Trung', 'reports/danang/khutrung_010.jpg', 16.03141000, 108.21977000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 10 HOUR), 'KIM_LOAI', 0, 0.74, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa Tho Dong"}', 'reports/danang/analyzed_010.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_11'), 'Bao cao rac Chinh Gian 11', 'Rac ven tuyen duong Chinh Gian', 'reports/danang/chinhgian_011.jpg', 16.06190000, 108.21450000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 11 HOUR), 'NHUA', 1, 0.92, '{"city":"Da Nang","district":"Thanh Khe","ward":"Chinh Gian"}', 'reports/danang/analyzed_011.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_12'), 'Bao cao rac Nam Duong 12', 'Rac sinh hoat tai khu Nam Duong', 'reports/danang/namduong_012.jpg', 16.05645000, 108.22130000, 'PENDING', DATE_SUB(NOW(), INTERVAL 12 HOUR), 'HUU_CO', 1, 0.83, '{"city":"Da Nang","district":"Hai Chau","ward":"Nam Duong"}', 'reports/danang/analyzed_012.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_13'), 'Bao cao rac Hoa Tho 13', 'Diem rac trong khu dan cu Hoa Tho', 'reports/danang/hoatho_013.jpg', 16.02286000, 108.20884000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 13 HOUR), 'KHAC', 1, 0.89, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa Tho Dong"}', 'reports/danang/analyzed_013.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_14'), 'Bao cao rac Ha Mau 14', 'Rac don dong tai khu Ha Mau', 'reports/danang/hamau_014.jpg', 16.03468000, 108.19795000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 14 HOUR), 'XAY_DUNG', 0, 0.72, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa Tho Tay"}', 'reports/danang/analyzed_014.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_15'), 'Bao cao rac Xuan Ha 15', 'Diem rac nho trong khu pho Xuan Ha', 'reports/danang/xuanha_015.jpg', 16.05820000, 108.21226000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 15 HOUR), 'NHUA', 1, 0.94, '{"city":"Da Nang","district":"Thanh Khe","ward":"Xuan Ha"}', 'reports/danang/analyzed_015.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_16'), 'Bao cao rac Hoa Phat 16', 'Rac ven duong Hoa Phat', 'reports/danang/hoaphat_016.jpg', 16.07985000, 108.17324000, 'PENDING', DATE_SUB(NOW(), INTERVAL 16 HOUR), 'HUU_CO', 1, 0.85, '{"city":"Da Nang","district":"Lien Chieu","ward":"Hoa Phat"}', 'reports/danang/analyzed_016.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_17'), 'Bao cao rac Khu Trung 17', 'Diem rac phat sinh gan khu dan cu Khu Trung', 'reports/danang/khutrung_017.jpg', 16.03802000, 108.21462000, 'VERIFIED', DATE_SUB(NOW(), INTERVAL 17 HOUR), 'NHUA', 1, 0.88, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa Cuong Nam"}', 'reports/danang/analyzed_017.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_18'), 'Bao cao rac Hoa Khanh Nam 18', 'Rac tai khu Hoa Khanh Nam', 'reports/danang/hoakhanhnam_018.jpg', 16.06612000, 108.14590000, 'REJECTED', DATE_SUB(NOW(), INTERVAL 18 HOUR), 'KIM_LOAI', 0, 0.71, '{"city":"Da Nang","district":"Lien Chieu","ward":"Hoa Khanh Nam"}', 'reports/danang/analyzed_018.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_19'), 'Bao cao rac Trung Nuoc 19', 'Rac tap trung tai khu Trung Nuoc', 'reports/danang/trungnuoc_019.jpg', 16.05133000, 108.20572000, 'CLEANED', DATE_SUB(NOW(), INTERVAL 19 HOUR), 'HUU_CO', 1, 0.93, '{"city":"Da Nang","district":"Hai Chau","ward":"Binh Hien"}', 'reports/danang/analyzed_019.jpg'),
+((SELECT user_id FROM users WHERE username='dn_user_20'), 'Bao cao rac Hoa Cam 20', 'Diem rac o khu Hoa Cam', 'reports/danang/hoacam_020.jpg', 16.01876000, 108.20286000, 'PENDING', DATE_SUB(NOW(), INTERVAL 20 HOUR), 'XAY_DUNG', 1, 0.82, '{"city":"Da Nang","district":"Cam Le","ward":"Hoa Cam"}', 'reports/danang/analyzed_020.jpg');
+
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa công viên 29/3', 'Nhiều chai nhựa, túi nilon vứt bừa bãi quanh ghế đá', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.054800, 108.218500, 'PENDING', '2026-05-14 08:30:00', 'NHUA', 1, 0.92, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"plastic_waste"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Bãi rác tự phát Hòa Khánh', 'Rác sinh hoạt đổ trộm sau khu công nghiệp', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.060500, 108.147900, 'VERIFIED', '2026-05-13 15:45:00', 'HUU_CO', 1, 0.88, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"illegal_dump"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác xây dựng đường Lê Văn Hiến', 'Gạch vụn, bao xi măng bỏ không đúng nơi quy định', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.035200, 108.221300, 'PENDING', '2026-05-13 10:20:00', 'XAY_DUNG', 0, 0.75, '{"ward":"Khuê Trung","district":"Cẩm Lệ","label":"construction_debris"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải nhựa ven sông Hàn', 'Túi nilon, chai lọ trôi dạt vào bờ kè sông Hàn', 'https://images.unsplash.com/photo-1621451537084-482c73073a0f', 16.069800, 108.226500, 'VERIFIED', '2026-05-12 07:15:00', 'NHUA', 1, 0.91, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"river_bank_waste"}', 'https://images.unsplash.com/photo-1621451537084-482c73073a0f'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác điện tử vứt sai quy định', 'Màn hình máy tính cũ, linh kiện điện tử tại đường Nguyễn Hữu Thọ', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.032500, 108.215800, 'REJECTED', '2026-05-11 16:00:00', 'KIM_LOAI', 0, 0.68, '{"ward":"Hòa Cường Nam","district":"Hải Châu","label":"e_waste"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác hữu cơ chợ Cồn', 'Rau củ hư, thức ăn thừa đổ tràn ra vỉa hè', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.062300, 108.213700, 'CLEANED', '2026-05-10 11:30:00', 'HUU_CO', 1, 0.85, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"market_waste"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Túi nilon bãi biển Mỹ Khê', 'Du khách vứt túi nilon, vỏ bim bim trên bãi cát', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.059700, 108.247200, 'PENDING', '2026-05-09 14:00:00', 'NHUA', 1, 0.93, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"beach_litter"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác thải pin ắc quy', 'Bình ắc quy cũ vứt bên đường Tôn Đức Thắng', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.057100, 108.204900, 'VERIFIED', '2026-05-08 09:45:00', 'KIM_LOAI', 1, 0.89, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"hazardous_waste"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác thải chai thủy tinh', 'Chai bia vỡ nguy hiểm tại công viên Châu Á', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.042800, 108.234500, 'PENDING', '2026-05-07 17:20:00', 'THUY_TINH', 0, 0.72, '{"ward":"Hòa Hải","district":"Ngũ Hành Sơn","label":"glass_waste"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác thải vải vụn xưởng may', 'Vải vụn, chỉ thừa đổ sau xưởng may Hòa Cầm', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.018800, 108.202900, 'VERIFIED', '2026-05-06 13:40:00', 'KHAC', 1, 0.82, '{"ward":"Hòa Cầm","district":"Cẩm Lệ","label":"textile_waste"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác nilon khu dân cư An Hải Đông', 'Túi nilon, hộp xốp vứt bừa bãi góc đường', 'https://images.unsplash.com/photo-1605600659908-0ef719419d41', 16.065400, 108.243800, 'REJECTED', '2026-05-05 10:00:00', 'NHUA', 0, 0.65, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"residential_waste"}', 'https://images.unsplash.com/photo-1605600659908-0ef719419d41'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác lốp xe cũ Hòa Phát', 'Lốp ô tô, xe máy cũ chất đống gây ô nhiễm', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.079900, 108.173200, 'CLEANED', '2026-05-04 15:50:00', 'KHAC', 1, 0.87, '{"ward":"Hòa Phát","district":"Liên Chiểu","label":"tire_waste"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác nhà hàng khu du lịch Bà Nà', 'Đồ ăn thừa, chai lọ khu vực chân núi Bà Nà', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.050000, 108.033300, 'PENDING', '2026-05-03 11:15:00', 'HUU_CO', 1, 0.84, '{"ward":"Hòa Ninh","district":"Hòa Vang","label":"tourist_waste"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác thải nhựa trường học', 'Học sinh vứt vỏ bánh kẹo, chai nước quanh trường THPT Phan Châu Trinh', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.061200, 108.215400, 'VERIFIED', '2026-05-02 08:30:00', 'NHUA', 1, 0.90, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"school_waste"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Xác động vật vứt ven đường', 'Xác chó mèo bỏ trong bao nilon ven đường Hoàng Văn Thái', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.037800, 108.194500, 'CLEANED', '2026-05-01 14:20:00', 'HUU_CO', 0, 0.60, '{"ward":"Hòa Thọ Tây","district":"Cẩm Lệ","label":"animal_carcass"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác nilon chợ Hàn', 'Rác thải nilon, hộp xốp tràn ra đường Trần Phú', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.071400, 108.222500, 'PENDING', '2026-04-30 09:10:00', 'NHUA', 1, 0.91, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"market_plastic"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác thải pin mặt trời hỏng', 'Tấm pin năng lượng mặt trời vỡ bỏ không đúng quy cách', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.023400, 108.206700, 'VERIFIED', '2026-04-29 16:45:00', 'KIM_LOAI', 1, 0.86, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"solar_waste"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác sơn, hóa chất xây dựng', 'Thùng sơn cũ, dung môi vứt tại công trình đường', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.045200, 108.218100, 'PENDING', '2026-04-28 12:30:00', 'XAY_DUNG', 0, 0.70, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"chemical_waste"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác nilon khu vực cầu Rồng', 'Du khách vứt rác sau khi xem cầu Rồng phun lửa', 'https://images.unsplash.com/photo-1621451537084-482c73073a0f', 16.068500, 108.227300, 'CLEANED', '2026-04-27 21:00:00', 'NHUA', 1, 0.94, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"tourist_litter"}', 'https://images.unsplash.com/photo-1621451537084-482c73073a0f'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải lốp xe chợ Hòa Khánh', 'Lốp xe máy cũ chất đống sau chợ Hòa Khánh', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.059800, 108.148500, 'VERIFIED', '2026-04-26 15:15:00', 'KHAC', 1, 0.83, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"tire_dump"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e');
+
+-- 21) report_verifications: 20 dòng
+INSERT INTO report_verifications (report_id, verified_by, result, confidence_score, created_at)
+SELECT wr.report_id, (SELECT user_id FROM users WHERE username='dn_user_01'), 'APPROVED', 90.00+RAND()*10, DATE_SUB(NOW(), INTERVAL FLOOR(RAND()*48) HOUR)
+FROM waste_reports wr
+WHERE wr.title LIKE 'Bao cao rac%'
+LIMIT 20;
+
+-- 22) partners: 20 dòng
+INSERT INTO partners (user_id, company_name, website, logo_url)
+SELECT u.user_id, CONCAT('Doi tac Da Nang ', LPAD(s.n,2,'0')), CONCAT('https://doitac-danang-', LPAD(s.n,2,'0'), '.vn'), CONCAT('logos/partners/danang_partner_', LPAD(s.n,2,'0'), '.png')
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 23) coupons: 20 dòng
+INSERT INTO coupons (partner_id, code, description, discount_type, discount_value, usage_limit, used_count, expiry_date, is_active, badge_label, category, location_scope, location_text, max_redeem_per_user, required_points, short_description, start_date, thumbnail_url, title)
+SELECT p.partner_id, CONCAT('DNG2026', LPAD(s.n,3,'0')), CONCAT('Uu dai xanh Da Nang #', s.n), 
+    CASE WHEN MOD(s.n,2)=0 THEN 'PERCENT' ELSE 'FIXED' END, CASE WHEN MOD(s.n,2)=0 THEN 12 ELSE 25000 END,
+    200, 0, DATE_ADD(CURDATE(), INTERVAL 90 DAY), TRUE, 'ECO', 'Lifestyle', 'CITY', 'Da Nang', 2, 100+(s.n*10),
+    CONCAT('Voucher ap dung tai Da Nang, ma so ', s.n), CURDATE(), CONCAT('coupons/danang_', LPAD(s.n,3,'0'), '.png'), CONCAT('Voucher Da Nang ', LPAD(s.n,2,'0'))
+FROM tmp_seed20 s
+JOIN partners p ON p.company_name = CONCAT('Doi tac Da Nang ', LPAD(s.n,2,'0'));
+
+-- 24) user_coupons: 20 dòng
+INSERT INTO user_coupons (user_id, coupon_id, status, used_at, created_at)
+SELECT u.user_id, c.coupon_id,
+    CASE WHEN MOD(s.n,4)=0 THEN 'EXPIRED' WHEN MOD(s.n,3)=0 THEN 'USED' ELSE 'UNUSED' END,
+    CASE WHEN MOD(s.n,3)=0 THEN DATE_SUB(NOW(), INTERVAL s.n DAY) ELSE NULL END,
+    DATE_SUB(NOW(), INTERVAL s.n DAY)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'))
+JOIN coupons c ON c.code = CONCAT('DNG2026', LPAD(s.n,3,'0'));
+
+-- 25) campaigns: 20 dòng
+INSERT INTO campaigns (created_by_partner_id, title, description, start_date, end_date, start_time, end_time, location_address, max_participants, image_url, reward_points, qr_code_url)
+SELECT p.partner_id, CONCAT('Chien dich xanh Da Nang ', LPAD(s.n,2,'0')), CONCAT('Hoat dong don dep moi truong tai Da Nang dot ', s.n),
+    DATE_ADD(CURDATE(), INTERVAL s.n DAY), DATE_ADD(CURDATE(), INTERVAL s.n+1 DAY), '06:30:00', '10:30:00',
+    CONCAT('Khu vuc cong cong Da Nang so ', s.n), 50+(s.n*5),
+    CONCAT('campaigns/danang_campaign_', LPAD(s.n,2,'0'), '.jpg'), 30+(s.n*3), CONCAT('campaign_qrs/danang_qr_', LPAD(s.n,2,'0'), '.png')
+FROM tmp_seed20 s
+JOIN partners p ON p.company_name = CONCAT('Doi tac Da Nang ', LPAD(s.n,2,'0'));
+
+-- 26) campaign_participants: 20 dòng
+INSERT INTO campaign_participants (campaign_id, user_id, joined_at)
+SELECT c.campaign_id, u.user_id, DATE_SUB(NOW(), INTERVAL s.n DAY)
+FROM tmp_seed20 s
+JOIN campaigns c ON c.title = CONCAT('Chien dich xanh Da Nang ', LPAD(s.n,2,'0'))
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 27) campaign_badge_rewards: 20 dòng
+INSERT INTO campaign_badge_rewards (campaign_id, badge_id)
+SELECT c.campaign_id, b.badge_id
+FROM tmp_seed20 s
+JOIN campaigns c ON c.title = CONCAT('Chien dich xanh Da Nang ', LPAD(s.n,2,'0'))
+JOIN badges b ON b.badge_name = CONCAT('Huy hieu ', LPAD(s.n,2,'0'));
+
+-- 28) checkins: 20 dòng
+INSERT INTO checkins (campaign_id, user_id, created_at)
+SELECT c.campaign_id, u.user_id, DATE_SUB(NOW(), INTERVAL s.n HOUR)
+FROM tmp_seed20 s
+JOIN campaigns c ON c.title = CONCAT('Chien dich xanh Da Nang ', LPAD(s.n,2,'0'))
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 29) campaign_likes: 20 dòng
+INSERT INTO campaign_likes (campaign_id, user_id)
+SELECT c.campaign_id, u.user_id
+FROM tmp_seed20 s
+JOIN campaigns c ON c.title = CONCAT('Chien dich xanh Da Nang ', LPAD(s.n,2,'0'))
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD((21-s.n),2,'0'));
+
+-- 30) campaign_comments: 20 dòng
+INSERT INTO campaign_comments (campaign_id, user_id, content, created_at)
+SELECT c.campaign_id, u.user_id, CONCAT('Binh luan dong gop cho chien dich so ', s.n, ' tai Da Nang.'), DATE_SUB(NOW(), INTERVAL s.n HOUR)
+FROM tmp_seed20 s
+JOIN campaigns c ON c.title = CONCAT('Chien dich xanh Da Nang ', LPAD(s.n,2,'0'))
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+-- 31) notifications: 20 dòng gốc + 20 dòng mới
+INSERT INTO notifications (user_id, source_scope, notification_type, title, message, is_read, target_type, created_at)
+SELECT u.user_id, 'USER_EVENT', CASE MOD(s.n,4) WHEN 1 THEN 'CAMPAIGN' WHEN 2 THEN 'ACHIEVEMENT' WHEN 3 THEN 'REWARD' ELSE 'SYSTEM' END,
+    CONCAT('Thong bao #', LPAD(s.n,2,'0')), CONCAT('Noi dung thong bao he thong cho nguoi dung ', s.n),
+    CASE WHEN MOD(s.n,2)=0 THEN TRUE ELSE FALSE END, 'USER', DATE_SUB(NOW(), INTERVAL s.n HOUR)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+INSERT INTO notifications (user_id, source_scope, notification_type, title, message, is_read, target_type, created_at) VALUES
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'USER_EVENT', 'REWARD', 'Bạn nhận được 50 điểm!', 'Báo cáo rác tại công viên 29/3 đã được duyệt. Bạn nhận được 50 điểm thưởng.', FALSE, 'WASTE_REPORT', '2026-05-14 08:35:00'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'USER_EVENT', 'CAMPAIGN', 'Chiến dịch dọn rác Mỹ Khê sắp diễn ra', 'Bạn đã đăng ký tham gia. Hẹn gặp bạn lúc 6h30 ngày 20/5 tại bãi biển Mỹ Khê!', TRUE, 'CAMPAIGN', '2026-05-13 10:00:00'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'USER_EVENT', 'ACHIEVEMENT', 'Chúc mừng! Bạn đạt cấp độ Eco Warrior', 'Bạn vừa đạt 100 điểm và mở khóa huy hiệu Eco Warrior.', FALSE, 'ACHIEVEMENT', '2026-05-12 17:00:00'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'USER_EVENT', 'SYSTEM', 'Cập nhật ứng dụng EcoTrack v2.5', 'Phiên bản mới với tính năng AI phân loại rác đã có mặt. Hãy cập nhật ngay!', TRUE, 'SYSTEM', '2026-05-11 08:00:00'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'USER_EVENT', 'REWARD', 'Voucher CoopMart đã sẵn sàng', 'Bạn đã đổi thành công voucher 100K. Mã: DNG2026001. HSD: 30/6/2026.', TRUE, 'VOUCHER', '2026-05-10 14:00:00'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'USER_EVENT', 'ACHIEVEMENT', 'Streak quiz 5 ngày liên tiếp!', 'Bạn đã làm quiz 5 ngày liên tục. Nhận thêm 15 điểm thưởng.', FALSE, 'ACHIEVEMENT', '2026-05-09 21:00:00'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'USER_EVENT', 'CAMPAIGN', 'Sự kiện trồng cây Sơn Trà', 'Cảm ơn bạn đã tham gia trồng 5 cây xanh tại Sơn Trà ngày 28/4.', TRUE, 'CAMPAIGN', '2026-05-08 15:00:00'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'USER_EVENT', 'REWARD', 'Báo cáo rác được xác minh', 'Báo cáo "Rác thải pin ắc quy" đã được xác minh. Nhận 50 điểm.', TRUE, 'WASTE_REPORT', '2026-05-08 10:00:00'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'USER_EVENT', 'SYSTEM', 'Nhắc nhở: Bạn chưa làm quiz hôm nay', 'Đừng quên làm quiz mỗi ngày để nhận điểm và duy trì streak nhé!', FALSE, 'SYSTEM', '2026-05-07 19:00:00'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'USER_EVENT', 'ACHIEVEMENT', 'Huy hiệu mới: Eco Starter', 'Chúc mừng bạn đã đạt 50 điểm đầu tiên. Huy hiệu Eco Starter đã được mở khóa!', TRUE, 'ACHIEVEMENT', '2026-05-06 09:00:00'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'USER_EVENT', 'CAMPAIGN', 'Cần tình nguyện viên dọn rác', 'Chiến dịch dọn rác công viên 29/3 cần thêm 10 tình nguyện viên ngày 25/5.', FALSE, 'CAMPAIGN', '2026-05-05 16:00:00'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'USER_EVENT', 'REWARD', 'Điểm thưởng từ chiến dịch', 'Bạn nhận được 150 điểm từ chiến dịch trồng cây Sơn Trà.', TRUE, 'CAMPAIGN', '2026-05-04 11:00:00'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'USER_EVENT', 'ACHIEVEMENT', 'Bạn đã báo cáo 10 điểm rác!', 'Cảm ơn đóng góp của bạn. Nhận huy hiệu "Người giám sát môi trường".', FALSE, 'ACHIEVEMENT', '2026-05-03 18:00:00'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'USER_EVENT', 'SYSTEM', 'Lịch dọn rác định kỳ tháng 5', 'Các buổi dọn rác: 15/5 (Sơn Trà), 22/5 (Ngũ Hành Sơn), 29/5 (Liên Chiểu).', TRUE, 'SYSTEM', '2026-05-02 07:00:00'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'USER_EVENT', 'REWARD', 'Đổi điểm thành công', 'Bạn đã dùng 200 điểm để đổi voucher GrabFood 50K. Mã: GF2026X9K.', TRUE, 'VOUCHER', '2026-05-01 12:00:00'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'USER_EVENT', 'CAMPAIGN', 'Workshop tái chế nhựa miễn phí', 'Tham gia workshop làm chậu cây từ chai nhựa lúc 9h ngày 18/5 tại ĐH Bách Khoa.', FALSE, 'CAMPAIGN', '2026-04-30 14:00:00'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'USER_EVENT', 'ACHIEVEMENT', 'Top 10 người dùng tích cực tháng 4', 'Bạn đứng thứ 7 trong bảng xếp hạng người dùng tích cực nhất tháng 4!', TRUE, 'ACHIEVEMENT', '2026-04-30 20:00:00'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'USER_EVENT', 'SYSTEM', 'Bảo trì hệ thống', 'Hệ thống sẽ bảo trì từ 2h-4h sáng ngày 16/5. Xin lỗi vì sự bất tiện.', TRUE, 'SYSTEM', '2026-04-29 22:00:00'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'USER_EVENT', 'REWARD', 'Điểm chào mừng thành viên mới', 'Chào mừng bạn đến với EcoTrack! Tặng bạn 20 điểm khởi đầu.', TRUE, 'SYSTEM', '2026-04-28 08:00:00'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'USER_EVENT', 'CAMPAIGN', 'Cuộc thi ảnh "Đà Nẵng Xanh"', 'Gửi ảnh về môi trường Đà Nẵng, giải nhất 500 điểm và voucher 200K.', FALSE, 'CAMPAIGN', '2026-04-27 09:00:00');
+
+-- 32) activity_logs: 20 dòng gốc + 20 dòng mới
+INSERT INTO activity_logs (user_id, action, created_at)
+SELECT u.user_id, CASE MOD(s.n,5) WHEN 1 THEN 'CREATE_REPORT' WHEN 2 THEN 'JOIN_CAMPAIGN' WHEN 3 THEN 'COMPLETE_QUIZ' WHEN 4 THEN 'REDEEM_COUPON' ELSE 'UPDATE_PROFILE' END,
+    DATE_SUB(NOW(), INTERVAL s.n MINUTE)
+FROM tmp_seed20 s
+JOIN users u ON u.username = CONCAT('dn_user_', LPAD(s.n,2,'0'));
+
+INSERT INTO activity_logs (user_id, action, created_at)
+SELECT u.user_id, action, created_at
+FROM (
+    SELECT 'ngoc.tran' as uname, 'CREATE_REPORT' as action, '2026-05-14 08:30:00' as created_at UNION ALL
+    SELECT 'minh.hoang', 'JOIN_CAMPAIGN', '2026-05-13 09:45:00' UNION ALL
+    SELECT 'thuy.le', 'COMPLETE_QUIZ', '2026-05-12 14:20:00' UNION ALL
+    SELECT 'tuan.phan', 'CREATE_REPORT', '2026-05-12 07:15:00' UNION ALL
+    SELECT 'lan.vo', 'REDEEM_COUPON', '2026-05-10 13:55:00' UNION ALL
+    SELECT 'trang.bui', 'CREATE_REPORT', '2026-05-10 11:30:00' UNION ALL
+    SELECT 'phat.ngo', 'JOIN_CAMPAIGN', '2026-05-09 08:00:00' UNION ALL
+    SELECT 'nhi.dinh', 'CREATE_REPORT', '2026-05-08 09:45:00' UNION ALL
+    SELECT 'anh.nguyen', 'COMPLETE_QUIZ', '2026-05-06 09:00:00' UNION ALL
+    SELECT 'khoa.pham', 'CREATE_REPORT', '2026-05-06 13:40:00' UNION ALL
+    SELECT 'uyen.truong', 'UPDATE_PROFILE', '2026-05-05 15:30:00' UNION ALL
+    SELECT 'duc.ton', 'COMPLETE_QUIZ', '2026-05-03 12:30:00' UNION ALL
+    SELECT 'my.lam', 'CREATE_REPORT', '2026-05-03 11:15:00' UNION ALL
+    SELECT 'hieu.ha', 'JOIN_CAMPAIGN', '2026-05-02 06:45:00' UNION ALL
+    SELECT 'tram.dang', 'COMPLETE_QUIZ', '2026-04-30 08:40:00' UNION ALL
+    SELECT 'thao.cao', 'CREATE_REPORT', '2026-04-30 09:10:00' UNION ALL
+    SELECT 'loc.vuong', 'UPDATE_PROFILE', '2026-04-29 14:00:00' UNION ALL
+    SELECT 'ngoc.tran', 'COMPLETE_QUIZ', '2026-04-27 13:35:00' UNION ALL
+    SELECT 'minh.hoang', 'REDEEM_COUPON', '2026-04-26 10:20:00' UNION ALL
+    SELECT 'lan.vo', 'CREATE_REPORT', '2026-04-25 16:30:00'
+) t
+JOIN users u ON u.username = t.uname;
+
+-- ================================================================
+-- RECYCLE_SUGGESTIONS (dữ liệu gốc)
+-- ================================================================
+INSERT INTO recycle_suggestions (waste_type_key, waste_type_label, title, short_description, recycle_image_url, difficulty_level, estimated_time_minutes, materials_needed, is_active) VALUES
+('nhua', 'Nhựa', 'Chậu cây mini từ chai nhựa', 'Tận dụng chai nhựa để làm chậu trồng cây để bàn.', 'https://images.unsplash.com/photo-1483794344563-d27a8d18014e', 'Dễ', 25, '["Chai nhua cu","Keo","Keo dan","Dat trong cay","Cay nho","Dinh duc lo"]', TRUE),
+('nhua', 'Nhựa', 'Ống đựng bút từ hộp nhựa', 'Tạo ống đựng bút gọn gàng từ hộp nhựa cũ.', 'https://images.unsplash.com/photo-1455390582262-044cdead277a', 'Dễ', 20, '["Hop nhua cung","Giay mau","Keo dan","Keo cat","But marker"]', TRUE),
+('giay', 'Giấy', 'Giỏ đựng đồ từ bìa carton', 'Gấp và dán bìa carton thành giỏ lưu trữ đa năng.', 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4', 'Trung bình', 40, '["Bia carton","Keo cat","Keo nen","Giay trang tri","Vai boc ngoai"]', TRUE),
+('giay', 'Giấy', 'Khung ảnh handmade từ giấy', 'Làm khung ảnh trang trí từ giấy bìa và giấy màu.', 'https://images.unsplash.com/photo-1510936111840-65e151ad71bb', 'Dễ', 30, '["Giay bia","Giay mau","Keo dan","Keo cat","Sticker","Anh in"]', TRUE),
+('kim loai', 'Kim loại', 'Đèn nến từ lon nước', 'Biến lon nước thành đèn nến trang trí an toàn.', 'https://images.unsplash.com/photo-1463320726281-696a485928c7', 'Trung bình', 35, '["Lon nhom","Dao hoac keo","Dinh duc lo","Nen tealight"]', TRUE),
+('thuy tinh', 'Thủy tinh', 'Bình hoa từ chai thủy tinh', 'Trang trí chai thủy tinh cũ thành bình hoa.', 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad6', 'Dễ', 30, '["Chai thuy tinh","Son","Day trang tri","Keo cat","Nuoc cam hoa"]', TRUE),
+('huu co', 'Rác hữu cơ', 'Phân compost tại nhà', 'Ủ rác hữu cơ thành phân bón cho cây.', 'https://images.unsplash.com/photo-1464226184884-fa280b87c399', 'Trung bình', 120, '["Thung u","Rac huu co","La kho","Phan vi sinh","Dung cu dao"]', TRUE);
+
+-- ================================================================
+-- RECYCLE_SUGGESTION_STEPS
+-- ================================================================
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Làm sạch nguyên liệu', 'Rửa sạch và để khô nguyên liệu trước khi thao tác.', 'https://images.unsplash.com/photo-1622287160745-14d2b51aa566', NULL
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Cắt tạo hình', 'Cắt thân chai theo chiều ngang để tạo phần thân chậu.', 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3', 'https://www.youtube.com/watch?v=TZ0yA3lM3xM'
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Hoàn thiện', 'Đục lỗ thoát nước, thêm đất và trồng cây nhỏ.', 'https://images.unsplash.com/photo-1463320898484-cdee8141c787', NULL
+FROM recycle_suggestions WHERE title = 'Chậu cây mini từ chai nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Chuẩn bị hộp nhựa', 'Chọn hộp nhựa cứng, vệ sinh sạch và để khô.', 'https://images.unsplash.com/photo-1608889335941-32ac5f2041b9', NULL
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Trang trí bề mặt', 'Dán giấy màu hoặc sơn để tạo thẩm mỹ.', 'https://images.unsplash.com/photo-1485546246426-74dc88dec4d9', 'https://www.youtube.com/watch?v=oQ9Yw2f2N2A'
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Sắp xếp sử dụng', 'Đặt lên bàn học và phân loại bút theo nhóm.', 'https://images.unsplash.com/photo-1517842645767-c639042777db', NULL
+FROM recycle_suggestions WHERE title = 'Ống đựng bút từ hộp nhựa';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Cắt bìa carton', 'Cắt bìa theo kích thước đáy và thành giỏ.', 'https://images.unsplash.com/photo-1503602642458-232111445657', NULL
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Dán cố định', 'Dùng keo nến dán các mặt lại chắc chắn.', 'https://images.unsplash.com/photo-1581622558663-b2df8f5f16fa', 'https://www.youtube.com/watch?v=Fuvf6Q7t6w4'
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Bọc ngoài', 'Bọc giấy màu hoặc vải để tăng độ bền và đẹp mắt.', 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee', NULL
+FROM recycle_suggestions WHERE title = 'Giỏ đựng đồ từ bìa carton';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Cắt khung giấy', 'Cắt 2 lớp bìa theo kích thước ảnh mong muốn.', 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30', NULL
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Dán và cố định ảnh', 'Dán lớp nền và tạo khe để thay ảnh khi cần.', 'https://images.unsplash.com/photo-1455885666463-9c1b8fd57d80', 'https://www.youtube.com/watch?v=2HqN5RjJwAE'
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Trang trí hoàn thiện', 'Trang trí thêm sticker hoặc họa tiết tự vẽ.', 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b', NULL
+FROM recycle_suggestions WHERE title = 'Khung ảnh handmade từ giấy';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Làm sạch lon', 'Rửa sạch lon kim loại và bóc nhãn cũ.', 'https://images.unsplash.com/photo-1532634896-26909d0d4b6b', NULL
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Đục họa tiết', 'Đục lỗ họa tiết nhỏ xung quanh lon theo mẫu.', 'https://images.unsplash.com/photo-1516542076529-1ea3854896f2', 'https://www.youtube.com/watch?v=XnT5QJv1f5A'
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Lắp nến', 'Đặt nến tealight vào trong lon và kiểm tra an toàn.', 'https://images.unsplash.com/photo-1515444744559-5f6b18f5ddc0', NULL
+FROM recycle_suggestions WHERE title = 'Đèn nến từ lon nước';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Rửa chai', 'Làm sạch chai thủy tinh và loại bỏ nắp cũ.', 'https://images.unsplash.com/photo-1576416806626-7463c5f4a3f1', NULL
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Trang trí thân chai', 'Sơn hoặc quấn dây thừng trang trí bên ngoài.', 'https://images.unsplash.com/photo-1467533003447-e295ff1b0435', 'https://www.youtube.com/watch?v=5K8n3L_p4gw'
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Cắm hoa', 'Thêm nước và cắm hoa tươi hoặc hoa khô.', 'https://images.unsplash.com/photo-1490750967868-88aa4486c946', NULL
+FROM recycle_suggestions WHERE title = 'Bình hoa từ chai thủy tinh';
+
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 1, 'Chuẩn bị thùng ủ', 'Chuẩn bị thùng có lỗ thoáng và nắp đậy.', 'https://images.unsplash.com/photo-1608939705107-98fe503df4fe', NULL
+FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 2, 'Phân lớp rác hữu cơ', 'Xếp xen kẽ rác hữu cơ và vật liệu khô như lá khô.', 'https://images.unsplash.com/photo-1581579188871-45ea61f2a238', 'https://www.youtube.com/watch?v=TCQx2fLCM9k'
+FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
+INSERT INTO recycle_suggestion_steps (suggestion_id, step_order, step_title, step_description, instruction_image_url, instruction_video_url)
+SELECT suggestion_id, 3, 'Theo dõi độ ẩm', 'Đảo đều định kỳ và giữ độ ẩm vừa phải đến khi hoai mục.', 'https://images.unsplash.com/photo-1464226184884-fa280b87c399', NULL
+FROM recycle_suggestions WHERE title = 'Phân compost tại nhà';
+
+
+
+
+
+
+
+-- ================================================================
+-- TÀI KHOẢN ADMIN DEMO (để đăng nhập thực tế)
+-- ================================================================
+INSERT INTO users (username, password, email, account_non_expired, is_enabled, account_non_locked, credentials_non_expired, is_verified) VALUES
+('admin', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'admin@ecotrack.vn', TRUE, TRUE, TRUE, TRUE, TRUE),
+('partner_demo', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'partner@ecotrack.vn', TRUE, TRUE, TRUE, TRUE, TRUE),
+('user_demo', '$2a$10$gSiGn10kvbT96EdP.Sz8UuKzSrXzx6Ph2VLirfIa3doSfGTt73vRy', 'user@ecotrack.vn', TRUE, TRUE, TRUE, TRUE, TRUE);
+
+-- Gán role cho tài khoản demo
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username = 'admin' AND r.role_name = 'ROLE_ADMIN';
+
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username = 'admin' AND r.role_name = 'ROLE_USER';
+
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username = 'partner_demo' AND r.role_name = 'ROLE_PARTNER';
+
+INSERT INTO user_role (user_id, role_id)
+SELECT u.user_id, r.role_id
+FROM users u, roles r
+WHERE u.username = 'user_demo' AND r.role_name = 'ROLE_USER';
+
+-- Profile cho tài khoản demo
+INSERT INTO user_profiles (user_id, full_name, avatar_url, gender, phone_number, birth_date, location, level_id)
+SELECT u.user_id, 'Quản Trị Viên', 'https://i.pravatar.cc/150?img=68', 'M', '0900000000', '1995-01-01', 'Đà Nẵng, Việt Nam', 
+    (SELECT level_id FROM levels WHERE level_name = 'Level 15')
+FROM users u WHERE u.username = 'admin';
+
+INSERT INTO user_profiles (user_id, full_name, avatar_url, gender, phone_number, birth_date, location, level_id)
+SELECT u.user_id, 'Đối Tác EcoTrack', 'https://i.pravatar.cc/150?img=70', 'F', '0911111111', '1998-06-15', 'Đà Nẵng, Việt Nam', 
+    (SELECT level_id FROM levels WHERE level_name = 'Level 10')
+FROM users u WHERE u.username = 'partner_demo';
+
+INSERT INTO user_profiles (user_id, full_name, avatar_url, gender, phone_number, birth_date, location, level_id)
+SELECT u.user_id, 'Người Dùng Demo', 'https://i.pravatar.cc/150?img=72', 'M', '0922222222', '2000-03-20', 'Đà Nẵng, Việt Nam', 
+    (SELECT level_id FROM levels WHERE level_name = 'Level 08')
+FROM users u WHERE u.username = 'user_demo';
+
+-- Điểm cho tài khoản demo
+INSERT INTO user_points (user_id, points) VALUES
+((SELECT user_id FROM users WHERE username='admin'), 2500),
+((SELECT user_id FROM users WHERE username='partner_demo'), 1800),
+((SELECT user_id FROM users WHERE username='user_demo'), 350);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- ================================================================
+-- BỔ SUNG 50 BÁO CÁO RÁC - TRẢI KHẮP NỘI THÀNH & NGOẠI Ô ĐÀ NẴNG
+-- (Tránh sân bay, sông, biển - tập trung khu dân cư, đường phố, chợ, trường học...)
+-- ================================================================
+
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+
+-- ========================
+-- QUẬN HẢI CHÂU (10 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa đường Lê Duẩn', 'Chai nhựa, túi nilon vứt bừa bãi trước cửa hàng tiện lợi', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.068500, 108.217800, 'PENDING', '2026-05-14 08:00:00', 'NHUA', 1, 0.91, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"leduan_street"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác sinh hoạt kiệt 198 Trần Phú', 'Rác thải để trước cửa nhà không đúng giờ thu gom', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.071200, 108.221400, 'VERIFIED', '2026-05-14 07:30:00', 'HUU_CO', 1, 0.86, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"tranphu_alley"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác thải nhựa chợ Cồn', 'Hộp xốp, túi nilon từ hàng ăn vứt tràn ra vỉa hè', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.062300, 108.213500, 'PENDING', '2026-05-13 16:00:00', 'NHUA', 1, 0.88, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"con_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác xây dựng đường Nguyễn Chí Thanh', 'Gạch vụn, bao xi măng bỏ trên vỉa hè sau sửa nhà', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.064500, 108.218200, 'PENDING', '2026-05-13 14:30:00', 'XAY_DUNG', 0, 0.75, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"nguyenchithanh"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác điện tử đường Quang Trung', 'Màn hình máy tính cũ, bàn phím hỏng vứt góc đường', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.066800, 108.220500, 'VERIFIED', '2026-05-12 11:00:00', 'KIM_LOAI', 1, 0.82, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"quangtrung_ewaste"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác thải nhựa công viên 29/3', 'Ly nhựa, ống hút, túi nilon sau buổi picnic của nhóm sinh viên', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.054800, 108.218600, 'PENDING', '2026-05-12 09:45:00', 'NHUA', 1, 0.93, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"park_293"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác thải đường Nguyễn Hữu Thọ', 'Bao rác lớn vứt bên đường, bốc mùi hôi thối', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.035200, 108.218400, 'CLEANED', '2026-05-11 15:30:00', 'HUU_CO', 1, 0.85, '{"ward":"Hòa Cường Nam","district":"Hải Châu","label":"nguyenhuutho"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác thải khu vực ga Đà Nẵng', 'Du khách vứt rác bừa bãi trước cổng ga tàu', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.072300, 108.215800, 'VERIFIED', '2026-05-10 13:00:00', 'NHUA', 1, 0.89, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"train_station"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác thải đường Đống Đa', 'Vỏ lon bia, chai rượu vứt la liệt sau quán nhậu', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.063700, 108.219800, 'PENDING', '2026-05-09 22:00:00', 'THUY_TINH', 1, 0.87, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"dongda_beer"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác thải vải vụn tiệm may đường Hoàng Diệu', 'Vải vụn, chỉ thừa đổ đầy thùng rác tràn ra ngoài', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.065400, 108.222100, 'REJECTED', '2026-05-08 10:30:00', 'KHAC', 0, 0.72, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"hoangdieu_textile"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+
+-- ========================
+-- QUẬN THANH KHÊ (8 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác thải nhựa đường Điện Biên Phủ', 'Túi nilon, chai nhựa dọc tuyến đường lớn Thanh Khê', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.068900, 108.210500, 'PENDING', '2026-05-14 08:30:00', 'NHUA', 1, 0.90, '{"ward":"Chính Gián","district":"Thanh Khê","label":"dienbienphu"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác hữu cơ chợ Tân Chính', 'Rau củ hư, cá thối vứt sau chợ gây mùi khó chịu', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.071500, 108.209800, 'VERIFIED', '2026-05-13 17:00:00', 'HUU_CO', 1, 0.84, '{"ward":"Tân Chính","district":"Thanh Khê","label":"tanchinh_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác thải nhựa trường THPT Thanh Khê', 'Học sinh vứt vỏ bánh kẹo, hộp sữa quanh cổng trường', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.073500, 108.208200, 'PENDING', '2026-05-13 12:00:00', 'NHUA', 1, 0.91, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"thanhkhe_school"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác xây dựng đường Hà Huy Tập', 'Vật liệu xây dựng thừa đổ trộm vào đất trống', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.074800, 108.207500, 'PENDING', '2026-05-12 15:00:00', 'XAY_DUNG', 0, 0.73, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"hahuytap"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác thải sinh hoạt kiệt 52 Lê Duẩn', 'Thùng rác quá tải, rác tràn ra đường 3 ngày chưa thu gom', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.069500, 108.216400, 'CLEANED', '2026-05-11 08:00:00', 'HUU_CO', 1, 0.83, '{"ward":"Chính Gián","district":"Thanh Khê","label":"leduan_alley"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác thải kim loại tiệm sửa xe đường Trần Cao Vân', 'Nhớt thải, lốp xe cũ, ắc quy hỏng vứt bừa bãi', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.067800, 108.212400, 'VERIFIED', '2026-05-10 14:30:00', 'KIM_LOAI', 1, 0.86, '{"ward":"Chính Gián","district":"Thanh Khê","label":"trancaovan_garage"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác thải nhựa đường Nguyễn Tất Thành', 'Túi nilon, vỏ bim bim dọc tuyến đường dài', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.075200, 108.203400, 'PENDING', '2026-05-09 16:00:00', 'NHUA', 1, 0.88, '{"ward":"Xuân Hà","district":"Thanh Khê","label":"nguyentatthanh"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác thải chai lọ khu vui chơi', 'Chai bia vỡ nguy hiểm tại sân chơi trẻ em phường An Khê', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.048500, 108.185200, 'REJECTED', '2026-05-08 09:00:00', 'THUY_TINH', 0, 0.70, '{"ward":"An Khê","district":"Thanh Khê","label":"ankhe_playground"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+
+-- ========================
+-- QUẬN SƠN TRÀ (8 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa đường Ngô Quyền', 'Ly nhựa, ống hút từ quán cà phê vứt đầy vỉa hè', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.063500, 108.238500, 'PENDING', '2026-05-14 09:00:00', 'NHUA', 1, 0.92, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"ngoquyen_cafe"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác hữu cơ chợ An Hải Bắc', 'Thức ăn thừa, rau củ hư đổ tràn ra đường sau phiên chợ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.065800, 108.236500, 'VERIFIED', '2026-05-14 06:00:00', 'HUU_CO', 1, 0.85, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"anhai_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác xây dựng khu đô thị mới', 'Gạch, xi măng thừa đổ trộm vào khu đất trống đang quy hoạch', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.067200, 108.240300, 'PENDING', '2026-05-13 11:00:00', 'XAY_DUNG', 0, 0.74, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"newurban_debris"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải nhựa đường Lê Văn Lương', 'Túi nilon, chai nhựa từ hàng quán vứt la liệt', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.060200, 108.242800, 'PENDING', '2026-05-12 19:00:00', 'NHUA', 1, 0.89, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"levanluong"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác điện tử tiệm internet đường Hồ Nghinh', 'Case máy tính hỏng, màn hình cũ chất đống trước tiệm', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.058900, 108.244200, 'VERIFIED', '2026-05-12 14:00:00', 'KIM_LOAI', 1, 0.84, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"honghinh_ewaste"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác thải vải tiệm may đường Dương Đình Nghệ', 'Vải vụn, bông may thừa đổ đầy bao tải', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.057800, 108.241500, 'PENDING', '2026-05-11 10:30:00', 'KHAC', 1, 0.81, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"duongdinhnghe"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác thải sinh hoạt đường Trần Hưng Đạo', 'Bao rác lớn vứt sai giờ, chó mèo cắn phá tung tóe', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.064500, 108.235800, 'CLEANED', '2026-05-10 07:00:00', 'HUU_CO', 1, 0.82, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"tranhungdao"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác thải nhựa khu dân cư An Hải Đông', 'Đồ nhựa gia dụng hỏng, thau chậu cũ vứt góc đường', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.066500, 108.242000, 'PENDING', '2026-05-09 15:00:00', 'NHUA', 1, 0.87, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"anhaidong"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+
+-- ========================
+-- QUẬN NGŨ HÀNH SƠN (7 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác thải nhựa đường Lê Văn Hiến', 'Chai nhựa, hộp xốp từ hàng ăn vứt dọc đường', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.025800, 108.237500, 'PENDING', '2026-05-14 10:00:00', 'NHUA', 1, 0.90, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"levanhien"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác hữu cơ chợ Bắc Mỹ An', 'Rau củ, cá thối vứt sau chợ gây ô nhiễm môi trường', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.028500, 108.239800, 'VERIFIED', '2026-05-13 18:00:00', 'HUU_CO', 1, 0.83, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"bacmyan_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác xây dựng khu làng đại học', 'Vật liệu xây dựng thừa đổ trộm sau ký túc xá', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.022500, 108.241200, 'PENDING', '2026-05-12 08:30:00', 'XAY_DUNG', 0, 0.71, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"university_debris"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác thải nhựa đường Trần Đại Nghĩa', 'Sinh viên vứt rác bừa bãi quanh khu vực trường đại học', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.020800, 108.243500, 'PENDING', '2026-05-11 16:30:00', 'NHUA', 1, 0.91, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"trandainghia"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác thải kim loại tiệm sửa xe đường An Dương Vương', 'Dầu nhớt thải, phụ tùng xe cũ vứt bừa bãi trước tiệm', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.030200, 108.244800, 'VERIFIED', '2026-05-10 11:00:00', 'KIM_LOAI', 1, 0.85, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"anduongvuong"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác thải sinh hoạt đường Huỳnh Tấn Phát', 'Thùng rác quá tải 2 ngày, rác tràn ra đường', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.035500, 108.246200, 'PENDING', '2026-05-08 08:00:00', 'HUU_CO', 1, 0.84, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"huynhtanphat"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+
+-- ========================
+-- QUẬN LIÊN CHIỂU (7 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác thải nhựa đường Tôn Đức Thắng', 'Chai nhựa, túi nilon từ khu công nghiệp vương vãi', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.059500, 108.180200, 'PENDING', '2026-05-14 07:00:00', 'NHUA', 1, 0.89, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"tonducthang"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác hữu cơ chợ Hòa Khánh', 'Rau củ hư, thức ăn thừa đổ tràn sau chợ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.058200, 108.148500, 'VERIFIED', '2026-05-13 17:30:00', 'HUU_CO', 1, 0.82, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"hoakhanh_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác xây dựng đường Nguyễn Lương Bằng', 'Xà bần, gạch vụn đổ trộm vào đất trống cuối đường', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.063500, 108.175800, 'PENDING', '2026-05-12 13:00:00', 'XAY_DUNG', 0, 0.73, '{"ward":"Hòa Khánh Bắc","district":"Liên Chiểu","label":"nguyenluongbang"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác thải nhựa khu dân cư Hòa Phát', 'Đồ nhựa gia dụng cũ, thùng xốp vứt bừa bãi', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.078500, 108.174200, 'PENDING', '2026-05-11 09:00:00', 'NHUA', 1, 0.90, '{"ward":"Hòa Phát","district":"Liên Chiểu","label":"hoaphat_resident"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác điện tử khu công nghiệp Hòa Khánh', 'Linh kiện điện tử hỏng, bo mạch cũ vứt sai quy định', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.061500, 108.146200, 'VERIFIED', '2026-05-10 15:00:00', 'KIM_LOAI', 1, 0.87, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"industrial_ewaste"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải vải xưởng may Hòa Khánh', 'Vải vụn, chỉ thừa đổ trộm sau xưởng may', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.059800, 108.144500, 'PENDING', '2026-05-09 14:30:00', 'KHAC', 1, 0.83, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"textile_factory"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác thải sinh hoạt đường Mê Linh', 'Bao rác để sai giờ thu gom, bị xe cán nát bốc mùi', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.064500, 108.172300, 'CLEANED', '2026-05-08 06:30:00', 'HUU_CO', 1, 0.81, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"melinh"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+
+-- ========================
+-- QUẬN CẨM LỆ (5 báo cáo)waste_reports
+-- ========================
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác thải nhựa đường Cách Mạng Tháng Tám', 'Túi nilon, chai nhựa vứt dọc tuyến đường chính', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.025800, 108.210500, 'PENDING', '2026-05-14 09:30:00', 'NHUA', 1, 0.88, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"cachmangthangtam"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác hữu cơ chợ Cẩm Lệ', 'Rau củ, trái cây hư đổ đống sau chợ gây ruồi nhặng', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.022500, 108.208200, 'VERIFIED', '2026-05-13 16:00:00', 'HUU_CO', 1, 0.84, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"camle_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác xây dựng đường Nguyễn Nhàn', 'Gạch vụn, bao xi măng đổ trộm vào lô đất trống', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.028500, 108.205800, 'PENDING', '2026-05-11 10:00:00', 'XAY_DUNG', 0, 0.72, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"nguyennhan"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác thải nhựa khu dân cư Hòa Xuân', 'Đồ chơi trẻ em hỏng, chai nhựa vứt bừa bãi', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.015500, 108.225200, 'PENDING', '2026-05-10 14:00:00', 'NHUA', 1, 0.91, '{"ward":"Hòa Xuân","district":"Cẩm Lệ","label":"hoaxuan_toys"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác thải lốp xe đường Trường Chinh', 'Lốp xe máy cũ chất đống trước tiệm sửa xe', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.019500, 108.215200, 'VERIFIED', '2026-05-09 11:30:00', 'KHAC', 1, 0.85, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"truongchinh_tire"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e'),
+
+-- ========================
+-- HUYỆN HÒA VANG (5 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác thải nhựa thị trấn Hòa Vang', 'Túi nilon, chai nhựa vương vãi dọc đường chính', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.035200, 108.165800, 'PENDING', '2026-05-14 08:00:00', 'NHUA', 1, 0.86, '{"ward":"Hòa Châu","district":"Hòa Vang","label":"hoavang_town"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác hữu cơ chợ quê Hòa Tiến', 'Rau củ, phân gia súc vứt bừa bãi sau chợ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.012500, 108.175200, 'VERIFIED', '2026-05-13 07:00:00', 'HUU_CO', 1, 0.80, '{"ward":"Hòa Tiến","district":"Hòa Vang","label":"hoatien_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác xây dựng đường vành đai', 'Xà bần, đất đá đổ trộm dọc tuyến đường đang thi công', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.045200, 108.155800, 'PENDING', '2026-05-12 12:00:00', 'XAY_DUNG', 0, 0.70, '{"ward":"Hòa Khương","district":"Hòa Vang","label":"ring_road"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác thải nhựa làng nghề đá mỹ nghệ', 'Vỏ bao bì, chai nhựa từ cơ sở sản xuất đá', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.038500, 108.170200, 'PENDING', '2026-05-10 15:30:00', 'NHUA', 1, 0.87, '{"ward":"Hòa Châu","district":"Hòa Vang","label":"stone_craft"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác thải thuốc trừ sâu vùng rau Hòa Phong', 'Vỏ chai, bao bì thuốc bảo vệ thực vật vứt ngay ruộng', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.028500, 108.178500, 'CLEANED', '2026-05-08 09:00:00', 'KHAC', 0, 0.65, '{"ward":"Hòa Phong","district":"Hòa Vang","label":"pesticide_waste"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+
+-- ========================
+-- BÁN ĐẢO SƠN TRÀ - KHU DU LỊCH (5 báo cáo cuối)
+-- ========================
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác thải nhựa chân núi Sơn Trà', 'Du khách vứt chai nước, túi nilon tại khu vực dừng chân', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.105200, 108.268500, 'PENDING', '2026-05-14 11:00:00', 'NHUA', 1, 0.92, '{"ward":"Thọ Quang","district":"Sơn Trà","label":"sontra_foot"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác thải đường lên chùa Linh Ứng', 'Vỏ bim bim, ly nhựa dọc đường lên chùa', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.108500, 108.275200, 'VERIFIED', '2026-05-13 10:00:00', 'NHUA', 1, 0.90, '{"ward":"Thọ Quang","district":"Sơn Trà","label":"linhung_road"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác hữu cơ khu du lịch Bà Nà Hills', 'Thức ăn thừa, vỏ trái cây từ khu ẩm thực', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.045200, 108.033500, 'PENDING', '2026-05-12 14:00:00', 'HUU_CO', 1, 0.88, '{"ward":"Hòa Ninh","district":"Hòa Vang","label":"banahills"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác thải nhựa đỉnh Bàn Cờ', 'Du khách leo núi vứt rác bừa bãi tại điểm check-in', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.115200, 108.285200, 'CLEANED', '2026-05-11 08:00:00', 'NHUA', 1, 0.93, '{"ward":"Thọ Quang","district":"Sơn Trà","label":"banco_peak"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác thải chai lọ Hải Vân Quan', 'Chai bia, vỏ lon vứt la liệt tại khu di tích Hải Vân', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.128500, 108.132500, 'PENDING', '2026-05-10 16:00:00', 'THUY_TINH', 1, 0.86, '{"ward":"Hòa Hiệp Bắc","district":"Liên Chiểu","label":"haivan_quan"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a');
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- ================================================================
+-- BỔ SUNG 50 BÁO CÁO RÁC - TRẢI KHẮP ĐÀ NẴNG (ĐỢT 2)
+-- Tập trung: CLEANED & VERIFIED để hiện trên bản đồ
+-- Tránh sân bay, ven sông, ven biển
+-- ================================================================
+
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+
+-- ========================
+-- QUẬN HẢI CHÂU (12 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa đường Nguyễn Văn Linh đã dọn', 'Chai nhựa, túi nilon đã được đội vệ sinh dọn sạch hoàn toàn', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.052300, 108.215600, 'CLEANED', '2026-05-14 15:30:00', 'NHUA', 1, 0.94, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"nguyenvanlinh_ok"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác hữu cơ chợ Hàn đã xác thực', 'Thức ăn thừa tại chợ Hàn đã được thu gom, xác nhận bởi admin', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.070800, 108.222300, 'VERIFIED', '2026-05-14 14:00:00', 'HUU_CO', 1, 0.89, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"han_market_verified"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác nhựa đường Bạch Đằng đã dọn', 'Ly nhựa, ống hút từ quán cà phê đã được dọn sạch', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.069200, 108.223500, 'CLEANED', '2026-05-14 10:45:00', 'NHUA', 1, 0.91, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"bachdang_ok"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác xây dựng đường Phan Châu Trinh đã xác thực', 'Gạch vụn sửa nhà đã được xác minh và yêu cầu dọn dẹp', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.067500, 108.219800, 'VERIFIED', '2026-05-13 16:20:00', 'XAY_DUNG', 1, 0.87, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"phanchautrinh_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải công viên 29/3 đã dọn', 'Rác sau picnic đã được tình nguyện viên dọn sạch cuối tuần', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.055500, 108.219200, 'CLEANED', '2026-05-13 11:00:00', 'NHUA', 1, 0.93, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"park293_ok"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác điện tử đường Lê Lợi đã xác thực', 'Thiết bị điện tử cũ đã được xác minh và chuyển đến điểm thu gom', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.065800, 108.221400, 'VERIFIED', '2026-05-13 09:30:00', 'KIM_LOAI', 1, 0.90, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"leloi_verified"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác thải đường Lê Duẩn đã dọn', 'Rác trước cửa hàng tiện lợi đã được nhân viên dọn sạch', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.068500, 108.218200, 'CLEANED', '2026-05-12 17:00:00', 'HUU_CO', 1, 0.88, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"leduan_ok"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác thải đường Đống Đa đã xác thực', 'Chai lọ sau quán nhậu đã được xác minh và nhắc nhở chủ quán', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.064200, 108.220100, 'VERIFIED', '2026-05-12 14:30:00', 'THUY_TINH', 1, 0.86, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"dongda_verified"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác nhựa đường Lê Đình Dương đã dọn', 'Túi nilon, hộp xốp đã được dọn sạch bởi tổ dân phố', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.071500, 108.218900, 'CLEANED', '2026-05-12 08:15:00', 'NHUA', 1, 0.92, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"ledinhduong_ok"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác thải đường Quang Trung đã xác thực', 'Rác thải sinh hoạt sai giờ đã được xác minh và xử phạt', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.066300, 108.219500, 'VERIFIED', '2026-05-11 15:45:00', 'HUU_CO', 1, 0.85, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"quangtrung_verified"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác vải đường Hoàng Diệu đã dọn', 'Vải vụn tiệm may đã được thu gom và chuyển đi tái chế', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.065400, 108.222100, 'CLEANED', '2026-05-11 10:00:00', 'KHAC', 1, 0.84, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"hoangdieu_ok"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác thải đường Thái Phiên đã xác thực', 'Đồ nhựa cũ vứt bừa bãi đã được xác minh và dọn dẹp', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.068100, 108.220700, 'VERIFIED', '2026-05-10 13:20:00', 'NHUA', 1, 0.88, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"thaiphien_verified"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+
+-- ========================
+-- QUẬN THANH KHÊ (10 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác nhựa chợ Tân Chính đã dọn', 'Hộp xốp, túi nilon đã được ban quản lý chợ dọn sạch', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.071500, 108.210200, 'CLEANED', '2026-05-14 16:00:00', 'NHUA', 1, 0.91, '{"ward":"Tân Chính","district":"Thanh Khê","label":"tanchinh_ok"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác thải đường Hà Huy Tập đã xác thực', 'Vật liệu xây dựng đổ trộm đã được xác minh và xử lý', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.074800, 108.207800, 'VERIFIED', '2026-05-14 11:30:00', 'XAY_DUNG', 1, 0.86, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"hahuytap_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác nhựa trường THPT Thanh Khê đã dọn', 'Vỏ bánh kẹo, hộp sữa đã được học sinh dọn trong buổi lao động', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.073500, 108.208500, 'CLEANED', '2026-05-14 07:30:00', 'NHUA', 1, 0.93, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"thanhkhe_school_ok"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác thải đường Lê Đình Kỵ đã xác thực', 'Bao rác lớn sai giờ đã được xác minh và nhắc nhở hộ dân', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.070200, 108.209500, 'VERIFIED', '2026-05-13 15:00:00', 'HUU_CO', 1, 0.84, '{"ward":"Tân Chính","district":"Thanh Khê","label":"ledinhky_verified"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác nhựa đường Điện Biên Phủ đã dọn', 'Túi nilon, chai nhựa dọc tuyến đường đã được quét dọn sạch', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.068900, 108.211200, 'CLEANED', '2026-05-13 09:45:00', 'NHUA', 1, 0.90, '{"ward":"Chính Gián","district":"Thanh Khê","label":"dienbienphu_ok"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác thải đường Trần Cao Vân đã xác thực', 'Nhớt thải, lốp xe cũ đã được xác minh và yêu cầu tiệm sửa xe xử lý', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.067800, 108.212600, 'VERIFIED', '2026-05-12 16:30:00', 'KIM_LOAI', 1, 0.87, '{"ward":"Chính Gián","district":"Thanh Khê","label":"trancaovan_verified"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải kiệt 86 Lê Duẩn đã dọn', 'Rác tràn thùng đã được thu gom sau phản ánh của người dân', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.069500, 108.216800, 'CLEANED', '2026-05-12 10:00:00', 'HUU_CO', 1, 0.82, '{"ward":"Chính Gián","district":"Thanh Khê","label":"leduan86_ok"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác thải đường Nguyễn Tất Thành đã xác thực', 'Vỏ bim bim, túi nilon dọc đường đã được xác minh vị trí', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.075200, 108.203800, 'VERIFIED', '2026-05-11 14:00:00', 'NHUA', 1, 0.89, '{"ward":"Xuân Hà","district":"Thanh Khê","label":"nguyentatthanh_verified"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác nhựa sân chơi An Khê đã dọn', 'Chai lọ vỡ nguy hiểm đã được dọn sạch, an toàn cho trẻ em', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.048500, 108.185500, 'CLEANED', '2026-05-11 08:30:00', 'THUY_TINH', 1, 0.88, '{"ward":"An Khê","district":"Thanh Khê","label":"ankhe_play_ok"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải đường Lê Trọng Tấn đã xác thực', 'Rác sinh hoạt vứt sai quy định đã được xác minh và xử lý', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.072800, 108.206200, 'VERIFIED', '2026-05-10 11:15:00', 'HUU_CO', 1, 0.83, '{"ward":"Vĩnh Trung","district":"Thanh Khê","label":"letrongtan_verified"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+
+-- ========================
+-- QUẬN SƠN TRÀ (8 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác thải đường Ngô Quyền đã dọn', 'Rác từ quán cà phê đã được chủ quán cho nhân viên dọn sạch', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.063500, 108.238800, 'CLEANED', '2026-05-14 14:30:00', 'NHUA', 1, 0.92, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"ngoquyen_ok"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác hữu cơ chợ An Hải Bắc đã xác thực', 'Rau củ hư sau chợ đã được xác minh và thu gom đúng giờ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.065800, 108.236800, 'VERIFIED', '2026-05-14 08:00:00', 'HUU_CO', 1, 0.86, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"anhai_market_verified"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác xây dựng khu đô thị mới đã dọn', 'Gạch xi măng thừa đã được chủ thầu cho xe chở đi đúng nơi', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.067200, 108.240500, 'CLEANED', '2026-05-13 17:30:00', 'XAY_DUNG', 1, 0.89, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"newurban_ok"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác thải đường Lê Văn Lương đã xác thực', 'Rác từ hàng quán đã được xác minh và phạt hành chính chủ quán', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.060200, 108.243100, 'VERIFIED', '2026-05-13 10:00:00', 'NHUA', 1, 0.90, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"levanluong_verified"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác điện tử Hồ Nghinh đã dọn', 'Case máy tính hỏng đã được chuyển đến điểm tái chế điện tử', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.058900, 108.244500, 'CLEANED', '2026-05-12 15:45:00', 'KIM_LOAI', 1, 0.88, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"honghinh_ok"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác vải Dương Đình Nghệ đã xác thực', 'Vải vụn tiệm may đã được xác minh và hướng dẫn xử lý đúng cách', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.057800, 108.241800, 'VERIFIED', '2026-05-12 09:30:00', 'KHAC', 1, 0.84, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"duongdinhnghe_verified"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác thải Trần Hưng Đạo đã dọn', 'Bao rác bị chó mèo cắn phá đã được dọn sạch, khử mùi', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.064500, 108.236100, 'CLEANED', '2026-05-11 16:00:00', 'HUU_CO', 1, 0.85, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"tranhungdao_ok"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác nhựa khu dân cư An Hải Đông đã xác thực', 'Đồ nhựa gia dụng cũ đã được xác minh và chuyển đi tái chế', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.066500, 108.242300, 'VERIFIED', '2026-05-10 13:30:00', 'NHUA', 1, 0.87, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"anhaidong_verified"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+
+-- ========================
+-- QUẬN NGŨ HÀNH SƠN (8 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác nhựa đường Lê Văn Hiến đã dọn', 'Hộp xốp, chai nhựa đã được công nhân vệ sinh dọn sạch', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.025800, 108.237800, 'CLEANED', '2026-05-14 12:00:00', 'NHUA', 1, 0.91, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"levanhien_ok"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác hữu cơ chợ Bắc Mỹ An đã xác thực', 'Rau củ, cá thối đã được xác minh và thu gom triệt để', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.028500, 108.240100, 'VERIFIED', '2026-05-13 18:30:00', 'HUU_CO', 1, 0.85, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"bacmyan_verified"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác xây dựng làng đại học đã dọn', 'Vật liệu thừa sau ký túc xá đã được trường cho dọn sạch', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.022500, 108.241500, 'CLEANED', '2026-05-13 11:30:00', 'XAY_DUNG', 1, 0.88, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"university_ok"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác nhựa Trần Đại Nghĩa đã xác thực', 'Rác sinh viên vứt đã được xác minh và trường tổ chức tổng vệ sinh', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.020800, 108.243800, 'VERIFIED', '2026-05-12 14:00:00', 'NHUA', 1, 0.90, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"trandainghia_verified"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác kim loại An Dương Vương đã dọn', 'Dầu nhớt, phụ tùng xe cũ đã được tiệm sửa xe dọn dẹp', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.030200, 108.245100, 'CLEANED', '2026-05-12 08:45:00', 'KIM_LOAI', 1, 0.86, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"anduongvuong_ok"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải công viên Châu Á đã xác thực', 'Chai bia, ly nhựa đã được xác minh và ban quản lý dọn sạch', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.042500, 108.234500, 'VERIFIED', '2026-05-11 20:00:00', 'THUY_TINH', 1, 0.89, '{"ward":"Hòa Hải","district":"Ngũ Hành Sơn","label":"asia_park_verified"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác thải Huỳnh Tấn Phát đã dọn', 'Thùng rác quá tải đã được thu gom bổ sung, sạch sẽ', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.035500, 108.246500, 'CLEANED', '2026-05-11 07:00:00', 'HUU_CO', 1, 0.84, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"huynhtanphat_ok"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác nhựa đường Chương Dương đã xác thực', 'Túi nilon, chai nhựa đã được xác minh và đội vệ sinh xử lý', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.038200, 108.248500, 'VERIFIED', '2026-05-10 15:30:00', 'NHUA', 1, 0.88, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"chuongduong_verified"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+
+-- ========================
+-- QUẬN LIÊN CHIỂU (7 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác nhựa Tôn Đức Thắng đã dọn', 'Rác từ khu công nghiệp vương vãi đã được dọn sạch', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.059500, 108.180500, 'CLEANED', '2026-05-14 13:00:00', 'NHUA', 1, 0.90, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"tonducthang_ok"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác hữu cơ chợ Hòa Khánh đã xác thực', 'Rau củ hư đã được ban quản lý chợ thu gom và xác nhận', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.058200, 108.148800, 'VERIFIED', '2026-05-13 17:00:00', 'HUU_CO', 1, 0.83, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"hoakhanh_market_verified"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác xây dựng Nguyễn Lương Bằng đã dọn', 'Xà bần đổ trộm đã được xe tải chở đi đúng bãi quy định', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.063500, 108.176100, 'CLEANED', '2026-05-13 09:00:00', 'XAY_DUNG', 1, 0.87, '{"ward":"Hòa Khánh Bắc","district":"Liên Chiểu","label":"nguyenluongbang_ok"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác nhựa Hòa Phát đã xác thực', 'Đồ nhựa cũ, thùng xốp đã được xác minh và thu gom tái chế', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.078500, 108.174500, 'VERIFIED', '2026-05-12 15:00:00', 'NHUA', 1, 0.89, '{"ward":"Hòa Phát","district":"Liên Chiểu","label":"hoaphat_verified"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác điện tử khu công nghiệp Hòa Khánh đã dọn', 'Linh kiện điện tử đã được chuyển đến cơ sở tái chế chuyên nghiệp', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.061500, 108.146500, 'CLEANED', '2026-05-12 10:30:00', 'KIM_LOAI', 1, 0.91, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"industrial_ok"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác vải xưởng may đã xác thực', 'Vải vụn đã được xác minh và hợp đồng với đơn vị thu gom vải tái chế', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.059800, 108.144800, 'VERIFIED', '2026-05-11 14:30:00', 'KHAC', 1, 0.85, '{"ward":"Hòa Khánh","district":"Liên Chiểu","label":"textile_verified"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác thải Mê Linh đã dọn', 'Bao rác bị xe cán nát đã được thu gom, rửa sạch mặt đường', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.064500, 108.172600, 'CLEANED', '2026-05-10 08:00:00', 'HUU_CO', 1, 0.82, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"melinh_ok"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+
+-- ========================
+-- QUẬN CẨM LỆ (5 báo cáo cuối)
+-- ========================
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác nhựa Cách Mạng Tháng Tám đã dọn', 'Chai nhựa, túi nilon đã được tổ dân phố ra quân dọn sạch', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.025800, 108.210800, 'CLEANED', '2026-05-14 10:00:00', 'NHUA', 1, 0.92, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"cachmang_ok"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác hữu cơ chợ Cẩm Lệ đã xác thực', 'Rau củ hư đã được xác minh và thu gom, xử lý làm phân compost', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.022500, 108.208500, 'VERIFIED', '2026-05-13 16:30:00', 'HUU_CO', 1, 0.86, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"camle_verified"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác xây dựng Nguyễn Nhàn đã dọn', 'Gạch vụn, bao xi măng đã được chủ công trình dọn dẹp sạch', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.028500, 108.206100, 'CLEANED', '2026-05-12 16:00:00', 'XAY_DUNG', 1, 0.88, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"nguyennhan_ok"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác nhựa khu dân cư Hòa Xuân đã xác thực', 'Đồ chơi trẻ em hỏng đã được xác minh và thu gom tái chế', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.015500, 108.225500, 'VERIFIED', '2026-05-11 10:30:00', 'NHUA', 1, 0.90, '{"ward":"Hòa Xuân","district":"Cẩm Lệ","label":"hoaxuan_verified"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác lốp xe Trường Chinh đã dọn', 'Lốp xe máy cũ đã được chuyển đến cơ sở tái chế cao su', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.019500, 108.215500, 'CLEANED', '2026-05-10 14:00:00', 'KHAC', 1, 0.87, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"truongchinh_ok"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e');
+
+
+
+
+
+
+
+-- ================================================================
+-- BỔ SUNG 50 BÁO CÁO RÁC - TRẢI KHẮP ĐÀ NẴNG (ĐỢT 3)
+-- Tập trung: PENDING & REJECTED để đa dạng trạng thái
+-- Tránh sân bay, ven sông, ven biển
+-- ================================================================
+
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+
+-- ========================
+-- QUẬN HẢI CHÂU (10 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác thải nhựa đường Tiểu La', 'Chai nhựa, túi nilon vứt đầy vỉa hè trước quán ăn vặt', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.058200, 108.216800, 'PENDING', '2026-05-15 08:30:00', 'NHUA', 1, 0.89, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"tieula"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác hữu cơ kiệt 45 Nguyễn Hoàng', 'Thức ăn thừa đổ trước cửa nhà gây mùi hôi thối', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.061500, 108.217200, 'PENDING', '2026-05-15 07:45:00', 'HUU_CO', 0, 0.72, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"nguyenhoang_alley"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác xây dựng đường Ông Ích Khiêm', 'Gạch vụn, cát đá đổ trộm vào góc đường vắng', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.072800, 108.218500, 'REJECTED', '2026-05-14 16:00:00', 'XAY_DUNG', 0, 0.68, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"ongichkhiem"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác điện tử tiệm game đường Pasteur', 'Máy chơi game cũ, tay cầm hỏng chất đống trước tiệm', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.063200, 108.220800, 'PENDING', '2026-05-14 14:30:00', 'KIM_LOAI', 1, 0.84, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"pasteur_game"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác thải vải tiệm may đường Trần Quốc Toản', 'Vải vụn, chỉ thừa đổ tràn ra vỉa hè sau giờ làm', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.069800, 108.219200, 'PENDING', '2026-05-14 11:00:00', 'KHAC', 1, 0.81, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"tranquoctoan_textile"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa công viên APEC', 'Ly nhựa, ống hút từ khách du lịch vứt quanh ghế đá', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.057800, 108.217500, 'PENDING', '2026-05-13 17:30:00', 'NHUA', 1, 0.92, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"apec_park"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác thải chai lọ đường Yên Bái', 'Chai rượu vỡ nguy hiểm sau quán nhậu khuya', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.070500, 108.218800, 'REJECTED', '2026-05-13 11:00:00', 'THUY_TINH', 0, 0.65, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"yenbai_bar"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác thải sinh hoạt đường Phan Đình Phùng', 'Thùng rác quá tải 3 ngày chưa thu gom, rác tràn ra đường', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.067200, 108.221500, 'PENDING', '2026-05-12 09:00:00', 'HUU_CO', 1, 0.85, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"phandinhphung"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải kim loại tiệm khóa đường Nguyễn Thị Minh Khai', 'Ổ khóa hỏng, chìa khóa cũ, bản lề gỉ sét vứt bừa bãi', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.064800, 108.219500, 'PENDING', '2026-05-12 08:15:00', 'KIM_LOAI', 0, 0.78, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"minhkhai_locksmith"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác nhựa khu vực Bến xe Trung tâm', 'Hành khách vứt chai nước, hộp cơm sau khi xuống xe', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.059200, 108.214800, 'PENDING', '2026-05-11 15:45:00', 'NHUA', 1, 0.88, '{"ward":"Hòa Cường Bắc","district":"Hải Châu","label":"bus_station"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+
+-- ========================
+-- QUẬN THANH KHÊ (10 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác nhựa đường Nguyễn Đức Trung', 'Túi nilon, hộp xốp từ hàng ăn sáng vứt la liệt', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.070800, 108.208500, 'PENDING', '2026-05-15 09:00:00', 'NHUA', 1, 0.90, '{"ward":"Tân Chính","district":"Thanh Khê","label":"nguyenductrung"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác hữu cơ chợ Thanh Khê', 'Rau củ, cá ươn vứt sau quầy hàng gây ruồi nhặng', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.073200, 108.207500, 'REJECTED', '2026-05-14 18:00:00', 'HUU_CO', 0, 0.70, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"thanhkhe_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác xây dựng đường Trần Xuân Lê', 'Xà bần, gạch cũ đổ trộm vào bãi đất trống cuối đường', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.075500, 108.205800, 'PENDING', '2026-05-14 15:00:00', 'XAY_DUNG', 0, 0.74, '{"ward":"Xuân Hà","district":"Thanh Khê","label":"tranxuanle"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác thải nhựa trường mầm non Hoa Sen', 'Đồ chơi nhựa hỏng, chai sữa vứt quanh cổng trường', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.069200, 108.210800, 'PENDING', '2026-05-14 10:30:00', 'NHUA', 1, 0.87, '{"ward":"Chính Gián","district":"Thanh Khê","label":"hoasen_kinder"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác điện tử tiệm sửa đồ gia dụng đường Hải Phòng', 'Nồi cơm điện hỏng, quạt cũ chất đống trước tiệm', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.071500, 108.209200, 'PENDING', '2026-05-13 16:30:00', 'KIM_LOAI', 0, 0.76, '{"ward":"Tân Chính","district":"Thanh Khê","label":"haiphong_repair"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác thải chai lọ công viên Thanh Khê', 'Chai bia, ly thủy tinh vỡ nguy hiểm trong khu vui chơi', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.074200, 108.206500, 'REJECTED', '2026-05-13 10:00:00', 'THUY_TINH', 0, 0.67, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"thanhkhe_park"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác vải xưởng may nhỏ đường Trần Khánh Dư', 'Vải vụn, bông thừa đổ trộm sau xưởng vào ban đêm', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.068500, 108.208800, 'PENDING', '2026-05-12 14:00:00', 'KHAC', 1, 0.82, '{"ward":"Chính Gián","district":"Thanh Khê","label":"trankhanhdu_textile"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác nhựa đường Thái Thị Bôi', 'Bao nilon, chai nhựa từ cửa hàng tạp hóa vứt tràn lan', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.072500, 108.210200, 'PENDING', '2026-05-12 09:30:00', 'NHUA', 1, 0.89, '{"ward":"Tân Chính","district":"Thanh Khê","label":"thaithiboi"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác thải lốp xe tiệm sửa xe đường Lê Độ', 'Lốp ô tô cũ, săm xe hỏng chất thành đống', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.070200, 108.211500, 'PENDING', '2026-05-11 16:00:00', 'KHAC', 1, 0.85, '{"ward":"Chính Gián","district":"Thanh Khê","label":"ledo_tire"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác thải sinh hoạt kiệt 12 Trần Quý Cáp', 'Rác để sai giờ, chó hoang cắn phá tung tóe khắp kiệt', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b', 16.073800, 108.209500, 'REJECTED', '2026-05-11 08:00:00', 'HUU_CO', 0, 0.71, '{"ward":"Vĩnh Trung","district":"Thanh Khê","label":"tranquycap_alley"}', 'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b'),
+
+-- ========================
+-- QUẬN SƠN TRÀ (10 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác nhựa đường Lý Nam Đế', 'Chai nước, vỏ bim bim từ học sinh trường cấp 2', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.062800, 108.237500, 'PENDING', '2026-05-15 07:00:00', 'NHUA', 1, 0.91, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"lynamde_school"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác hữu cơ chợ chiều An Hải Đông', 'Thức ăn thừa, rau củ dập nát sau phiên chợ chiều', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.065200, 108.240800, 'PENDING', '2026-05-14 19:00:00', 'HUU_CO', 0, 0.73, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"anhaidong_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác xây dựng đường Nguyễn Công Trứ', 'Vật liệu xây dựng thừa đổ trộm vào khu đất quy hoạch', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.061500, 108.239200, 'REJECTED', '2026-05-14 12:00:00', 'XAY_DUNG', 0, 0.69, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"nguyencongtru"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải kim loại đường Hoàng Sa', 'Tôn cũ, sắt vụn từ tiệm hàn xì vứt bừa bãi', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.059800, 108.245200, 'PENDING', '2026-05-13 14:30:00', 'KIM_LOAI', 1, 0.83, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"hoangsa_metal"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác nhựa đường Hà Đặc', 'Túi nilon, hộp xốp từ quán ăn vặt trước cổng trường', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.064500, 108.241200, 'PENDING', '2026-05-13 11:00:00', 'NHUA', 1, 0.88, '{"ward":"An Hải Đông","district":"Sơn Trà","label":"hadac_school"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác điện tử tiệm sửa máy tính đường Nguyễn Du', 'Linh kiện máy tính cũ, màn hình hỏng chất đống', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.061200, 108.238800, 'REJECTED', '2026-05-12 17:00:00', 'KIM_LOAI', 0, 0.66, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"nguyendu_computer"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác thải nhựa khu dân cư Vương Thừa Vũ', 'Đồ nhựa gia dụng cũ, thùng xốp vứt góc đường nội bộ', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.058200, 108.243500, 'PENDING', '2026-05-12 10:00:00', 'NHUA', 1, 0.86, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"vuongthuavu"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác thải vải tiệm may đường Trần Bạch Đằng', 'Vải vụn, chỉ thừa đổ đầy thùng rác tràn ra ngoài', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.056500, 108.240800, 'PENDING', '2026-05-11 15:00:00', 'KHAC', 1, 0.80, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"tranbachdang"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác chai lọ đường Cao Bá Quát', 'Chai bia, vỏ lon vứt la liệt sau quán nhậu vỉa hè', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.060500, 108.241800, 'PENDING', '2026-05-11 09:30:00', 'THUY_TINH', 1, 0.84, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"caobatquat"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác thải lốp xe đường Nguyễn Phan Vinh', 'Lốp xe đạp, xe máy cũ vứt trước tiệm sửa xe nhỏ', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.063800, 108.244200, 'REJECTED', '2026-05-10 16:30:00', 'KHAC', 0, 0.64, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"nguyenphanvinh"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e'),
+
+-- ========================
+-- QUẬN NGŨ HÀNH SƠN (8 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác nhựa đường Lê Quang Đạo', 'Ly nhựa, túi nilon từ khu ẩm thực vứt tràn lan', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.028500, 108.242500, 'PENDING', '2026-05-15 10:00:00', 'NHUA', 1, 0.90, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"lequangdao"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác hữu cơ chợ Mỹ An', 'Cá ươn, rau củ hư đổ tràn sau chợ gây mùi nồng nặc', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.031500, 108.244500, 'PENDING', '2026-05-14 17:00:00', 'HUU_CO', 0, 0.71, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"myan_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác xây dựng đường Đỗ Bá', 'Gạch vụn, xi măng thừa từ công trình sửa nhà', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.034500, 108.246800, 'REJECTED', '2026-05-14 13:00:00', 'XAY_DUNG', 0, 0.67, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"doba_debris"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác thải nhựa làng đá Non Nước', 'Bao bì, chai nhựa từ cơ sở sản xuất đá mỹ nghệ', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.038200, 108.238500, 'PENDING', '2026-05-13 15:00:00', 'NHUA', 1, 0.87, '{"ward":"Hòa Hải","district":"Ngũ Hành Sơn","label":"nonnuoc_stone"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác kim loại tiệm hàn đường Ngũ Hành Sơn', 'Sắt vụn, tôn cũ chất đống trước tiệm hàn', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.032500, 108.245200, 'PENDING', '2026-05-13 10:30:00', 'KIM_LOAI', 0, 0.75, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"nguhanhson_metal"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác vải xưởng may nhỏ đường Thuận Hóa', 'Vải vụn, bông may thừa đổ trộm cuối đường', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.027500, 108.241800, 'PENDING', '2026-05-12 14:30:00', 'KHAC', 1, 0.83, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"thuanhoa_textile"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác chai lọ đường Nguyễn Xiển', 'Chai bia vỡ, ly thủy tinh nguy hiểm trên vỉa hè', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.033500, 108.247200, 'REJECTED', '2026-05-12 08:00:00', 'THUY_TINH', 0, 0.69, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"nguyenxien"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác nhựa công viên Hòa Hải', 'Túi nilon, chai nước từ khách dã ngoại cuối tuần', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.040500, 108.236800, 'PENDING', '2026-05-11 18:00:00', 'NHUA', 1, 0.91, '{"ward":"Hòa Hải","district":"Ngũ Hành Sơn","label":"hoahai_park"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+
+-- ========================
+-- QUẬN LIÊN CHIỂU (7 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác nhựa đường Hoàng Văn Thái', 'Chai nhựa, túi nilon từ khu công nghiệp vương vãi', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.055200, 108.178500, 'PENDING', '2026-05-15 08:00:00', 'NHUA', 1, 0.88, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"hoangvanthai"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác hữu cơ chợ Hòa Minh', 'Thức ăn thừa, rau củ hư đổ tràn sau chợ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.057500, 108.176200, 'PENDING', '2026-05-14 16:30:00', 'HUU_CO', 0, 0.74, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"hoaminh_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác xây dựng đường Nguyễn Chánh', 'Xà bần, gạch đá đổ trộm vào lô đất trống', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.060500, 108.172500, 'REJECTED', '2026-05-14 11:30:00', 'XAY_DUNG', 0, 0.70, '{"ward":"Hòa Khánh Bắc","district":"Liên Chiểu","label":"nguyenchanh"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác điện tử xưởng lắp ráp đường Mê Linh', 'Bo mạch hỏng, linh kiện điện tử thải bỏ không đúng cách', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.063500, 108.174800, 'PENDING', '2026-05-13 14:00:00', 'KIM_LOAI', 1, 0.86, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"melinh_factory"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác thải vải xưởng may Hòa Khánh Bắc', 'Vải vụn, chỉ thừa đổ trộm sau xưởng vào cuối tuần', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.064500, 108.171200, 'PENDING', '2026-05-12 16:00:00', 'KHAC', 1, 0.82, '{"ward":"Hòa Khánh Bắc","district":"Liên Chiểu","label":"hoakhanhbac_textile"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác nhựa khu dân cư Hòa Hiệp Nam', 'Đồ nhựa gia dụng hỏng, thau chậu cũ vứt bừa bãi', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.068500, 108.168200, 'PENDING', '2026-05-12 09:00:00', 'NHUA', 1, 0.85, '{"ward":"Hòa Hiệp Nam","district":"Liên Chiểu","label":"hoahepnam"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác lốp xe đường Tô Hiệu', 'Lốp ô tô cũ, vỏ xe tải hỏng chất đống bên đường', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.061500, 108.170200, 'REJECTED', '2026-05-11 13:30:00', 'KHAC', 0, 0.68, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"tohieu_tire"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e'),
+
+-- ========================
+-- QUẬN CẨM LỆ (5 báo cáo cuối)waste_reports
+-- ========================
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác nhựa đường Ông Ích Đường', 'Túi nilon, chai nhựa từ quán cà phê võng vứt la liệt', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.023500, 108.212500, 'PENDING', '2026-05-15 09:30:00', 'NHUA', 1, 0.87, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"ongichduong"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác hữu cơ chợ Hòa Cầm', 'Rau củ hư, cá thối vứt sau chợ gây ô nhiễm', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.018500, 108.204200, 'REJECTED', '2026-05-14 18:30:00', 'HUU_CO', 0, 0.72, '{"ward":"Hòa Cầm","district":"Cẩm Lệ","label":"hoacam_market"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác xây dựng đường Văn Tiến Dũng', 'Gạch vụn, bao xi măng đổ trộm vào bãi đất trống', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.027500, 108.215200, 'PENDING', '2026-05-13 15:30:00', 'XAY_DUNG', 0, 0.73, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"vantiendung"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác kim loại tiệm sửa xe đường Tôn Đản', 'Phụ tùng xe máy cũ, nhớt thải vứt bừa bãi', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.020500, 108.208500, 'PENDING', '2026-05-12 11:00:00', 'KIM_LOAI', 0, 0.77, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"tondan_garage"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác nhựa khu dân cư Hòa Phú', 'Thùng xốp, chai lọ vứt bừa bãi góc đường nội bộ', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.030500, 108.218500, 'PENDING', '2026-05-11 14:00:00', 'NHUA', 1, 0.84, '{"ward":"Hòa Phú","district":"Cẩm Lệ","label":"hoaphu"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SET SQL_SAFE_UPDATES = 0;
+
+-- Sửa "Rác thải nhựa ven sông Hàn"
+UPDATE waste_reports 
+SET title = 'Rác thải nhựa đường Ngô Quyền kéo dài',
+    description = 'Túi nilon, chai lọ vứt dọc tuyến đường Ngô Quyền, đoạn gần chợ',
+    gps_lat = 16.063500, 
+    gps_long = 108.238500,
+    ai_analysis_json = '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"ngoquyen_street"}'
+WHERE title = 'Rác thải nhựa ven sông Hàn';
+
+-- Sửa "Túi nilon bãi biển Mỹ Khê"
+UPDATE waste_reports 
+SET title = 'Túi nilon đường Lê Văn Lương',
+    description = 'Du khách vứt túi nilon, vỏ bim bim dọc đường Lê Văn Lương',
+    gps_lat = 16.060200, 
+    gps_long = 108.242800,
+    ai_analysis_json = '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"levanluong_litter"}'
+WHERE title = 'Túi nilon bãi biển Mỹ Khê';
+
+-- Sửa "Rác nilon khu vực cầu Rồng"
+UPDATE waste_reports 
+SET title = 'Rác nilon đường Trần Hưng Đạo',
+    description = 'Du khách vứt rác sau khi dạo phố, tập trung ở khu vực quán xá',
+    gps_lat = 16.064500, 
+    gps_long = 108.235800,
+    ai_analysis_json = '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"tranhungdao_litter"}'
+WHERE title = 'Rác nilon khu vực cầu Rồng';
+
+SET SQL_SAFE_UPDATES = 1;
+
+
+
+
+
+
+
+-- ================================================================
+-- BỔ SUNG 20 BÁO CÁO RÁC - TRẢI KHẮP ĐÀ NẴNG (ĐỢT 4)
+-- Tránh sân bay, sông, biển - đủ trạng thái PENDING, VERIFIED, CLEANED, REJECTED
+-- ================================================================
+
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+
+-- ========================
+-- QUẬN HẢI CHÂU (4 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa đường Hùng Vương', 'Chai nhựa, túi nilon vứt đầy trước cổng trường tiểu học', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.065200, 108.216500, 'PENDING', '2026-05-15 10:00:00', 'NHUA', 1, 0.90, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"hungvuong_school"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác hữu cơ đường Lê Lợi đã dọn', 'Thức ăn thừa từ nhà hàng đã được thu gom sạch sẽ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.066500, 108.220800, 'CLEANED', '2026-05-15 09:30:00', 'HUU_CO', 1, 0.92, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"leloi_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác xây dựng kiệt 78 Nguyễn Chí Thanh đã xác thực', 'Xà bần sửa nhà đã được xác minh, chủ nhà cam kết dọn trong ngày', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.063500, 108.218800, 'VERIFIED', '2026-05-14 16:00:00', 'XAY_DUNG', 1, 0.85, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"nguyenchithanh_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác điện tử tiệm sửa đồ đường Nguyễn Hoàng bị từ chối', 'Thiết bị cũ không phải rác thải, chủ tiệm đang sửa chữa', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.062500, 108.217500, 'REJECTED', '2026-05-14 14:00:00', 'KIM_LOAI', 0, 0.55, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"nguyenhoang_rejected"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+
+-- ========================
+-- QUẬN THANH KHÊ (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác nhựa đường Hải Phòng đã dọn', 'Túi nilon, hộp xốp đã được tổ dân phố dọn sạch', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.071500, 108.209500, 'CLEANED', '2026-05-15 11:00:00', 'NHUA', 1, 0.93, '{"ward":"Tân Chính","district":"Thanh Khê","label":"haiphong_cleaned"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác hữu cơ chợ Lê Duẩn đã xác thực', 'Rau củ hư sau chợ đã được xác minh và chuyển đi làm compost', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.069500, 108.216500, 'VERIFIED', '2026-05-14 17:30:00', 'HUU_CO', 1, 0.86, '{"ward":"Chính Gián","district":"Thanh Khê","label":"leduan_market_verified"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác lốp xe đường Lê Độ bị từ chối', 'Lốp xe đang được tập kết để tái chế, không phải vứt bừa bãi', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e', 16.070200, 108.211500, 'REJECTED', '2026-05-14 10:00:00', 'KHAC', 0, 0.52, '{"ward":"Chính Gián","district":"Thanh Khê","label":"ledo_tire_rejected"}', 'https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e'),
+
+-- ========================
+-- QUẬN SƠN TRÀ (4 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác thải nhựa đường Lê Hữu Trác', 'Chai nước, vỏ bim bim từ khách du lịch vứt dọc đường', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.061500, 108.244500, 'PENDING', '2026-05-15 08:30:00', 'NHUA', 1, 0.91, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"lehuutrac"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác vải tiệm may đường Lê Văn Thứ đã dọn', 'Vải vụn đã được thu gom và gửi đến cơ sở tái chế', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.060500, 108.243200, 'CLEANED', '2026-05-15 07:45:00', 'KHAC', 1, 0.88, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"levanthu_cleaned"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác chai lọ đường Hà Kỳ Ngộ đã xác thực', 'Chai bia vỡ đã được xác minh, yêu cầu quán nhậu dọn dẹp', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.058500, 108.242500, 'VERIFIED', '2026-05-14 15:30:00', 'THUY_TINH', 1, 0.87, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"hakyngo_verified"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác nhựa đường Dương Vân Nga bị từ chối', 'Đồ nhựa đã được phân loại để bán ve chai, không phải rác', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.062500, 108.243800, 'REJECTED', '2026-05-14 11:00:00', 'NHUA', 0, 0.58, '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"duongvannga_rejected"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+
+-- ========================
+-- QUẬN NGŨ HÀNH SƠN (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác nhựa đường Phan Tứ', 'Túi nilon, chai nhựa từ quán ăn vặt gần trường đại học', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.023500, 108.244500, 'PENDING', '2026-05-15 09:00:00', 'NHUA', 1, 0.89, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"phantu"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác hữu cơ đường Đỗ Bá đã dọn', 'Cá thối, rau hư đã được công nhân vệ sinh dọn sạch', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.034500, 108.247200, 'CLEANED', '2026-05-15 08:00:00', 'HUU_CO', 1, 0.91, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"doba_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác xây dựng đường Chương Dương đã xác thực', 'Vật liệu thừa đã được xác minh, chủ thầu đang cho xe chở đi', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.038500, 108.248200, 'VERIFIED', '2026-05-14 14:30:00', 'XAY_DUNG', 1, 0.84, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"chuongduong_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+
+-- ========================
+-- QUẬN LIÊN CHIỂU (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác thải nhựa đường Nguyễn Sinh Sắc', 'Chai nhựa, túi nilon từ khu dân cư mới vứt bừa bãi', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.058500, 108.177500, 'PENDING', '2026-05-15 10:30:00', 'NHUA', 1, 0.88, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"nguyensinhsac"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác kim loại đường Âu Cơ đã dọn', 'Sắt vụn, tôn cũ đã được thu gom về điểm tái chế', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.062500, 108.175500, 'CLEANED', '2026-05-15 08:15:00', 'KIM_LOAI', 1, 0.90, '{"ward":"Hòa Khánh Bắc","district":"Liên Chiểu","label":"auco_cleaned"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác vải xưởng may đường Hoàng Thị Loan đã xác thực', 'Vải vụn đã được xác minh, xưởng ký hợp đồng thu gom định kỳ', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.064500, 108.173500, 'VERIFIED', '2026-05-14 16:00:00', 'KHAC', 1, 0.86, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"hoangthiloan_verified"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+
+-- ========================
+-- QUẬN CẨM LỆ (3 báo cáo cuối)
+-- ========================
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác thải nhựa đường Nguyễn Phước Tần', 'Túi nilon, hộp xốp từ hàng ăn vứt la liệt vỉa hè', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.024500, 108.213500, 'PENDING', '2026-05-15 11:30:00', 'NHUA', 1, 0.87, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"nguyenphuoctan"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác hữu cơ chợ Hòa Thọ đã dọn', 'Rau củ, cá ươn đã được ban quản lý chợ thu gom sạch', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.022500, 108.210500, 'CLEANED', '2026-05-15 07:00:00', 'HUU_CO', 1, 0.92, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"hoatho_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác xây dựng đường Lê Đại Hành đã xác thực', 'Gạch vụn đã được xác minh, yêu cầu chủ nhà dọn trong 24h', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.026500, 108.214500, 'VERIFIED', '2026-05-14 15:00:00', 'XAY_DUNG', 1, 0.83, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"ledaihanh_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428');
+
+
+
+
+
+-- ================================================================
+-- BỔ SUNG 20 BÁO CÁO RÁC - RẢI RÁC KHẮP ĐÀ NẴNG (ĐỢT 5)
+-- Tránh sân bay, sông, biển - đa dạng trạng thái để hiện rõ trên bản đồ
+-- ================================================================
+
+INSERT INTO waste_reports (user_id, title, description, image_url, gps_lat, gps_long, status, created_at, category, ai_verified, ai_confidence, ai_analysis_json, ai_analyzed_image_url) VALUES
+
+-- ========================
+-- QUẬN HẢI CHÂU (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='lan.vo'), 'Rác thải nhựa đường Trưng Nữ Vương', 'Vỏ chai, túi nilon từ quán trà sữa vứt đầy vỉa hè trước cổng trường', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.066500, 108.215500, 'PENDING', '2026-05-15 13:00:00', 'NHUA', 1, 0.92, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"trungnuvuong"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='thuy.le'), 'Rác hữu cơ chợ đêm Lê Duẩn đã dọn', 'Thức ăn thừa sau phiên chợ đêm đã được dọn sạch sẽ', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.069500, 108.217500, 'CLEANED', '2026-05-15 06:00:00', 'HUU_CO', 1, 0.94, '{"ward":"Hải Châu 1","district":"Hải Châu","label":"nightmarket_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác điện tử đường Thái Phiên đã xác thực', 'Laptop cũ, điện thoại hỏng đã được xác minh và gửi tái chế', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.068500, 108.220500, 'VERIFIED', '2026-05-14 17:00:00', 'KIM_LOAI', 1, 0.89, '{"ward":"Hải Châu 2","district":"Hải Châu","label":"thaiphien_ewaste_verified"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+
+-- ========================
+-- QUẬN THANH KHÊ (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='duc.ton'), 'Rác thải chai lọ đường Huỳnh Ngọc Huệ', 'Chai bia, ly thủy tinh vỡ nguy hiểm trước quán nhậu', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.071500, 108.211500, 'PENDING', '2026-05-15 12:30:00', 'THUY_TINH', 1, 0.86, '{"ward":"Tân Chính","district":"Thanh Khê","label":"huynhngochue"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+((SELECT user_id FROM users WHERE username='my.lam'), 'Rác nhựa đường Thúc Tề đã dọn', 'Túi nilon, chai nhựa đã được dọn sạch sau phản ánh', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.073500, 108.210500, 'CLEANED', '2026-05-15 10:00:00', 'NHUA', 1, 0.91, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"thucte_cleaned"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='hieu.ha'), 'Rác xây dựng đường Phan Thanh đã xác thực', 'Vật liệu thừa đã được xác minh, phường đang xử lý', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.074500, 108.209500, 'VERIFIED', '2026-05-14 16:30:00', 'XAY_DUNG', 1, 0.84, '{"ward":"Thanh Khê Tây","district":"Thanh Khê","label":"phanthanh_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+
+-- ========================
+-- QUẬN SƠN TRÀ (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='tuan.phan'), 'Rác thải nhựa đường Lê Tấn Trung', 'Chai nước, vỏ bim bim từ khách tắm biển vứt dọc đường vào trung tâm', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.060500, 108.245500, 'PENDING', '2026-05-15 14:00:00', 'NHUA', 1, 0.88, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"letantrung"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='trang.bui'), 'Rác vải đường Lê Thước đã dọn', 'Vải vụn tiệm may đã được thu gom sạch sẽ', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9', 16.059500, 108.244500, 'CLEANED', '2026-05-15 09:00:00', 'KHAC', 1, 0.90, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"lethuoc_cleaned"}', 'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9'),
+((SELECT user_id FROM users WHERE username='nhi.dinh'), 'Rác kim loại đường Trần Đình Đàn đã xác thực', 'Sắt vụn đã được xác minh và chuyển đến cơ sở tái chế', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7', 16.058500, 108.246500, 'VERIFIED', '2026-05-14 15:00:00', 'KIM_LOAI', 1, 0.87, '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"trandinhdan_verified"}', 'https://images.unsplash.com/photo-1593941707882-a5bba14938c7'),
+
+-- ========================
+-- QUẬN NGŨ HÀNH SƠN (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='phat.ngo'), 'Rác thải nhựa đường Lê Văn Hưu', 'Hộp xốp, túi nilon từ khu ăn uống sinh viên vứt tràn lan', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.024500, 108.245500, 'PENDING', '2026-05-15 11:30:00', 'NHUA', 1, 0.90, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"levanhuu"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='uyen.truong'), 'Rác hữu cơ đường Đoàn Khuê đã dọn', 'Rau củ hư từ chợ nhỏ đã được dọn sạch', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.027500, 108.246500, 'CLEANED', '2026-05-15 07:30:00', 'HUU_CO', 1, 0.92, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"doankhue_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='loc.vuong'), 'Rác chai lọ đường Mai Hắc Đế đã xác thực', 'Chai bia vỡ đã được xác minh, quán nhậu đã dọn dẹp', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a', 16.030500, 108.247500, 'VERIFIED', '2026-05-14 18:00:00', 'THUY_TINH', 1, 0.86, '{"ward":"Mỹ An","district":"Ngũ Hành Sơn","label":"maihacde_verified"}', 'https://images.unsplash.com/photo-1605600659873-d808a13e4d2a'),
+
+-- ========================
+-- QUẬN LIÊN CHIỂU (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='thao.cao'), 'Rác thải nhựa đường Ngô Văn Sở', 'Chai nhựa, túi nilon từ khu dân cư vứt bừa bãi góc đường', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.060500, 108.176500, 'PENDING', '2026-05-15 13:30:00', 'NHUA', 1, 0.87, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"ngovanso"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác hữu cơ đường Dũng Sĩ Thanh Khê đã dọn', 'Thức ăn thừa từ nhà hàng đã được thu gom sạch', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.063500, 108.174500, 'CLEANED', '2026-05-15 08:30:00', 'HUU_CO', 1, 0.93, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"dungsithanhkhe_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='khoa.pham'), 'Rác điện tử đường Trần Đình Tri đã xác thực', 'Thiết bị điện tử cũ đã được xác minh và gửi tái chế', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48', 16.061500, 108.178500, 'VERIFIED', '2026-05-14 14:00:00', 'KIM_LOAI', 1, 0.88, '{"ward":"Hòa Minh","district":"Liên Chiểu","label":"trandinhtri_verified"}', 'https://images.unsplash.com/photo-1555664424-778a1e5e1b48'),
+
+-- ========================
+-- QUẬN CẨM LỆ (3 báo cáo)
+-- ========================
+((SELECT user_id FROM users WHERE username='tram.dang'), 'Rác thải nhựa đường Hoàng Đức Lương', 'Túi nilon, chai nhựa vứt la liệt trước cửa hàng tạp hóa', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2', 16.023500, 108.211500, 'PENDING', '2026-05-15 14:30:00', 'NHUA', 1, 0.86, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"hoangducluong"}', 'https://images.unsplash.com/photo-1604187351574-c75ca9b63ab2'),
+((SELECT user_id FROM users WHERE username='vu.ho'), 'Rác hữu cơ đường Lê Trọng Tấn đã dọn', 'Rau củ hư đã được công nhân vệ sinh dọn sạch cuối ngày', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.025500, 108.212500, 'CLEANED', '2026-05-15 17:00:00', 'HUU_CO', 1, 0.91, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"letrongtan_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b'),
+((SELECT user_id FROM users WHERE username='anh.nguyen'), 'Rác xây dựng đường Phan Hành Sơn đã xác thực', 'Gạch vụn đã được xác minh, yêu cầu chủ thầu dọn dẹp', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428', 16.027500, 108.213500, 'VERIFIED', '2026-05-14 13:30:00', 'XAY_DUNG', 1, 0.85, '{"ward":"Hòa Thọ Đông","district":"Cẩm Lệ","label":"phanhanhson_verified"}', 'https://images.unsplash.com/photo-1574375927067-e3e4c2fbe428'),
+
+-- ========================
+-- HUYỆN HÒA VANG (2 báo cáo cuối)
+-- ========================
+((SELECT user_id FROM users WHERE username='ngoc.tran'), 'Rác thải nhựa khu tái định cư Hòa Liên', 'Chai nhựa, thùng xốp từ hộ dân mới chuyển đến vứt bừa bãi', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5', 16.085500, 108.145500, 'PENDING', '2026-05-15 15:00:00', 'NHUA', 1, 0.85, '{"ward":"Hòa Liên","district":"Hòa Vang","label":"hoalien"}', 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5'),
+((SELECT user_id FROM users WHERE username='minh.hoang'), 'Rác hữu cơ chợ Hòa Sơn đã dọn', 'Rau củ hư hỏng đã được thu gom về điểm xử lý tập trung', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b', 16.052500, 108.125500, 'CLEANED', '2026-05-15 06:30:00', 'HUU_CO', 1, 0.90, '{"ward":"Hòa Sơn","district":"Hòa Vang","label":"hoason_cleaned"}', 'https://images.unsplash.com/photo-1589758438364-0ad96db11d4b');
+
+
+
+
+
+
+
+
+
+
+
+USE ecotrack_demo1;
+SET SQL_SAFE_UPDATES = 0;
+
+-- ================================================================
+-- 1. SỬA 3 BÁO CÁO DÍNH SÔNG/BIỂN
+-- ================================================================
+UPDATE waste_reports 
+SET title = 'Rác thải nhựa đường Ngô Quyền kéo dài',
+    description = 'Túi nilon, chai lọ vứt dọc tuyến đường Ngô Quyền, đoạn gần chợ',
+    gps_lat = 16.063500, gps_long = 108.238500,
+    ai_analysis_json = '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"ngoquyen_street"}'
+WHERE title = 'Rác thải nhựa ven sông Hàn';
+
+UPDATE waste_reports 
+SET title = 'Túi nilon đường Lê Văn Lương',
+    description = 'Du khách vứt túi nilon, vỏ bim bim dọc đường Lê Văn Lương',
+    gps_lat = 16.060200, gps_long = 108.242800,
+    ai_analysis_json = '{"ward":"Phước Mỹ","district":"Sơn Trà","label":"levanluong_litter"}'
+WHERE title = 'Túi nilon bãi biển Mỹ Khê';
+
+UPDATE waste_reports 
+SET title = 'Rác nilon đường Trần Hưng Đạo',
+    description = 'Du khách vứt rác sau khi dạo phố, tập trung ở khu vực quán xá',
+    gps_lat = 16.064500, gps_long = 108.235800,
+    ai_analysis_json = '{"ward":"An Hải Bắc","district":"Sơn Trà","label":"tranhungdao_litter"}'
+WHERE title = 'Rác nilon khu vực cầu Rồng';
+
+
+-- Xóa bản trùng "Rác thải công viên Châu Á đã xác thực" - giữ bản CLEANED gốc
+DELETE FROM waste_reports 
+WHERE title = 'Rác thải công viên Châu Á đã xác thực';
+
+
+-- Xóa bản trùng "Rác nhựa Hòa Phát đã xác thực" - giữ bản PENDING gốc
+DELETE FROM waste_reports 
+WHERE title = 'Rác nhựa Hòa Phát đã xác thực';
+
+DELETE FROM waste_reports 
+WHERE title = 'Rác nhựa đường Lê Văn Hiến đã dọn';
+-- Xóa thêm báo cáo trùng "Rác lốp xe cũ Hòa Phát"
+DELETE FROM waste_reports WHERE title = 'Rác lốp xe cũ Hòa Phát';
+SET SQL_SAFE_UPDATES = 1;
+
+
+
+
+-- ================================================================
+-- Dọn dẹp bảng tạm
+-- ================================================================
+DROP TEMPORARY TABLE IF EXISTS tmp_seed20;
+
+-- ================================================================
+-- HOÀN TẤT
+-- ================================================================

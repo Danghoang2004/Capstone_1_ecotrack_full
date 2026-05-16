@@ -376,24 +376,12 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColors.adminAccentSoft,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'EcoTrack Admin',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.adminAccentDeep,
-                          ),
-                        ),
                       ),
-                      const SizedBox(height: 10),
+
                       const Text(
                         'Phân Công Đội Môi Trường',
                         style: TextStyle(
-                          fontSize: 32,
+                          fontSize: 28,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.8,
                           color: AppColors.adminTextPrimary,

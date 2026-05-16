@@ -8,7 +8,9 @@ import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage
 import 'package:frontend_ecotrack/presentation/admin_partner_web/campaign_manage_admin/campaign_side_panel.dart';
 
 class AdminCampaignPage extends StatefulWidget {
-  const AdminCampaignPage({super.key});
+  final int refreshToken;
+
+  const AdminCampaignPage({super.key, this.refreshToken = 0});
 
   @override
   State<AdminCampaignPage> createState() => _AdminCampaignPageState();
@@ -18,6 +20,7 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
   CampaignPanel panel = CampaignPanel.none;
   int? selectedId;
   int _refreshKey = 0;
+  int _realtimeRefreshKey = 0;
   Timer? _autoRefreshTimer;
   bool _isAutoRefreshing = false;
 
@@ -33,6 +36,16 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
   void dispose() {
     _autoRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant AdminCampaignPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshToken != widget.refreshToken) {
+      setState(() {
+        _realtimeRefreshKey++;
+      });
+    }
   }
 
   void _startAutoRefresh() {
@@ -136,7 +149,7 @@ class _AdminCampaignPageState extends State<AdminCampaignPage> {
                   const CampaignDashboard(),
                   const SizedBox(height: 16),
                   CampaignList(
-                    key: ValueKey(_refreshKey), // Gán key ở đây
+                    key: ValueKey('list_${_refreshKey}_$_realtimeRefreshKey'),
                     showHeader: false,
                     onCreate: openCreate,
                     onEdit: openEdit,

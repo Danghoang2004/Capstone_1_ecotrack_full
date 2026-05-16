@@ -297,7 +297,6 @@
           const features = state.reports.map((item) => {
             const status = escapeHtml(item.status || 'UNKNOWN');
             const title = escapeHtml(item.title || 'Không có tiêu đề');
-            const category = escapeHtml(item.category || 'Khác');
             const count = Number(item.count || 1);
             const overflowCount = Number(item.overflowCount || 0);
             const statusSummary = item.statusSummary || {};
@@ -311,7 +310,6 @@
             <div class="goong-report-popup" style="font-family: Arial, sans-serif; line-height: 1.45;">
               <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px; color: #1f2937; overflow-wrap:anywhere;">${title}</div>
               <div style="font-size: 12px; color: #2563eb; margin-bottom: 4px; font-weight: 600;">Trạng thái cụm: ${status}</div>
-              <div style="font-size: 12px; color: #374151; margin-bottom: 2px;">Loại rác: ${category}</div>
               <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">Tổng báo cáo: ${count}</div>
               <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
                 <span style="font-size:11px; padding:2px 8px; border-radius:999px; background:#fee2e2; color:#991b1b;">Chờ duyệt: ${pendingCount}</span>
