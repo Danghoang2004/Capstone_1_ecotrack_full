@@ -483,7 +483,7 @@ class _Report_pageState extends State<Report_page> {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.help_outline, color: Colors.black87),
+              icon: const Icon(Icons.history, color: Colors.black87),
               onPressed: () {
                 Navigator.push(
                   context,

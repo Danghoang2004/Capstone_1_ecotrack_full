@@ -28,14 +28,47 @@ class NotificationService {
   }
 
   Future<int> getUnreadCount() async {
-    final res = await apiClient.get('/api/notifications/unread');
+    // Use /api/notifications (full list) and count client-side by 'read' flag.
+    // This keeps badge consistent with the list shown in NotificationScreen.
+    final res = await apiClient.get('/api/notifications');
     if (res.statusCode != 200) {
-      throw Exception('Không tải được số thông báo chưa đọc');
+      throw Exception('Không tải được thông báo');
     }
 
     final body = apiClient.decodeUtf8Json(res);
     if (body is List) {
-      return body.length;
+      int cnt = 0;
+      for (final e in body) {
+        if (e is Map<String, dynamic>) {
+          final readVal = e['read'];
+          if (readVal is bool) {
+            if (!readVal) cnt++;
+          } else if (readVal is num) {
+            if (readVal == 0) cnt++; // 0 => unread
+          } else if (readVal == null) {
+            // If field missing, assume unread
+            cnt++;
+          }
+        } else if (e is Map) {
+          final readVal = e['read'];
+          if (readVal is bool) {
+            if (!readVal) cnt++;
+          } else if (readVal is num) {
+            if (readVal == 0) cnt++;
+          } else if (readVal == null) {
+            cnt++;
+          }
+        }
+      }
+      return cnt;
+    }
+
+    // fallback: try /unread endpoint
+    final alt = await apiClient.get('/api/notifications/unread');
+    if (alt.statusCode == 200) {
+      final altBody = apiClient.decodeUtf8Json(alt);
+      if (altBody is List) return altBody.length;
+      if (altBody is int) return altBody;
     }
     return 0;
   }

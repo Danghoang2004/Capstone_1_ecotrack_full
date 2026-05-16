@@ -44,7 +44,10 @@ class NotificationItem {
 class NotificationScreen extends StatefulWidget {
   static const routeName = '/notifications';
 
-  const NotificationScreen({super.key});
+  /// If [initialItems] is provided, the screen will use them and skip initial API load.
+  final List<NotificationItem>? initialItems;
+
+  const NotificationScreen({super.key, this.initialItems});
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -58,12 +61,19 @@ class _NotificationScreenState extends State<NotificationScreen>
   List<NotificationItem> _all = [];
   bool _loading = true;
   String? _error;
+  bool _changed = false; // whether any item was marked as read while on screen
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadNotifications();
+    // If initial items are provided (from caller), use them directly.
+    if (widget.initialItems != null) {
+      _all = widget.initialItems!;
+      _loading = false;
+    } else {
+      _loadNotifications();
+    }
   }
 
   Future<void> _loadNotifications() async {
@@ -87,84 +97,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Thông báo')),
-        body: Center(child: Text('Lỗi: $_error')),
-      );
-    }
-
-    final unread = _all.where((e) => !e.isRead).toList();
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F5),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF6F7F5),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text(
-          'Thông báo',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: false,
-
-        // PHẦN QUAN TRỌNG ĐỂ KHUNG "Tất cả / Chưa đọc" NHỎ LẠI
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
-            child: Padding(
-              // ⬅️ Widget Padding được thêm để tạo khoảng cách 10px 2 bên
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10.0,
-              ), // ⬅️ Khoảng cách 10px trái/phải
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE3F5D8),
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: SizedBox(
-                    height: 35, // Đã điều chỉnh để trông thon gọn hơn
-                    child: TabBar(
-                      controller: _tabController,
-                      isScrollable: false,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      labelPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                      ), // Padding nội bộ của text trong Tab
-                      labelColor: Colors.white,
-                      unselectedLabelColor: const Color(0xFF2F6B2F),
-                      dividerColor: Colors.transparent,
-                      indicator: BoxDecoration(
-                        color: const Color(0xFF2F6B2F),
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                      tabs: const [
-                        Tab(child: Text('Tất cả')),
-                        Tab(child: Text('Chưa đọc')),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildList(_all), _buildList(unread)],
-      ),
-    );
-  }
+  
 
   Widget _buildList(List<NotificationItem> items) {
     if (items.isEmpty) {
@@ -218,7 +151,6 @@ class _NotificationScreenState extends State<NotificationScreen>
         if (!item.isRead) {
           try {
             await _service.markAsRead(item.id);
-
             setState(() {
               final idx = _all.indexWhere((n) => n.id == item.id);
               if (idx != -1) {
@@ -230,6 +162,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                   isRead: true,
                   timeAgo: item.timeAgo,
                 );
+                _changed = true;
               }
             });
           } catch (e) {
@@ -357,6 +290,96 @@ class _NotificationScreenState extends State<NotificationScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Wrap scaffold with WillPopScope to return whether changes happened
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, _changed);
+        return false;
+      },
+      child: _buildMainScaffold(),
+    );
+  }
+
+  Widget _buildMainScaffold() {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Thông báo')),
+        body: Center(child: Text('Lỗi: $_error')),
+      );
+    }
+
+    final unread = _all.where((e) => !e.isRead).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F7F5),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF6F7F5),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        title: const Text(
+          'Thông báo',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+        ),
+        centerTitle: false,
+
+        // PHẦN QUAN TRỌNG ĐỂ KHUNG "Tất cả / Chưa đọc" NHỎ LẠI
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 10.0),
+            child: Padding(
+              // ⬅️ Widget Padding được thêm để tạo khoảng cách 10px 2 bên
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+              ), // ⬅️ Khoảng cách 10px trái/phải
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3F5D8),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: SizedBox(
+                    height: 35, // Đã điều chỉnh để trông thon gọn hơn
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: false,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                      ), // Padding nội bộ của text trong Tab
+                      labelColor: Colors.white,
+                      unselectedLabelColor: const Color(0xFF2F6B2F),
+                      dividerColor: Colors.transparent,
+                      indicator: BoxDecoration(
+                        color: const Color(0xFF2F6B2F),
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      tabs: const [
+                        Tab(child: Text('Tất cả')),
+                        Tab(child: Text('Chưa đọc')),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildList(_all), _buildList(unread)],
       ),
     );
   }
