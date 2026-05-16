@@ -86,8 +86,18 @@ class HotspotAlertNotificationService {
     );
 
     final title = 'Bạn gần một điểm rác!';
+
+    // Determine whether to show the dominant waste type.
+    final displayType = wasteTypeVietnamese(hotspot.dominantWasteType);
+    final hideType = hotspot.dominantWasteType == null ||
+      hotspot.dominantWasteType.isEmpty ||
+      hotspot.dominantWasteType.contains('_') ||
+      displayType.toUpperCase() == hotspot.dominantWasteType.toUpperCase();
+
+    final mainSegment = hideType ? '' : ' Chủ yếu: $displayType.';
+
     final body =
-        'Có ${hotspot.reportCount} báo cáo ở đây. Chủ yếu: ${wasteTypeVietnamese(hotspot.dominantWasteType)}. Giúp dọn dẹp?';
+      'Có ${hotspot.reportCount} báo cáo ở đây.$mainSegment Giúp dọn dẹp?';
 
     await _plugin.show(
       hotspot.clusterId,

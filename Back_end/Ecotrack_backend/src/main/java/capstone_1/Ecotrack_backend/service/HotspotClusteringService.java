@@ -201,7 +201,9 @@ public class HotspotClusteringService {
                                 List<Long> reportIds = hotspot.getReport_ids() != null
                                                 ? hotspot.getReport_ids()
                                                 : List.of();
-                                Map<String, Long> categoryCounts = reportRepository.findAllById(reportIds).stream()
+                                List<WasteReport> reportsInHotspot = reportRepository.findAllById(reportIds);
+                                
+                                Map<String, Long> categoryCounts = reportsInHotspot.stream()
                                                 .map(WasteReport::getCategory)
                                                 .filter(Objects::nonNull)
                                                 .map(String::trim)
@@ -210,6 +212,18 @@ public class HotspotClusteringService {
                                                                 category -> category,
                                                                 Collectors.counting()));
                                 item.setCategoryCounts(categoryCounts);
+                                
+                                // Set reports list
+                                List<HotspotNearbyResponse.ReportInfo> reportInfos = reportsInHotspot.stream()
+                                                .map(r -> new HotspotNearbyResponse.ReportInfo(
+                                                        r.getReportId(),
+                                                        r.getTitle() != null ? r.getTitle() : "Không có tiêu đề",
+                                                        r.getDescription() != null ? r.getDescription() : "",
+                                                        r.getCategory() != null ? r.getCategory() : "Rác hỗn hợp",
+                                                        r.getStatus() != null ? r.getStatus().name() : "UNKNOWN"
+                                                ))
+                                                .collect(Collectors.toList());
+                                item.setReports(reportInfos);
 
                                 String dominantWasteType = categoryCounts.entrySet().stream()
                                                 .max(Map.Entry.comparingByValue())

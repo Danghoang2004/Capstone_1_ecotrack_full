@@ -51,6 +51,7 @@ public class HotspotNearbyResponse {
         private Map<String, Long> categoryCounts;
         private String dominantWasteType;
         private RecyclingSuggestion recyclingSuggestion;
+        private List<ReportInfo> reports;
 
         public Integer getClusterId() {
             return clusterId;
@@ -122,6 +123,73 @@ public class HotspotNearbyResponse {
 
         public void setRecyclingSuggestion(RecyclingSuggestion recyclingSuggestion) {
             this.recyclingSuggestion = recyclingSuggestion;
+        }
+
+        public List<ReportInfo> getReports() {
+            return reports;
+        }
+
+        public void setReports(List<ReportInfo> reports) {
+            this.reports = reports;
+        }
+    }
+
+    public static class ReportInfo {
+        private Long reportId;
+        private String title;
+        private String description;
+        private String category;
+        private String status;
+
+        public ReportInfo() {
+        }
+
+        public ReportInfo(Long reportId, String title, String description, String category, String status) {
+            this.reportId = reportId;
+            this.title = title;
+            this.description = description;
+            this.category = category;
+            this.status = status;
+        }
+
+        public Long getReportId() {
+            return reportId;
+        }
+
+        public void setReportId(Long reportId) {
+            this.reportId = reportId;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
         }
     }
 

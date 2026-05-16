@@ -131,6 +131,32 @@ class RecyclingSuggestion {
   }
 }
 
+class ReportInfo {
+  final int reportId;
+  final String title;
+  final String description;
+  final String category;
+  final String status;
+
+  ReportInfo({
+    required this.reportId,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.status,
+  });
+
+  factory ReportInfo.fromJson(Map<String, dynamic> json) {
+    return ReportInfo(
+      reportId: _parseInt(json['reportId'] ?? json['report_id']) ?? 0,
+      title: (json['title'] ?? 'Không có tiêu đề').toString(),
+      description: (json['description'] ?? '').toString(),
+      category: (json['category'] ?? 'Rác hỗn hợp').toString(),
+      status: (json['status'] ?? 'UNKNOWN').toString(),
+    );
+  }
+}
+
 class NearbyHotspot {
   final int clusterId;
   final double centerLat;
@@ -141,6 +167,7 @@ class NearbyHotspot {
   final Map<String, int> categoryCounts;
   final String dominantWasteType;
   final RecyclingSuggestion recyclingSuggestion;
+  final List<ReportInfo> reports;
 
   NearbyHotspot({
     required this.clusterId,
@@ -152,11 +179,18 @@ class NearbyHotspot {
     required this.categoryCounts,
     required this.dominantWasteType,
     required this.recyclingSuggestion,
+    required this.reports,
   });
 
   factory NearbyHotspot.fromJson(Map<String, dynamic> json) {
     final rawCategoryCounts =
         (json['categoryCounts'] ?? json['category_counts']) as Map?;
+    
+    final rawReports = (json['reports'] as List?) ?? [];
+    final reportsList = rawReports
+        .whereType<Map<String, dynamic>>()
+        .map((report) => ReportInfo.fromJson(report))
+        .toList();
 
     return NearbyHotspot(
       clusterId: _parseInt(json['clusterId'] ?? json['cluster_id']) ?? 0,
@@ -181,6 +215,7 @@ class NearbyHotspot {
                 ?.cast<String, dynamic>() ??
             const {},
       ),
+      reports: reportsList,
     );
   }
 }
