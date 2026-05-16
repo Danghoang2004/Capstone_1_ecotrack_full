@@ -698,7 +698,7 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
                 value: _sumKpi((item) => item.totalCompletedPending).toString(),
               ),
               _SmallStat(
-                label: 'Resolved',
+                label: 'Đã hoàn tất',
                 value: _sumKpi((item) => item.totalResolved).toString(),
               ),
               _SmallStat(
@@ -887,7 +887,7 @@ class _AdminEnvironmentTeamPageState extends State<AdminEnvironmentTeamPage>
           DataColumn(label: Text('Đội')),
           DataColumn(label: Text('Assigned')),
           DataColumn(label: Text('Pending')),
-          DataColumn(label: Text('Resolved')),
+          DataColumn(label: Text('Đã hoàn tất')),
           DataColumn(label: Text('Tỷ lệ')),
           DataColumn(label: Text('TB phút')),
         ],
