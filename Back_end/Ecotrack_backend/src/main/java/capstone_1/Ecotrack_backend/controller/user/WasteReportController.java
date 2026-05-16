@@ -72,7 +72,7 @@ public class WasteReportController {
             response.put("report_id", saved.getReportId());
             response.put("report_status", saved.getStatus().name());
             response.put("status", saved.getStatus().name());
-            response.put("points", saved.getStatus() == WasteReport.Status.VERIFIED ? 10 : 0);
+            response.put("points", saved.getStatus() == WasteReport.Status.AI_VERIFIED ? 10 : 0);
             response.put("message", buildStatusMessage(saved.getStatus()));
 
             Map<String, Object> aiResult = buildAiResult(saved);
@@ -99,10 +99,12 @@ public class WasteReportController {
 
     private String buildStatusMessage(WasteReport.Status status) {
         return switch (status) {
-            case VERIFIED -> "Báo cáo của bạn đã được AI xác thực là rác.";
-            case REJECTED -> "AI không phát hiện rác trong báo cáo này.";
-            case PENDING -> "Báo cáo đang được AI phân tích hoặc chờ kiểm duyệt.";
-            case CLEANED -> "Báo cáo đã được xử lý.";
+            case AI_VERIFIED, VERIFIED -> "Báo cáo của bạn đã được AI xác thực thành công.";
+            case NEED_REVIEW -> "AI phát hiện vật thể có thể là rác nhưng cần admin kiểm duyệt thêm.";
+            case REQUEST_REUPLOAD -> "Ảnh chưa đủ rõ hoặc chưa đủ bối cảnh rác. Vui lòng chụp lại ảnh rõ hơn.";
+            case PENDING_AI_ANALYSIS, PENDING -> "Báo cáo đang được AI phân tích.";
+            case REJECTED -> "AI không phát hiện rác hoặc ảnh không rõ.";
+            case CLEANED, APPROVED -> "Báo cáo đã được xử lý.";
         };
     }
 

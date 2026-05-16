@@ -117,11 +117,21 @@ public class WasteReportService {
                 reportData.setAiAnalysisJson("{}");
             }
 
-            WasteReport.Status resolvedStatus = resolveAiStatus(data);
-            reportData.setStatus(resolvedStatus);
-            isEligibleForPoints = resolvedStatus == WasteReport.Status.VERIFIED;
+            if ("AI_VERIFIED".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = true;
+                reportData.setStatus(WasteReport.Status.AI_VERIFIED);
+            } else if ("NEED_REVIEW".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.NEED_REVIEW);
+            } else if ("REQUEST_REUPLOAD".equalsIgnoreCase(data.getReportStatus())) {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.REQUEST_REUPLOAD);
+            } else {
+                isEligibleForPoints = false;
+                reportData.setStatus(WasteReport.Status.NEED_REVIEW);
+            }
         } else {
-            reportData.setStatus(WasteReport.Status.PENDING);
+            reportData.setStatus(WasteReport.Status.PENDING_AI_ANALYSIS);
             isEligibleForPoints = false;
         }
         WasteReport saved = reportRepository.save(reportData);
@@ -232,11 +242,13 @@ public class WasteReportService {
                     report.getUserId(), NotificationType.CAMPAIGN, "Cộng 10 điểm!",
                     "Báo cáo của bạn đã được AI xác thực thành công.", "REPORT", report.getReportId());
         } else {
-            String message;
-            if (report.getStatus() == WasteReport.Status.REJECTED) {
-                message = "AI không phát hiện rác trong báo cáo này.";
-            } else if (report.getStatus() == WasteReport.Status.PENDING) {
-                message = "Báo cáo đang được AI phân tích hoặc chờ kiểm duyệt.";
+            String message = "";
+            if (report.getStatus() == WasteReport.Status.REQUEST_REUPLOAD) {
+                message = "Ảnh chưa đủ rõ hoặc chưa đủ bối cảnh rác. Vui lòng chụp lại ảnh rõ hơn.";
+            } else if (report.getStatus() == WasteReport.Status.NEED_REVIEW) {
+                message = "AI phát hiện vật thể có thể là rác nhưng cần admin kiểm duyệt thêm.";
+            } else if (report.getStatus() == WasteReport.Status.PENDING_AI_ANALYSIS) {
+                message = "Hệ thống đang phân tích ảnh, vui lòng kiểm tra lại sau.";
             } else {
                 message = "Đang kiểm duyệt. Chúng mình sẽ xác nhận trong tối đa 24h ";
             }
@@ -245,28 +257,6 @@ public class WasteReportService {
                     report.getUserId(), NotificationType.SYSTEM, "Báo cáo chưa được duyệt",
                     message, "REPORT", report.getReportId());
         }
-    }
-
-    private WasteReport.Status resolveAiStatus(AiDetectionResponse.AiData data) {
-        String aiDecision = data.getAiDecision() == null ? "" : data.getAiDecision().trim().toUpperCase();
-        String finalWasteDecision = data.getFinalWasteDecision() == null
-                ? ""
-                : data.getFinalWasteDecision().trim().toUpperCase();
-
-        if (Boolean.TRUE.equals(data.getNeedManualReview())
-                || "UNCERTAIN".equals(aiDecision)
-                || "UNCERTAIN".equals(finalWasteDecision)) {
-            return WasteReport.Status.PENDING;
-        }
-
-        if (data.isWaste()
-                || "WASTE_DETECTED".equals(aiDecision)
-                || "WASTE_DETECTED".equals(finalWasteDecision)
-                || "WASTE".equals(finalWasteDecision)) {
-            return WasteReport.Status.VERIFIED;
-        }
-
-        return WasteReport.Status.REJECTED;
     }
 
     public List<WasteReport> getReportsByUser(Long userId) {
