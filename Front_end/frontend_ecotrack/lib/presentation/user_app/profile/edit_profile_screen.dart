@@ -29,6 +29,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
+  late TextEditingController _birthDateController;
+
+  String? _selectedGender;
+  DateTime? _selectedBirthDate;
 
   final TextEditingController _currentPassController = TextEditingController();
   final TextEditingController _newPassController = TextEditingController();
@@ -49,6 +53,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _addressController = TextEditingController(
       text: widget.currentProfile.location ?? "",
     );
+    _birthDateController = TextEditingController(
+      text: widget.currentProfile.birthDate != null
+          ? '${widget.currentProfile.birthDate!.day.toString().padLeft(2, '0')}/${widget.currentProfile.birthDate!.month.toString().padLeft(2, '0')}/${widget.currentProfile.birthDate!.year}'
+          : "",
+    );
+    _selectedGender = widget.currentProfile.gender;
+    _selectedBirthDate = widget.currentProfile.birthDate;
   }
 
   String? get _avatarNetworkUrl {
@@ -76,6 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _birthDateController.dispose();
     _currentPassController.dispose();
     _newPassController.dispose();
     _confirmPassController.dispose();
@@ -153,13 +165,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _handleUpdate() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Validate logic: Nếu user điền mật khẩu mới, phải có mật khẩu hiện tại và xác nhận
+    final hasNewPass = _newPassController.text.isNotEmpty;
+    final hasCurrentPass = _currentPassController.text.isNotEmpty;
+    final hasConfirmPass = _confirmPassController.text.isNotEmpty;
+
+    if (hasNewPass && (!hasCurrentPass || !hasConfirmPass)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng điền mật khẩu hiện tại và xác nhận mật khẩu mới'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
+      // Nếu user không chỉnh sửa field, dùng giá trị cũ
+      final fullName = _nameController.text.trim().isNotEmpty
+          ? _nameController.text.trim()
+          : widget.currentProfile.fullName;
+
+      final phoneNumber = _phoneController.text.trim().isNotEmpty
+          ? _phoneController.text.trim()
+          : widget.currentProfile.phoneNumber;
+
+      final location = _addressController.text.trim().isNotEmpty
+          ? _addressController.text.trim()
+          : widget.currentProfile.location;
+
+      final gender = _selectedGender ?? widget.currentProfile.gender;
+      final birthDate = _selectedBirthDate ?? widget.currentProfile.birthDate;
+
       await _userService.updateProfileFull(
-        fullName: _nameController.text.trim(),
-        location: _addressController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
+        fullName: fullName ?? '',
+        location: location ?? '',
+        phoneNumber: phoneNumber ?? '',
+        gender: gender,
+        birthDate: birthDate,
         currentPassword: _currentPassController.text.isNotEmpty
             ? _currentPassController.text
             : null,
@@ -283,6 +330,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             'Họ và tên',
                             _nameController,
                             'Nhập họ và tên',
+                            isRequired: true,
                           ),
                           const SizedBox(height: 12),
                           _buildFormField(
@@ -303,6 +351,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             _addressController,
                             'Nhập địa chỉ',
                           ),
+                          const SizedBox(height: 12),
+                          _buildGenderDropdown(),
+                          const SizedBox(height: 12),
+                          _buildBirthDateField(),
                         ],
                       ),
                     ),
@@ -560,6 +612,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String hint, {
     bool isPassword = false,
     bool readOnly = false,
+    bool isRequired = false,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -582,9 +635,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           validator:
               validator ??
               (val) {
-                if (val == null || val.isEmpty) {
+                // Nếu field bắt buộc
+                if (isRequired && (val == null || val.isEmpty)) {
                   return "Vui lòng nhập $label";
                 }
+                // Field không bắt buộc, cho phép trống
                 return null;
               },
           style: const TextStyle(
@@ -629,4 +684,150 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ],
     );
   }
+
+  Widget _buildGenderDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Giới tính',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: _selectedGender,
+          hint: const Text('Chọn giới tính'),
+          items: const [
+            DropdownMenuItem(value: 'M', child: Text('Nam')),
+            DropdownMenuItem(value: 'F', child: Text('Nữ')),
+            DropdownMenuItem(value: 'O', child: Text('Khác')),
+          ],
+          onChanged: (value) {
+            setState(() => _selectedGender = value);
+          },
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFFF8FBF9),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 15,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: Color(0xFF1F8F53),
+                width: 1.6,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBirthDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Ngày sinh',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: _birthDateController,
+          readOnly: true,
+          onTap: () => _selectBirthDate(),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: 'DD/MM/YYYY',
+            hintStyle: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF8FBF9),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 15,
+            ),
+            suffixIcon: const Icon(
+              Icons.calendar_today,
+              color: Color(0xFF1F8F53),
+              size: 18,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                color: Color(0xFF1F8F53),
+                width: 1.6,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectBirthDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedBirthDate ?? DateTime.now(),
+      firstDate: DateTime(1950),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1F8F53),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedBirthDate) {
+      setState(() {
+        _selectedBirthDate = picked;
+        _birthDateController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+      });
+    }
+  }
 }
+

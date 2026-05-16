@@ -196,6 +196,8 @@ class UserService {
     required String fullName,
     required String location,
     required String phoneNumber,
+    String? gender,
+    DateTime? birthDate,
     String? currentPassword,
     String? newPassword,
     String? confirmPassword,
@@ -218,6 +220,17 @@ class UserService {
     request.fields['fullName'] = fullName;
     request.fields['location'] = location;
     request.fields['phoneNumber'] = phoneNumber;
+
+    // Thêm gender (nếu có)
+    if (gender != null && gender.isNotEmpty) {
+      request.fields['gender'] = gender;
+    }
+
+    // Thêm birthDate (nếu có)
+    if (birthDate != null) {
+      request.fields['birthDate'] =
+          '${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}';
+    }
 
     if (currentPassword != null && currentPassword.isNotEmpty) {
       request.fields['currentPassword'] = currentPassword;

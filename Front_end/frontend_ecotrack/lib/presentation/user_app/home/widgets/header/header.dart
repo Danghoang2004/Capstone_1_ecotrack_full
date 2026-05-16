@@ -4,6 +4,8 @@ import 'package:frontend_ecotrack/presentation/user_app/notification/notificatio
 import '../../../../../core/theme/app_colors.dart';
 import '../../controllers/profile_controller.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:frontend_ecotrack/core/services/notification_service.dart';
+import 'dart:async';
 
 class HeaderWidget extends StatefulWidget {
   final ProfileController controller;
@@ -16,6 +18,10 @@ class HeaderWidget extends StatefulWidget {
 }
 
 class _HeaderWidgetState extends State<HeaderWidget> {
+  final NotificationService _notificationService = NotificationService();
+  int _unreadCount = 0;
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
@@ -24,6 +30,25 @@ class _HeaderWidgetState extends State<HeaderWidget> {
         setState(() {});
       }
     });
+    _loadUnreadCount();
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _loadUnreadCount());
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await _notificationService.getUnreadCount();
+      if (mounted) {
+        setState(() => _unreadCount = count);
+      }
+    } catch (_) {
+      // Silently ignore errors
+    }
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 
   String? get _avatarNetworkUrl {
@@ -141,10 +166,10 @@ class _HeaderWidgetState extends State<HeaderWidget> {
                           color: Colors.red,
                           shape: BoxShape.circle,
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            '5',
-                            style: TextStyle(
+                            _unreadCount > 0 ? (_unreadCount > 99 ? '99+' : '$_unreadCount') : '0',
+                            style: const TextStyle(
                               color: AppColors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
