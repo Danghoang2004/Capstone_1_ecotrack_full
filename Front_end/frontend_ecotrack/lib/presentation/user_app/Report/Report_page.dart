@@ -35,8 +35,6 @@ class _Report_pageState extends State<Report_page> {
         return 'Không phải rác';
       case 'UNCERTAIN':
         return 'Chưa chắc chắn';
-      case 'REQUEST_REUPLOAD':
-        return 'Yêu cầu chụp lại';
       default:
         return (aiDecision ?? 'Chưa xác định').toString();
     }
@@ -130,13 +128,15 @@ class _Report_pageState extends State<Report_page> {
               ),
 
               Text(
-                reportStatus == 'REQUEST_REUPLOAD'
-                    ? 'Ảnh cần chụp lại'
+                reportStatus == 'REJECTED'
+                    ? 'AI không phát hiện rác'
                     : 'Gửi báo cáo thành công!',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: reportStatus == 'REQUEST_REUPLOAD'
+                  color: reportStatus == 'REJECTED'
+                      ? Colors.red[700]
+                      : reportStatus == 'PENDING'
                       ? Colors.orange[700]
                       : Colors.green[700],
                 ),
@@ -222,12 +222,12 @@ class _Report_pageState extends State<Report_page> {
               // Chi tiết giao dịch
               _buildTicketRow(
                 "Trạng thái",
-                reportStatus == "AI_VERIFIED"
-                    ? "Đã xác thực bởi AI"
-                    : reportStatus == "NEED_REVIEW"
-                    ? "Cần kiểm duyệt"
-                    : reportStatus == "REQUEST_REUPLOAD"
-                    ? "Cần chụp lại"
+                reportStatus == "VERIFIED"
+                    ? "Đã xác thực là rác"
+                    : reportStatus == "REJECTED"
+                    ? "Không phải rác"
+                    : reportStatus == "CLEANED"
+                    ? "Đã dọn dẹp"
                     : "Đang chờ duyệt",
               ),
               _buildTicketRow("Mã báo cáo", data['transactionCode'] ?? "N/A"),

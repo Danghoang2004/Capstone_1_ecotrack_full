@@ -91,7 +91,7 @@ public class WasteReport {
     private String aiFalsePositiveReason;
 
     public enum Status {
-        PENDING, VERIFIED, REJECTED, CLEANED, PENDING_AI_ANALYSIS, AI_VERIFIED, NEED_REVIEW, REQUEST_REUPLOAD, APPROVED
+        PENDING, VERIFIED, REJECTED, CLEANED
     }
 
     public WasteReport() {

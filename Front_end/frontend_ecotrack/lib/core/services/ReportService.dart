@@ -19,7 +19,7 @@ class ReportServiceAdmin {
 
   // --- API CHO ADMIN: Lấy TẤT CẢ báo cáo ---
   Future<List<Report>> fetchAllReports() async {
-    final response = await apiClient.get("/api/admin/reports");
+    final response = await apiClient.get("/api/admin/reports/group-gps");
 
     if (response.statusCode == 200) {
       final List<dynamic> data = apiClient.decodeUtf8Json(response);
@@ -74,7 +74,7 @@ class ReportServiceAdmin {
   }
 
   Future<List<dynamic>> getReports() async {
-    final response = await apiClient.get("/api/reports");
+    final response = await apiClient.get("/api/reports/group-gps");
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

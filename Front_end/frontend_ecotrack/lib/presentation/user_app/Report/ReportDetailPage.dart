@@ -17,8 +17,6 @@ class ReportDetailPage extends StatelessWidget {
         return 'Không phải rác';
       case 'UNCERTAIN':
         return 'Chưa chắc chắn';
-      case 'REQUEST_REUPLOAD':
-        return 'Yêu cầu chụp lại';
       default:
         return (aiDecision ?? 'Chưa xác định').toString();
     }
@@ -53,18 +51,10 @@ class ReportDetailPage extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'PENDING':
-      case 'PENDING_AI_ANALYSIS':
         return Colors.orange;
       case 'VERIFIED':
         return Colors.blue;
-      case 'AI_VERIFIED':
-        return const Color(0xFF1E88E5);
-      case 'NEED_REVIEW':
-        return const Color(0xFFFB8C00);
-      case 'REQUEST_REUPLOAD':
-        return const Color(0xFFF4511E);
       case 'CLEANED':
-      case 'APPROVED':
         return Colors.green;
       case 'REJECTED':
         return Colors.red;

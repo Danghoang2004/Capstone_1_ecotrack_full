@@ -205,7 +205,7 @@ CREATE TABLE waste_reports (
     image_url VARCHAR(255) NOT NULL,
     gps_lat DECIMAL(10,8) NOT NULL,
     gps_long DECIMAL(11,8) NOT NULL,
-    status ENUM('PENDING','VERIFIED','REJECTED','CLEANED','PENDING_AI_ANALYSIS','AI_VERIFIED','NEED_REVIEW','REQUEST_REUPLOAD','APPROVED') NOT NULL DEFAULT 'PENDING',
+    status ENUM('PENDING','VERIFIED','REJECTED','CLEANED') NOT NULL DEFAULT 'PENDING',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     category VARCHAR(50),
    ai_verified TINYINT(1) NULL DEFAULT NULL,
@@ -238,6 +238,20 @@ CREATE TABLE report_verifications (
     FOREIGN KEY (report_id) REFERENCES waste_reports(report_id) ON DELETE CASCADE,
     FOREIGN KEY (verified_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
+
+-- ================================================================
+-- MIGRATION: normalize legacy AI report statuses to 4 canonical states
+-- ================================================================
+UPDATE waste_reports
+SET status = CASE
+    WHEN status IN ('PENDING_AI_ANALYSIS', 'NEED_REVIEW', 'REQUEST_REUPLOAD') THEN 'PENDING'
+    WHEN status IN ('AI_VERIFIED', 'APPROVED') THEN 'VERIFIED'
+    ELSE status
+END
+WHERE status IN ('PENDING_AI_ANALYSIS', 'AI_VERIFIED', 'NEED_REVIEW', 'REQUEST_REUPLOAD', 'APPROVED');
+
+ALTER TABLE waste_reports
+    MODIFY status ENUM('PENDING','VERIFIED','REJECTED','CLEANED') NOT NULL DEFAULT 'PENDING';
 
 -- ================================================================
 -- ENVIRONMENT_CLEANUP_TASKS

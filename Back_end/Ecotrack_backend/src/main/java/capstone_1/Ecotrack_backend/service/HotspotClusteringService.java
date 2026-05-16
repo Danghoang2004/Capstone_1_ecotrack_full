@@ -43,10 +43,10 @@ public class HotspotClusteringService {
         private final RestTemplate restTemplate = new RestTemplate();
 
         // URL của FastAPI
-        @Value("${ai.cluster-hotspots-url:http://localhost:8000/ai/cluster-hotspots}")
+        @Value("${ai.cluster-hotspots-url}")
         private String fastApiClusterUrl;
 
-        @Value("${ai.predict-hotspots-url:http://localhost:8000/ai/predict-hotspots}")
+        @Value("${ai.predict-hotspots-url}")
         private String fastApiPredictUrl;
 
         /**

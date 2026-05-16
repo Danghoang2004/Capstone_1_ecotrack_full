@@ -23,7 +23,13 @@ public class AdminReportController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<AdminGroupedWasteReportResponse>> getAllReports() {
+    public ResponseEntity<List<WasteReport>> getAllReports() {
+        List<WasteReport> reports = reportService.getAllReportsForAdmin();
+        return ResponseEntity.ok(reports);
+    }
+
+    @GetMapping("/group-gps")
+    public ResponseEntity<List<AdminGroupedWasteReportResponse>> getAllReportsForGroup() {
         List<AdminGroupedWasteReportResponse> reports = reportService.getAllGroupedReportsForAdmin();
         return ResponseEntity.ok(reports);
     }
