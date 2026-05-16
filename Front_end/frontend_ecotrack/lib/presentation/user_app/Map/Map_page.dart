@@ -1123,12 +1123,6 @@ class _MapPageState extends State<MapPage> {
                           ),
 
                           _modernDetailRow(
-                            Icons.delete_outline,
-                            'Loại rác chủ yếu',
-                            _wasteTypeVietnamese(hotspot.dominantWasteType),
-                          ),
-
-                          _modernDetailRow(
                             Icons.location_on_outlined,
                             'Khoảng cách',
                             '${hotspot.distanceMeters.toStringAsFixed(0)} m',
@@ -1160,9 +1154,9 @@ class _MapPageState extends State<MapPage> {
 
                     const SizedBox(height: 14),
 
-                    // CATEGORY LIST
-                    ...hotspot.categoryCounts.entries.map(
-                      (e) => Container(
+                    // REPORTS LIST
+                    ...hotspot.reports.map(
+                      (report) => Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -1170,54 +1164,80 @@ class _MapPageState extends State<MapPage> {
                           color: Colors.white,
                           border: Border.all(color: Colors.grey.shade200),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.recycling,
-                                color: Colors.blue,
-                              ),
-                            ),
-
-                            const SizedBox(width: 14),
-
-                            Expanded(
-                              child: Text(
-                                _wasteTypeVietnamese(e.key),
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                            Row(
+                              children: [
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.description,
+                                    color: Colors.blue,
+                                  ),
                                 ),
-                              ),
-                            ),
 
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '${e.value}',
-                                style: TextStyle(
-                                  color: Colors.green.shade700,
-                                  fontWeight: FontWeight.bold,
+                                const SizedBox(width: 14),
+
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        report.title,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF0E6B57),
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Loại: ${_wasteTypeVietnamese(report.category)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getStatusColor(report.status).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: _getStatusColor(report.status),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _getStatusVietnamese(report.status),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: _getStatusColor(report.status),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ),
+
 
                     const SizedBox(height: 26),
                   ],
@@ -1284,6 +1304,21 @@ class _MapPageState extends State<MapPage> {
 
       default:
         return type;
+    }
+  }
+
+  String _getStatusVietnamese(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return 'Chờ xác thực';
+      case 'VERIFIED':
+        return 'Đã xác thực';
+      case 'CLEANED':
+        return 'Đã dọn dẹp';
+      case 'REJECTED':
+        return 'Bị từ chối';
+      default:
+        return status;
     }
   }
 
@@ -1446,8 +1481,9 @@ class _MapPageState extends State<MapPage> {
       return const SizedBox.shrink();
     }
 
+    // Shift the alert banner down slightly so it doesn't overlap the legend
     return Positioned(
-      top: MediaQuery.of(context).padding.top + (widget.hideAppBar ? 28 : 155),
+      top: MediaQuery.of(context).padding.top + (widget.hideAppBar ? 28 : 155) + 32,
       left: 16,
       right: 16,
       child: Material(
@@ -1485,13 +1521,25 @@ class _MapPageState extends State<MapPage> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '${hotspot.reportCount} báo cáo • ${_wasteTypeVietnamese(hotspot.dominantWasteType)}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
+                      Builder(builder: (_) {
+                        final displayType = _wasteTypeVietnamese(hotspot.dominantWasteType);
+                        final hideType = hotspot.dominantWasteType == null ||
+                            hotspot.dominantWasteType.isEmpty ||
+                            hotspot.dominantWasteType.contains('_') ||
+                            displayType.toUpperCase() == hotspot.dominantWasteType.toUpperCase();
+
+                        final subtitle = hideType
+                            ? '${hotspot.reportCount} báo cáo'
+                            : '${hotspot.reportCount} báo cáo • $displayType';
+
+                        return Text(
+                          subtitle,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        );
+                      }),
                       const SizedBox(height: 4),
                       const Text(
                         'Nhấn để xem chi tiết',
