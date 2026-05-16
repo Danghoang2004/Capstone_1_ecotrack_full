@@ -590,7 +590,6 @@ class _AdminMapPageState extends State<AdminMapPage> {
             'latitude': first.latitude,
             'longitude': first.longitude,
             'status': _pickClusterStatus(reportsInCluster),
-            'category': first.category,
             'count': reportsInCluster.length,
             'overflowCount': reportsInCluster.length - visibleReports.length,
             'statusSummary': statusSummary,

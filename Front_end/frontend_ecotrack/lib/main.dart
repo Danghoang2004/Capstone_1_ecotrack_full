@@ -58,7 +58,6 @@ class MyApp extends StatelessWidget {
               ),
             ),
           ),
-
           initialRoute: '/login',
           onGenerateRoute: AppRouter.generateRoute,
         );
