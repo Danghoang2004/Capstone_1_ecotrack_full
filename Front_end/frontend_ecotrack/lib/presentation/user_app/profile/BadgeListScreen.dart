@@ -184,27 +184,34 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
                 color: imageBgColor,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
                 child: isLocked
-                    ? const Icon(Icons.lock, color: Colors.amber, size: 40)
+                    ? const Center(
+                        child: Icon(Icons.lock, color: Colors.amber, size: 48),
+                      )
                     : (imageUrl != null
-                          ? Image.network(
-                              imageUrl,
-                              width: 60,
-                              height: 60,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(
+                        ? Image.network(
+                            imageUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(
                                     Icons.star,
                                     color: Colors.orange,
-                                    size: 40,
+                                    size: 48,
                                   ),
-                            )
-                          : const Icon(
+                                ),
+                          )
+                        : const Center(
+                            child: Icon(
                               Icons.star,
                               color: Colors.orange,
-                              size: 40,
-                            )),
+                              size: 48,
+                            ),
+                          )),
               ),
             ),
           ),
