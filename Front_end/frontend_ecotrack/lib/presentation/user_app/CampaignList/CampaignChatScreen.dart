@@ -785,27 +785,91 @@ class _AttachmentPreview extends StatelessWidget {
 
   const _AttachmentPreview({required this.message});
 
+  void _openImagePreview(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.all(16),
+          backgroundColor: Colors.transparent,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
+              ),
+              Flexible(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: InteractiveViewer(
+                    minScale: 0.8,
+                    maxScale: 4,
+                    child: Image.network(
+                      message.attachmentUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(24),
+                        color: Colors.white,
+                        child: const Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.broken_image_outlined,
+                                size: 44, color: Colors.grey),
+                            SizedBox(height: 12),
+                            Text(
+                              'Không thể mở ảnh đính kèm',
+                              style: TextStyle(color: Colors.black87),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (message.isImageAttachment) {
-      return ClipRRect(
+      return InkWell(
         borderRadius: BorderRadius.circular(16),
-        child: Image.network(
-          message.attachmentUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+        onTap: () => _openImagePreview(context),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.broken_image_outlined),
-                SizedBox(width: 8),
-                Text('Không tải được ảnh đính kèm'),
-              ],
+            height: 220,
+            child: Image.network(
+              message.attachmentUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: double.infinity,
+                height: 220,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.broken_image_outlined),
+                    SizedBox(width: 8),
+                    Text('Không tải được ảnh đính kèm'),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
