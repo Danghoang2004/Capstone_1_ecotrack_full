@@ -28,8 +28,26 @@ class CampaignChatMessage {
   });
 
   bool get hasAttachment => attachmentUrl.trim().isNotEmpty;
-  bool get isImageAttachment =>
-      attachmentType.toLowerCase().startsWith('image/');
+  bool get isImageAttachment {
+    final type = attachmentType.trim().toLowerCase();
+    if (type.startsWith('image/')) {
+      return true;
+    }
+
+    final url = attachmentUrl.trim().toLowerCase();
+    if (url.isEmpty) {
+      return false;
+    }
+
+    return url.endsWith('.jpg') ||
+        url.endsWith('.jpeg') ||
+        url.endsWith('.png') ||
+        url.endsWith('.gif') ||
+        url.endsWith('.webp') ||
+        url.endsWith('.bmp') ||
+        url.endsWith('.heic') ||
+        url.endsWith('.heif');
+  }
 
   factory CampaignChatMessage.fromJson(Map<String, dynamic> json) {
     return CampaignChatMessage(
