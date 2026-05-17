@@ -573,7 +573,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Text(
-                'Loại chiếm ưu thế: ${_getWasteTypeVietnamese(topEntry.key)} (${topEntry.value} vật - ${_toPercentText(topEntry.value, totalGroupedCount)}).',
+                'Loại chiếm ưu thế: ${_getWasteTypeVietnamese(topEntry.key)} (${topEntry.value}).',
                 style: const TextStyle(
                   color: Color(0xFF166534),
                   fontWeight: FontWeight.w600,
