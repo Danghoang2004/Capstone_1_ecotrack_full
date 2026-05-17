@@ -1325,7 +1325,7 @@ class _AdminEnvironmentTaskPageState extends State<AdminEnvironmentTaskPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Trang ${safePageIndex + 1}/$totalPages - Hiển thị ${startIndex + 1}-${math.min(startIndex + pageTasks.length, tasks.length)} trên ${tasks.length} task',
+                      'Trang ${safePageIndex + 1}/$totalPages',
                       style: const TextStyle(
                         color: AppColors.adminTextSecondary,
                         fontWeight: FontWeight.w600,
