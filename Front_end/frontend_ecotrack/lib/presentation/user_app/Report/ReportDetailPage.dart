@@ -76,6 +76,9 @@ class ReportDetailPage extends StatelessWidget {
       }
     }
     final Map<String, dynamic> analysisData = aiData ?? <String, dynamic>{};
+    final String severityPercent = report.aiSeverityScore != null
+        ? "${report.aiSeverityScore}%"
+        : "";
 
     return Scaffold(
       // Scaffold tự động có nút Back trên AppBar nếu dùng Navigator.push
@@ -225,17 +228,16 @@ class ReportDetailPage extends StatelessWidget {
                             const SizedBox(height: 8),
                             _buildAIRow(
                               "Mức ô nhiễm:",
-                              _getPollutionLevelVietnamese(
-                                report.aiPollutionLevel,
-                              ),
+                              report.aiPollutionLevel != null
+                                  ? "${_getPollutionLevelVietnamese(report.aiPollutionLevel)}${severityPercent.isNotEmpty ? ' (${severityPercent})' : ''}"
+                                  : _getPollutionLevelVietnamese(
+                                      report.aiPollutionLevel,
+                                    ),
                             ),
                           ],
                           if (report.aiSeverityScore != null) ...[
                             const SizedBox(height: 8),
-                            _buildAIRow(
-                              "Điểm ô nhiễm:",
-                              "${report.aiSeverityScore}/100",
-                            ),
+                            _buildAIRow("Điểm ô nhiễm:", severityPercent),
                           ],
                           if (report.aiWasteType != null) ...[
                             const SizedBox(height: 8),

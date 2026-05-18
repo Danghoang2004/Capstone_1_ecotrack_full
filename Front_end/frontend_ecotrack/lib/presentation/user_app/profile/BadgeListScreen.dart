@@ -186,11 +186,11 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: isLocked
-                    ? const Center(
-                        child: Icon(Icons.lock, color: Colors.amber, size: 48),
-                      )
-                    : (imageUrl != null
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Always try to show the image (or fallback icon)
+                    imageUrl != null
                         ? Image.network(
                             imageUrl,
                             width: double.infinity,
@@ -211,7 +211,17 @@ class _BadgeListScreenState extends State<BadgeListScreen> {
                               color: Colors.orange,
                               size: 48,
                             ),
-                          )),
+                          ),
+
+                    // If locked, dim the image and show lock overlay
+                    if (isLocked) ...[
+                      Container(color: Colors.black.withOpacity(0.35)),
+                      const Center(
+                        child: Icon(Icons.lock, color: Colors.amber, size: 48),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
           ),
