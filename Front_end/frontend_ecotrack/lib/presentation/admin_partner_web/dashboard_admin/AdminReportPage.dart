@@ -1111,7 +1111,7 @@ class _AdminReportPageState extends State<AdminReportPage> {
               const SizedBox(width: 16),
               Icon(Icons.access_time, size: 16, color: Colors.grey[500]),
               const SizedBox(width: 4),
-      
+
               Text(
                 DateFormat('HH:mm dd/MM/yyyy').format(report.createdAt),
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
@@ -1181,6 +1181,36 @@ class _AdminReportPageState extends State<AdminReportPage> {
         label = "Chờ xử lý";
         icon = Icons.access_time;
         break;
+      case 'PENDING_AI_ANALYSIS':
+        bg = Colors.orange.withOpacity(0.1);
+        text = Colors.orange;
+        label = "AI đang xử lý";
+        icon = Icons.smart_toy_outlined;
+        break;
+      case 'NEED_REVIEW':
+        bg = Colors.deepPurple.withOpacity(0.1);
+        text = Colors.deepPurple;
+        label = "Cần kiểm duyệt";
+        icon = Icons.rate_review_outlined;
+        break;
+      case 'REQUEST_REUPLOAD':
+        bg = Colors.redAccent.withOpacity(0.1);
+        text = Colors.redAccent;
+        label = "Cần chụp lại";
+        icon = Icons.replay;
+        break;
+      case 'AI_VERIFIED':
+        bg = Colors.teal.withOpacity(0.1);
+        text = Colors.teal;
+        label = "AI xác thực";
+        icon = Icons.verified_outlined;
+        break;
+      case 'APPROVED':
+        bg = Colors.green.withOpacity(0.1);
+        text = Colors.green;
+        label = "Đã duyệt";
+        icon = Icons.check_circle_outline;
+        break;
       case 'VERIFIED':
         bg = Colors.blue.withOpacity(0.1);
         text = Colors.blue;
@@ -1231,7 +1261,37 @@ class _AdminReportPageState extends State<AdminReportPage> {
   }
 
   Widget _buildActionButton(Report report) {
-    if (report.status == 'PENDING') {
+    if (_isReviewableAiStatus(report.status) || report.status == 'PENDING') {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.end,
+        children: [
+          TextButton.icon(
+            onPressed: () => _updateStatus(report.reportId, 'REJECTED'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            ),
+            icon: const Icon(Icons.cancel_outlined, size: 18),
+            label: const Text("Từ chối"),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => _updateStatus(report.reportId, 'VERIFIED'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.adminAccentSky,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            icon: const Icon(Icons.check_circle_outline, size: 18),
+            label: const Text("Duyệt bài"),
+          ),
+        ],
+      );
+    } else if (report.status == 'VERIFIED') {
       return ElevatedButton(
         onPressed: () => _updateStatus(report.reportId, 'VERIFIED'),
         style: ElevatedButton.styleFrom(
@@ -1259,6 +1319,17 @@ class _AdminReportPageState extends State<AdminReportPage> {
       );
     }
     return const SizedBox.shrink(); // Đã dọn hoặc từ chối thì không hiện nút chính
+  }
+
+  bool _isReviewableAiStatus(String status) {
+    return const {
+      'AI_VERIFIED',
+      'CLEANED',
+      'REQUEST_REUPLOAD',
+      'NEED_REVIEW',
+      'PENDING_AI_ANALYSIS',
+      'APPROVED',
+    }.contains(status);
   }
 
   // Hàm hiển thị Popup chi tiết
@@ -1388,17 +1459,24 @@ class _AdminReportPageState extends State<AdminReportPage> {
                               // (visible in DevTools console when running flutter web)
                               // Close detail dialog first (ctx from showDialog builder is in scope),
                               // then navigate after a short delay so the dialog fully dismisses.
-                              print('AdminReportPage: open user reports for userId=${reporter.userId}');
+                              print(
+                                'AdminReportPage: open user reports for userId=${reporter.userId}',
+                              );
                               Navigator.of(ctx).pop();
-                              Future.delayed(const Duration(milliseconds: 150), () {
-                                if (!mounted) return;
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) => UserReportsPage(
-                                    userId: reporter.userId,
-                                    username: reporter.username,
-                                  ),
-                                ));
-                              });
+                              Future.delayed(
+                                const Duration(milliseconds: 150),
+                                () {
+                                  if (!mounted) return;
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => UserReportsPage(
+                                        userId: reporter.userId,
+                                        username: reporter.username,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
                             },
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 10),
@@ -1480,66 +1558,69 @@ class _AdminReportPageState extends State<AdminReportPage> {
               // 3. Footer Nút hành động (Duyệt/Xóa ngay trong popup)
               Padding(
                 padding: const EdgeInsets.all(24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text(
-                        "Đóng",
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 54, 54, 54),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    if (report.status == 'PENDING') ...[
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.cancel, size: 18),
-                        label: const Text("Từ chối"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          _updateStatus(report.reportId, 'REJECTED');
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.check, size: 18),
-                        label: const Text("Duyệt bài"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          _updateStatus(report.reportId, 'VERIFIED');
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                    ],
-                    if (report.status == 'VERIFIED')
-                      ElevatedButton.icon(
-                        icon: const Icon(Icons.cleaning_services, size: 18),
-                        label: const Text("Đã dọn xong"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          _updateStatus(report.reportId, 'CLEANED');
-                          Navigator.pop(ctx);
-                        },
-                      ),
-                  ],
-                ),
+                child: _buildDetailActionButtons(report, ctx),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDetailActionButtons(Report report, BuildContext dialogContext) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text(
+            "Đóng",
+            style: TextStyle(color: Color.fromARGB(255, 54, 54, 54)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        if (report.status == 'VERIFIED')
+          ElevatedButton.icon(
+            icon: const Icon(Icons.cleaning_services, size: 18),
+            label: const Text("Đã dọn xong"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              _updateStatus(report.reportId, 'CLEANED');
+              Navigator.pop(dialogContext);
+            },
+          )
+        else if (report.status == 'PENDING' ||
+            _isReviewableAiStatus(report.status)) ...[
+          ElevatedButton.icon(
+            icon: const Icon(Icons.cancel, size: 18),
+            label: const Text("Từ chối"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              _updateStatus(report.reportId, 'REJECTED');
+              Navigator.pop(dialogContext);
+            },
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.check, size: 18),
+            label: const Text("Duyệt bài"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              _updateStatus(report.reportId, 'VERIFIED');
+              Navigator.pop(dialogContext);
+            },
+          ),
+        ],
+      ],
     );
   }
 

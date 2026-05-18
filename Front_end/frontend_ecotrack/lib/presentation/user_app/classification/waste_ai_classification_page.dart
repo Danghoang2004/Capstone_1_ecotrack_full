@@ -545,14 +545,6 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                       _toPercentText(entry.value, totalGroupedCount),
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    if (averageConfidenceByType.containsKey(entry.key))
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Text(
-                          '| ${(averageConfidenceByType[entry.key]! * 100).toStringAsFixed(1)}%',
-                          style: const TextStyle(color: Color(0xFF4A5568)),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -573,7 +565,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
                 border: Border.all(color: const Color(0xFFBBF7D0)),
               ),
               child: Text(
-                'Loại chiếm ưu thế: ${_getWasteTypeVietnamese(topEntry.key)} (${topEntry.value}).',
+                'Loại chiếm ưu thế: ${_getWasteTypeVietnamese(topEntry.key)}.',
                 style: const TextStyle(
                   color: Color(0xFF166534),
                   fontWeight: FontWeight.w600,
@@ -583,7 +575,7 @@ class _WasteAiClassificationPageState extends State<WasteAiClassificationPage> {
           ],
           const SizedBox(height: 12),
           Text(
-            'Thông tin đã được nhóm từ ${result.detections.length} vùng nhận diện để dễ theo dõi hơn.',
+            'Thông tin đã được nhóm từ vùng nhận diện để dễ theo dõi hơn.',
             style: const TextStyle(color: Color(0xFF4A5568)),
           ),
         ],

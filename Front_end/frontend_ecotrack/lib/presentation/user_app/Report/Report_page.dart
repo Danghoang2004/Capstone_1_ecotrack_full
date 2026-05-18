@@ -103,6 +103,12 @@ class _Report_pageState extends State<Report_page> {
     );
     final String severityText =
         (aiResult['severity_description'] ?? data['message'] ?? '').toString();
+    final dynamic severityScoreRaw = aiResult['severity_score'];
+    final String severityScoreDisplay =
+        (severityScoreRaw == null ||
+            severityScoreRaw.toString().toUpperCase() == 'N/A')
+        ? 'N/A'
+        : '${severityScoreRaw.toString()}%';
 
     showDialog(
       context: context,
@@ -166,9 +172,7 @@ class _Report_pageState extends State<Report_page> {
                       ),
                       const SizedBox(height: 4),
                       Text("Mức ô nhiễm: $pollutionLevelVi"),
-                      Text(
-                        "Điểm ô nhiễm: ${(aiResult['severity_score'] ?? 'N/A').toString()}",
-                      ),
+                      Text("Điểm ô nhiễm: $severityScoreDisplay"),
                       const SizedBox(height: 6),
                       Text(
                         severityText,
